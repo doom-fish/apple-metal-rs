@@ -41,7 +41,10 @@ fn main() {
         .expect("allocate buffer");
 
     let slice: &mut [f32] = unsafe {
-        core::slice::from_raw_parts_mut(buffer.contents().expect("buffer.contents").cast::<f32>(), N)
+        core::slice::from_raw_parts_mut(
+            buffer.contents().expect("buffer.contents").cast::<f32>(),
+            N,
+        )
     };
     for (i, x) in slice.iter_mut().enumerate() {
         *x = i as f32;

@@ -1,22 +1,39 @@
 # apple-metal-rs
 
 Safe Rust bindings for Apple's [Metal](https://developer.apple.com/metal/)
-framework on macOS.
+framework on macOS, backed by a Swift bridge in the
+`screencapturekit-rs` style.
 
-The crate is intentionally tiny: it exposes the bits needed to obtain a
-GPU device handle and bridge it with Apple's
-[`IOSurface`](https://developer.apple.com/documentation/iosurface) for
-zero-copy texture access. For higher-level rendering you can pair it
-with the [`metal`](https://crates.io/crates/metal) crate or
-`objc2-metal`.
+`apple-metal` 0.6.0 now covers:
+
+- device discovery and capability queries
+- buffers, textures, texture views, buffer-backed textures, and `IOSurface`
+  zero-copy interop
+- command queues/buffers plus explicit blit, compute, and render encoders
+- MSL compilation, functions, compute pipeline state, and render pipeline state
+- heaps, events, shared events, dynamic libraries, binary archives, argument
+  encoders, indirect command buffers, acceleration-structure handles, visible /
+  intersection function tables, counter sample buffers, log state, residency
+  sets, and capture scopes
+
+See [`COVERAGE.md`](./COVERAGE.md) for the audited SDK matrix and the deferred
+families that are still intentionally out of scope for this crate release.
+`MetalFX` and `MetalPerformanceShaders` are separate frameworks and are not part
+of `apple-metal`.
 
 ## Quick start
 
 ```rust,no_run
-use apple_metal::MetalDevice;
+use apple_metal::{resource_options, MetalDevice};
 
 let device = MetalDevice::system_default().expect("no Metal-capable GPU");
-println!("got Metal device {:p}", device.as_ptr());
+println!("{} (registry id {})", device.name(), device.registry_id());
+
+let _queue = device.new_command_queue().expect("command queue");
+let buffer = device
+    .new_buffer(4096, resource_options::STORAGE_MODE_SHARED)
+    .expect("shared buffer");
+println!("allocated {} bytes", buffer.length());
 ```
 
 ### Zero-copy from `IOSurface`
@@ -37,15 +54,30 @@ println!("{}x{} MTLTexture", texture.width(), texture.height());
 # #[cfg(not(feature = "iosurface"))] fn main() {}
 ```
 
+## Examples
+
+- `01_get_device` — create the default Metal device and print basic identity.
+- `02_caps_buffer_texture` — inspect device capabilities, allocate buffers, and
+  create textures.
+- `03_command_buffer_blit` — submit a simple blit copy on the GPU.
+- `04_compute_shader` — compile MSL source and dispatch a compute kernel.
+- `05_render_and_explicit_encoders` — exercise explicit blit, compute, and
+  render encoders in one program.
+- `06_resources_and_archives` — use argument encoders, heaps, log state,
+  dynamic libraries, and binary archives.
+- `07_advanced_objects` — touch shared events, fences, counters, indirect
+  command buffers, residency sets, and capture scopes.
+
+Run one directly with:
+
+```bash
+cargo run --example 05_render_and_explicit_encoders
+```
+
 ## Status
 
-v0.1 covers:
-
-- `MetalDevice::system_default()` — `MTLCreateSystemDefaultDevice`
-- `MetalTexture` with `width / height / pixel_format / as_ptr`
-- `IOSurfaceMetalExt::create_metal_texture(device, plane_index)`
-- Common `MTLPixelFormat` constants
-- `is_ycbcr_biplanar(fourcc)` helper
-
-Extracted from `apple-cf-rs` v0.1.1's `metal` feature so the Metal
-surface area can grow on its own without bloating CoreFoundation.
+- Audited against the active Xcode Metal SDK headers
+  (`MacOSX26.2.sdk/System/Library/Frameworks/Metal.framework/Headers`).
+- `COVERAGE.md` tracks implemented, partial, and deferred Metal families.
+- The crate continues to prefer safe, synchronous handle wrappers over raw
+  Objective-C messaging from Rust.

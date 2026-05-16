@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.6.0 — Wider Metal resource, command, and advanced-object coverage
+
+- Added safe wrappers for richer `MTLDevice` capability queries, explicit
+  command buffer lifecycle/state APIs, `MTLBlitCommandEncoder`,
+  `MTLComputeCommandEncoder`, `MTLRenderCommandEncoder`, and
+  `MTLRenderPipelineState`.
+- Added advanced Metal object coverage for texture views, buffer-backed
+  textures, heaps, fences, shared events, dynamic libraries, binary archives,
+  argument encoders, indirect command buffers, acceleration-structure handles,
+  visible/intersection function tables, counter sample buffers, log state,
+  residency sets, and capture scopes.
+- Split the Rust FFI and Swift bridge into `core`, `command`, `render`, and
+  `advanced` areas following the `screencapturekit-rs` multi-file bridge
+  pattern.
+- Added examples `05_render_and_explicit_encoders`,
+  `06_resources_and_archives`, and `07_advanced_objects`, plus the
+  `tests/public_api_smoke.rs` integration smoke test.
+- Added `COVERAGE.md`, refreshed the README, and bumped the crate to `0.6.0`.
+
 ## 0.5.0 — Compute pipeline + screencapturekit-style bridge split
 
 - **`MetalLibrary`** — compile MSL source via

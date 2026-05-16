@@ -10,7 +10,15 @@
 use core::ffi::c_void;
 use core::ptr;
 
+pub(crate) mod advanced;
+pub(crate) mod command;
 pub mod ffi;
+pub(crate) mod render;
+pub(crate) mod util;
+
+pub use advanced::*;
+pub use command::*;
+pub use render::*;
 
 /// Common `MTLPixelFormat` constants.
 pub mod pixel_format {
@@ -51,6 +59,19 @@ pub mod storage_mode {
     pub const MANAGED: usize = 1;
     pub const PRIVATE: usize = 2;
     pub const MEMORYLESS: usize = 3;
+}
+
+/// `MTLCPUCacheMode` enum values.
+pub mod cpu_cache_mode {
+    pub const DEFAULT_CACHE: usize = 0;
+    pub const WRITE_COMBINED: usize = 1;
+}
+
+/// `MTLHazardTrackingMode` enum values.
+pub mod hazard_tracking_mode {
+    pub const DEFAULT: usize = 0;
+    pub const UNTRACKED: usize = 1;
+    pub const TRACKED: usize = 2;
 }
 
 /// `MTLResourceOptions` bitmask values.
@@ -119,10 +140,7 @@ impl MetalDevice {
         if p.is_null() {
             None
         } else {
-            Some(Self {
-                ptr: p,
-                drop_on_release: true,
-            })
+            Some(unsafe { Self::from_retained_ptr(p) })
         }
     }
 
@@ -355,7 +373,7 @@ impl CommandBuffer {
 
     /// Record a blit copy from `src` into `dst` for `size` bytes.
     /// Convenience for GPU↔GPU byte copies.
-    #[must_use] 
+    #[must_use]
     pub fn blit_copy_buffer(
         &self,
         src: &MetalBuffer,
@@ -536,7 +554,7 @@ impl MetalBuffer {
 
     /// Copy `src` into this buffer at byte offset `0`. Returns the
     /// number of bytes actually written.
-    #[must_use] 
+    #[must_use]
     pub fn write_bytes(&self, src: &[u8]) -> usize {
         let Some(dst) = self.contents() else {
             return 0;
@@ -632,6 +650,33 @@ impl MetalTexture {
     /// caller is transferring.
     #[must_use]
     pub const unsafe fn from_raw(ptr: *mut c_void) -> Self {
+        Self { ptr }
+    }
+}
+
+impl MetalDevice {
+    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
+        Self {
+            ptr,
+            drop_on_release: true,
+        }
+    }
+}
+
+impl CommandQueue {
+    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
+        Self { ptr }
+    }
+}
+
+impl CommandBuffer {
+    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
+        Self { ptr }
+    }
+}
+
+impl MetalBuffer {
+    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
         Self { ptr }
     }
 }

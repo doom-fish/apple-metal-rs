@@ -1,11 +1,11 @@
 [package]
 name = "apple-metal"
-version = "0.5.1"
+version = "0.6.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/doom-fish/apple-metal-rs"
 repository = "https://github.com/doom-fish/apple-metal-rs"
-description = "Safe Rust bindings for Apple's Metal framework — GPU access + IOSurface zero-copy texture interop on macOS, backed by a Swift bridge"
+description = "Safe Rust bindings for Apple's Metal framework — devices, resources, command encoding, advanced GPU objects, and IOSurface interop on macOS, backed by a Swift bridge"
 authors = ["Per Johansson <per@doom.fish>"]
 keywords = ["metal", "gpu", "iosurface", "macos", "apple"]
 categories = ["api-bindings", "os::macos-apis", "graphics"]
@@ -14,11 +14,14 @@ readme = "README.md"
 build = "build.rs"
 include = [
     "src/**/*",
+    "examples/**/*",
+    "tests/**/*",
     "swift-bridge/Package.swift",
     "swift-bridge/Sources/**/*",
     "build.rs",
     "Cargo.toml",
     "README.md",
+    "COVERAGE.md",
     "LICENSE-*",
     "CHANGELOG.md",
 ]
@@ -42,7 +45,7 @@ iosurface = ["dep:apple-cf"]
 
 [dependencies]
 libc = "0.2"
-apple-cf = { path = "../apple-cf-rs", version = ">=0.1.1, <0.6", default-features = false, features = ["iosurface"], optional = true }
+apple-cf = { path = "../apple-cf-rs", version = ">=0.6.0, <0.7", default-features = false, features = ["iosurface"], optional = true }
 
 [dev-dependencies]
 
@@ -67,3 +70,15 @@ name = "02_caps_buffer_texture"
 
 [[example]]
 name = "03_command_buffer_blit"
+
+[[example]]
+name = "04_compute_shader"
+
+[[example]]
+name = "05_render_and_explicit_encoders"
+
+[[example]]
+name = "06_resources_and_archives"
+
+[[example]]
+name = "07_advanced_objects"

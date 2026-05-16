@@ -1,0 +1,84 @@
+# COVERAGE
+
+Audit target: `MacOSX26.2.sdk/System/Library/Frameworks/Metal.framework/Headers`
+from the active Xcode toolchain (`xcrun --sdk macosx --show-sdk-path`).
+
+Scope notes:
+
+- This document covers **Metal.framework** only.
+- `MetalFX.framework` and `MetalPerformanceShaders.framework` are separate
+  frameworks and are intentionally out of scope for `apple-metal`.
+- Status is tracked per logical API row so implemented subsets of larger headers
+  can be called out without pretending that an entire header family is complete.
+
+Legend:
+
+- ✅ implemented
+- 🟡 partial
+- ⏭️ skipped / deferred
+
+## Implemented rows
+
+| API row | Status | Rust surface | Notes |
+| --- | --- | --- | --- |
+| System device discovery and core capability queries (`MTLCreateSystemDefaultDevice`, `MTLDevice.name`, `registryID`, unified-memory / working-set / family support, dynamic-library / raytracing / counter-sampling feature gates, counter-set names) | ✅ | `MetalDevice::system_default`, `name`, `registry_id`, `has_unified_memory`, `recommended_max_working_set_size`, `supports_family`, `supports_dynamic_libraries`, `supports_render_dynamic_libraries`, `supports_raytracing`, `supports_counter_sampling`, `counter_set_names` | Backed by the Swift bridge in `Device.swift` + `Advanced.swift`. |
+| Core resource / queue / pipeline construction (`makeBuffer`, `makeTexture`, `makeCommandQueue`, `makeLibrary(source:)`, `makeComputePipelineState`, `makeRenderPipelineState`) | ✅ | `MetalDevice::new_buffer`, `new_texture`, `new_command_queue`, `new_library_with_source`, `new_compute_pipeline_state`, `new_render_pipeline_state` | Covers the creation path used by all examples/tests. |
+| Advanced object construction (`makeCommandQueue(maxCount/logState)`, `makeHeap`, `makeFence`, `makeSharedEvent`, `makeDynamicLibrary`, `makeBinaryArchive`, `makeIndirectCommandBuffer`, `makeAccelerationStructure`, `makeCounterSampleBuffer`, `newLogState`, `newResidencySet`) | ✅ | `MetalDevice::new_command_queue_with_max_command_buffer_count`, `new_command_queue_with_log_state`, `new_heap`, `new_fence`, `new_shared_event`, `new_dynamic_library_with_source`, `load_dynamic_library`, `new_binary_archive`, `new_indirect_command_buffer`, `new_acceleration_structure_with_size`, `new_counter_sample_buffer`, `new_log_state`, `new_residency_set` | Availability-gated in Swift where the OS requires it. |
+| Library/function lookup (`MTLLibrary.makeFunction`) | ✅ | `MetalLibrary::new_function` | Source-based library compilation is covered end-to-end in examples/tests. |
+| Command queue + command buffer creation (`makeCommandBuffer`, `makeCommandBufferWithUnretainedReferences`) | ✅ | `CommandQueue::new_command_buffer`, `new_command_buffer_with_unretained_references` | Both retained and unretained command-buffer creation paths are covered. |
+| Command-buffer lifecycle/state (`enqueue`, `commit`, `waitUntilScheduled`, `waitUntilCompleted`, `status`, `error`) | ✅ | `CommandBuffer::enqueue`, `commit`, `wait_until_scheduled`, `wait_until_completed`, `status`, `error` | `command_buffer_status::*` constants are exposed for state checks. |
+| Command-buffer event sync (`encodeWaitForEvent`, `encodeSignalEvent`) | ✅ | `CommandBuffer::encode_wait_for_event`, `encode_signal_event` | Shared-event signaling is smoke-tested. |
+| Blit encoder basics (`copyFromBuffer`, `fillBuffer`, fence wait/update, counter sampling, `endEncoding`) | ✅ | `BlitCommandEncoder::{copy_buffer, fill_buffer, wait_for_fence, update_fence, sample_counters, end_encoding}` | Enough to cover common copy/fill/counter workflows. |
+| Compute encoder basics (pipeline/buffer/texture binding, visible/intersection tables, acceleration-structure binding, threadgroup dispatch, fence wait/update, `endEncoding`) | ✅ | `ComputeCommandEncoder::{set_compute_pipeline_state, set_buffer, set_texture, set_visible_function_table, set_intersection_function_table, set_acceleration_structure, dispatch_threadgroups, dispatch_threads, wait_for_fence, update_fence, end_encoding}` | The explicit encoder path is exercised in examples and `public_api_smoke`. |
+| Render pipeline creation (`makeRenderPipelineState`) | ✅ | `MetalDevice::new_render_pipeline_state`, `RenderPipelineState::label` | Covers a simple single-color render pipeline. |
+| Render encoder basics (single color attachment, pipeline bind, vertex-buffer bind, `drawPrimitives`, fence wait/update, `endEncoding`) | ✅ | `CommandBuffer::new_render_command_encoder`, `RenderCommandEncoder::{set_render_pipeline_state, set_vertex_buffer, draw_primitives, wait_for_fence, update_fence, end_encoding}` | Enough for headless render-to-texture smoke coverage. |
+| Buffer basics (`length`, `contents`, `didModifyRange`) | ✅ | `MetalBuffer::{length, contents, write_bytes, did_modify_range}` | Shared-memory upload / readback is validated in tests/examples. |
+| Texture basics (`width`, `height`, `depth`, `mipmapLevelCount`, `arrayLength`, `pixelFormat`, `usage`, `storageMode`) | ✅ | `MetalTexture::{width, height, depth, mipmap_level_count, array_length, pixel_format, usage, storage_mode}` | Basic metadata is exposed for allocated and IOSurface-backed textures. |
+| 2D texture I/O and view creation (`replaceRegion`, `getBytes`, `newTextureView`) | ✅ | `MetalTexture::{replace_region_2d, read_bytes_2d, new_view}` | The crate can populate, read back, and create same-format views. |
+| Buffer-backed 2D textures (`MTLBuffer.makeTexture`) | ✅ | `MetalBuffer::new_texture_view_2d` | Used in examples/tests for linear-data-backed textures. |
+| Heap basics (`size`, `usedSize`, `currentAllocatedSize`, `maxAvailableSize`, basic resource allocation, purgeable state) | ✅ | `Heap::{size, used_size, current_allocated_size, max_available_size, new_buffer, new_texture, new_acceleration_structure_with_size, set_purgeable_state}` | Heap allocation + basic bookkeeping is exposed. |
+| Shared events (`signaledValue`, `notify/wait` equivalent via polling helper + command-buffer encode paths) | ✅ | `Event::{signaled_value, set_signaled_value, wait_until_signaled_value}` | Synchronous wait helper is implemented in the Swift bridge. |
+| Dynamic libraries (`makeDynamicLibrary`, serialize/load, install name) | ✅ | `DynamicLibrary::{install_name, serialize_to_file}` plus `MetalDevice::{new_dynamic_library_with_source, load_dynamic_library}` | Availability-gated to supported macOS releases. |
+| Binary archives (`addComputePipelineFunctions`, `addRenderPipelineFunctions`, serialize/load) | ✅ | `BinaryArchive::{add_compute_function, add_render_functions, serialize_to_file}` plus `MetalDevice::new_binary_archive` | Archive round-trip is covered in example 06. |
+| Argument encoders (`makeArgumentEncoder`, encoded length / alignment, set buffer / texture / argument buffer) | ✅ | `MetalFunction::new_argument_encoder`, `ArgumentEncoder::{encoded_length, alignment, set_argument_buffer, set_buffer, set_texture}` | Covers common argument-buffer setup. |
+| Indirect command-buffer allocation/reset/size | ✅ | `IndirectCommandBuffer::{size, reset_range}` plus `MetalDevice::new_indirect_command_buffer` | Allocation surface is wrapped even though command recording is deferred. |
+| Counter sample buffers (`sampleCount`, resolve range) | ✅ | `CounterSampleBuffer::{sample_count, resolve_range}` | Creation, sampling, and resolve paths are available when the device supports them. |
+| Log state + queue creation (`MTLLogState`, queue descriptor log-state path) | ✅ | `MetalDevice::new_log_state`, `new_command_queue_with_log_state` | Safe creation path only; log contents remain SDK-managed. |
+| Residency sets (`add/remove/contains/commit/request/end`) | ✅ | `ResidencySet::{add_buffer, add_texture, add_heap, remove_buffer, remove_texture, remove_heap, remove_all_allocations, contains_buffer, contains_texture, allocation_count, commit, request_residency, end_residency}` plus `CommandQueue::{add_residency_set, remove_residency_set}` | Enough for residency bookkeeping and queue association. |
+| Capture scopes (`MTLCaptureManager.shared`, destination support, capture scopes for device/queue, `begin`/`end`) | ✅ | `CaptureManager::{shared, supports_destination, is_capturing, new_capture_scope_with_device, new_capture_scope_with_command_queue}` and `CaptureScope::{begin, end}` | Headless-safe scope control is exposed. |
+| IOSurface zero-copy texture interop (crate extension, not a Metal header family) | ✅ | `IOSurfaceMetalExt::create_metal_texture` | Preserved from earlier releases under the default `iosurface` feature. |
+
+## Partial rows
+
+| API row | Status | Rust surface | What's still missing |
+| --- | --- | --- | --- |
+| `TextureDescriptor` coverage | 🟡 | `TextureDescriptor::new_2d`, `render_target_2d` plus public fields | No dedicated helpers yet for 1D/3D/cube/array/sparse descriptors, texture-type-specific validation, or descriptor convenience builders beyond the common 2D cases. |
+| Ray-tracing support (`MTLAccelerationStructure*`, `MTLVisibleFunctionTable`, `MTLIntersectionFunctionTable`) | 🟡 | `new_acceleration_structure_with_size`, compute binding helpers, `new_visible_function_table`, `new_intersection_function_table`, `set_opaque_triangle_intersection_function` | The crate exposes handle allocation/binding only; build/update/copy encoders, geometry descriptors, instance descriptors, compaction, and acceleration-structure command encoders are still deferred. |
+| Render encoding coverage | 🟡 | Single color-attachment render pass + pipeline/vertex-buffer bind + `draw_primitives` | No depth/stencil state, viewport/scissor, fragment resources, indexed/instanced draws, visibility result buffers, render-pass descriptor graph, or parallel render encoders yet. |
+| Heap coverage | 🟡 | Basic heap creation/allocation + purgeable state | No dedicated heap descriptor wrapper, sparse heaps, aliasing helpers, or residency preference controls beyond the SDK defaults. |
+| Capture coverage | 🟡 | Capture-manager singleton, destination support, capture scopes | File/trace-output configuration and explicit `startCapture` / `stopCapture` session management are not wrapped yet. |
+
+## Deferred / skipped rows
+
+| API row | Status | Reason |
+| --- | --- | --- |
+| `MTLDepthStencil*` | ⏭️ | Depth/stencil descriptor/state families are not wrapped in `0.6.0`. |
+| `MTLSampler*` | ⏭️ | Sampler descriptor/state creation is deferred. |
+| `MTLVertexDescriptor` / `MTLStageInputOutputDescriptor` / `MTLArgument` reflection descriptors | ⏭️ | Descriptor-heavy vertex/argument reflection APIs are not wrapped yet. |
+| `MTLRenderPass*`, `MTLBlitPass*`, `MTLComputePass*`, `MTLParallelRenderCommandEncoder`, `MTLDrawable` presentation APIs | ⏭️ | `0.6.0` intentionally keeps the safe render path to a headless single-color render target helper. |
+| `MTLIndirectCommandEncoder` command-recording APIs | ⏭️ | The crate allocates/resets indirect command buffers but does not yet expose per-command recording. |
+| `MTLResourceStateCommandEncoder`, `MTLResourceStatePass*`, sparse/resource-view pool APIs | ⏭️ | Resource-state and sparse-resource management are deferred. |
+| `MTLFunctionConstantValues`, `MTLFunctionDescriptor`, `MTLLinkedFunctions`, `MTLFunctionStitching`, `MTLFunctionHandle`, `MTLFunctionLog` | ⏭️ | Advanced function specialization/linking/logging families are not wrapped yet. |
+| `MTLIOCommandQueue`, `MTLIOCommandBuffer`, `MTLIOCompressor` | ⏭️ | GPU file-I/O APIs are deferred. |
+| `MTLRasterizationRate*`, `MTLDeviceCertification`, `MTLAllocation`, `MTLTensor`, `MTLResourceViewPool`, `MTLTextureViewPool`, other niche utility headers | ⏭️ | These newer or niche utility families are not part of the `0.6.0` safe surface. |
+| `MTL4*` headers (`MTL4CommandQueue`, `MTL4CommandBuffer`, `MTL4RenderPipeline`, `MTL4ComputePipeline`, `MTL4MeshRenderPipeline`, `MTL4MachineLearning*`, etc.) | ⏭️ | Metal 4 is a separate, very large API family and is intentionally deferred from `0.6.0`. |
+
+## Validation hooks
+
+The implemented rows above are exercised by:
+
+- examples `01_get_device` through `07_advanced_objects`
+- `tests/public_api_smoke.rs`
+- `cargo clippy --all-targets -- -D warnings`
+- `cargo test`
+- `for ex in examples/*.rs; do cargo run --example "$(basename "$ex" .rs)"; done`
