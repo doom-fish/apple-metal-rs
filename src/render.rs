@@ -58,6 +58,10 @@ impl RenderPipelineState {
         }
     }
 
+    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
+        Self { ptr }
+    }
+
     /// Metal's label for this pipeline, if one was set.
     #[must_use]
     pub fn label(&self) -> Option<String> {

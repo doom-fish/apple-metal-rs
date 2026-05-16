@@ -66,6 +66,15 @@ public func am_object_copy_label(_ handle: UnsafeMutableRawPointer?) -> UnsafeMu
     if let value: MTLRenderPipelineState = am_borrow(handle) {
         return am_copy_string(value.label)
     }
+    if let value: MTLComputePipelineState = am_borrow(handle) {
+        return am_copy_string(value.label)
+    }
+    if let value: MTLDepthStencilState = am_borrow(handle) {
+        return am_copy_string(value.label)
+    }
+    if let value: MTLSamplerState = am_borrow(handle) {
+        return am_copy_string(value.label)
+    }
     if let value: MTLCommandQueue = am_borrow(handle) {
         return am_copy_string(value.label)
     }

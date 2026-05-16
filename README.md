@@ -4,22 +4,25 @@ Safe Rust bindings for Apple's [Metal](https://developer.apple.com/metal/)
 framework on macOS, backed by a Swift bridge in the
 `screencapturekit-rs` style.
 
-`apple-metal` 0.6.0 now covers:
+`apple-metal` 0.6.1 now covers:
 
 - device discovery and capability queries
 - buffers, textures, texture views, buffer-backed textures, and `IOSurface`
   zero-copy interop
 - command queues/buffers plus explicit blit, compute, and render encoders
-- MSL compilation, functions, compute pipeline state, and render pipeline state
-- heaps, events, shared events, dynamic libraries, binary archives, argument
-  encoders, indirect command buffers, acceleration-structure handles, visible /
-  intersection function tables, counter sample buffers, log state, residency
-  sets, and capture scopes
+- MSL compilation, functions, compute/render pipeline state, and
+  descriptor-driven compute/render/tile pipeline creation
+- depth/stencil state, sampler state, and descriptor-driven argument encoders
+- limited `MetalFX` spatial / temporal scaler support
+- heaps, events, shared events, dynamic libraries, binary archives, indirect
+  command buffers, acceleration-structure handles, visible / intersection
+  function tables, counter sample buffers, log state, residency sets, and
+  capture scopes
 
 See [`COVERAGE.md`](./COVERAGE.md) for the audited SDK matrix and the deferred
 families that are still intentionally out of scope for this crate release.
-`MetalFX` and `MetalPerformanceShaders` are separate frameworks and are not part
-of `apple-metal`.
+`MetalPerformanceShaders` remains out of scope, and the broader `MetalFX`
+family is still only partially wrapped.
 
 ## Quick start
 

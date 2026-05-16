@@ -5,13 +5,21 @@
 )]
 
 use apple_metal::{
-    capture_destination, command_buffer_status, counter_sampling_point, indirect_command_type,
-    intersection_function_signature, load_action, log_level, pixel_format, primitive_type,
-    purgeable_state, resource_options, storage_mode, store_action, texture_usage, ArgumentEncoder,
-    BinaryArchive, BlitCommandEncoder, CaptureManager, CommandBuffer, CommandQueue,
-    ComputeCommandEncoder, ComputePipelineState, DynamicLibrary, Event, Fence,
-    IndirectCommandBuffer, MetalBuffer, MetalDevice, MetalFunction, MetalLibrary, MetalTexture,
-    RenderCommandEncoder, RenderPipelineState, ResidencySet, TextureDescriptor,
+    argument_buffers_tier, binding_access, blend_factor, blend_operation,
+    capture_destination, color_write_mask, command_buffer_status, compare_function,
+    counter_sampling_point, indirect_command_type, intersection_function_signature, load_action,
+    log_level, pixel_format, primitive_type, purgeable_state, resource_options,
+    sampler_address_mode, sampler_border_color, sampler_min_mag_filter, sampler_mip_filter,
+    sampler_reduction_mode, spatial_scaler_color_processing_mode, stencil_operation,
+    storage_mode, store_action, texture_type, texture_usage, ArgumentDescriptor,
+    ArgumentEncoder, BinaryArchive, BlitCommandEncoder, CaptureManager, CommandBuffer,
+    CommandQueue, ComputeCommandEncoder, ComputePipelineDescriptor, ComputePipelineState,
+    DepthStencilDescriptor, DynamicLibrary, Event, Fence, IndirectCommandBuffer, MetalBuffer,
+    MetalDevice, MetalFunction, MetalLibrary, MetalTexture, RenderCommandEncoder,
+    RenderPipelineColorAttachmentDescriptor, RenderPipelineDescriptor, RenderPipelineState,
+    ResidencySet, SamplerDescriptor, SpatialScalerDescriptor, StencilDescriptor,
+    TemporalScalerDescriptor, TemporalScalerFrameState, TemporalScalerTextures,
+    TextureDescriptor, TileRenderPipelineColorAttachmentDescriptor, TileRenderPipelineDescriptor,
 };
 use std::fs;
 use std::path::PathBuf;
@@ -257,6 +265,78 @@ fn public_api_smoke() {
     let _ = render_pipeline.label();
     assert!(pipeline.thread_execution_width() > 0);
     assert!(pipeline.max_total_threads_per_threadgroup() > 0);
+    assert!(device.argument_buffers_support() <= argument_buffers_tier::TIER2);
+
+    let mut sampler_descriptor = SamplerDescriptor::new();
+    sampler_descriptor.min_filter = sampler_min_mag_filter::LINEAR;
+    sampler_descriptor.mag_filter = sampler_min_mag_filter::LINEAR;
+    sampler_descriptor.mip_filter = sampler_mip_filter::LINEAR;
+    sampler_descriptor.s_address_mode = sampler_address_mode::CLAMP_TO_EDGE;
+    sampler_descriptor.t_address_mode = sampler_address_mode::CLAMP_TO_EDGE;
+    sampler_descriptor.r_address_mode = sampler_address_mode::CLAMP_TO_BORDER_COLOR;
+    sampler_descriptor.border_color = sampler_border_color::OPAQUE_WHITE;
+    sampler_descriptor.reduction_mode = sampler_reduction_mode::WEIGHTED_AVERAGE;
+    sampler_descriptor.compare_function = compare_function::LESS_EQUAL;
+    sampler_descriptor.support_argument_buffers = true;
+    sampler_descriptor.label = Some("smoke-sampler".to_string());
+    let sampler_state = device
+        .new_sampler_state(&sampler_descriptor)
+        .expect("sampler state");
+    assert_eq!(sampler_state.label().as_deref(), Some("smoke-sampler"));
+
+    let mut stencil_descriptor = StencilDescriptor::new();
+    stencil_descriptor.stencil_compare_function = compare_function::ALWAYS;
+    stencil_descriptor.stencil_failure_operation = stencil_operation::REPLACE;
+    stencil_descriptor.depth_failure_operation = stencil_operation::KEEP;
+    stencil_descriptor.depth_stencil_pass_operation = stencil_operation::REPLACE;
+    stencil_descriptor.read_mask = 0xff;
+    stencil_descriptor.write_mask = 0xff;
+
+    let mut depth_stencil_descriptor = DepthStencilDescriptor::new();
+    depth_stencil_descriptor.depth_compare_function = compare_function::LESS_EQUAL;
+    depth_stencil_descriptor.depth_write_enabled = true;
+    depth_stencil_descriptor.front_face_stencil = Some(stencil_descriptor);
+    depth_stencil_descriptor.back_face_stencil = Some(stencil_descriptor);
+    depth_stencil_descriptor.label = Some("smoke-depth".to_string());
+    let depth_stencil_state = device
+        .new_depth_stencil_state(&depth_stencil_descriptor)
+        .expect("depth stencil state");
+    assert_eq!(depth_stencil_state.label().as_deref(), Some("smoke-depth"));
+
+    let mut compute_descriptor = ComputePipelineDescriptor::new(&increment_fn);
+    compute_descriptor.thread_group_size_is_multiple_of_thread_execution_width = true;
+    compute_descriptor.max_total_threads_per_threadgroup = 64;
+    compute_descriptor.support_indirect_command_buffers = true;
+    let descriptor_compute_pipeline = device
+        .new_compute_pipeline_state_with_descriptor(&compute_descriptor)
+        .expect("descriptor compute pipeline");
+    assert!(descriptor_compute_pipeline.thread_execution_width() > 0);
+
+    let mut color_attachment_descriptor =
+        RenderPipelineColorAttachmentDescriptor::new(pixel_format::BGRA8UNORM);
+    color_attachment_descriptor.blending_enabled = true;
+    color_attachment_descriptor.source_rgb_blend_factor = blend_factor::SOURCE_ALPHA;
+    color_attachment_descriptor.destination_rgb_blend_factor =
+        blend_factor::ONE_MINUS_SOURCE_ALPHA;
+    color_attachment_descriptor.rgb_blend_operation = blend_operation::ADD;
+    color_attachment_descriptor.source_alpha_blend_factor = blend_factor::ONE;
+    color_attachment_descriptor.destination_alpha_blend_factor = blend_factor::ZERO;
+    color_attachment_descriptor.alpha_blend_operation = blend_operation::ADD;
+    color_attachment_descriptor.write_mask = color_write_mask::ALL;
+    let color_attachments = [color_attachment_descriptor];
+    let mut render_descriptor =
+        RenderPipelineDescriptor::new(&vertex_fn, Some(&fragment_fn), &color_attachments);
+    render_descriptor.depth_attachment_pixel_format = pixel_format::DEPTH32FLOAT;
+    render_descriptor.stencil_attachment_pixel_format = pixel_format::STENCIL8;
+    render_descriptor.support_indirect_command_buffers = true;
+    let descriptor_render_pipeline = device
+        .new_render_pipeline_state_with_descriptor(&render_descriptor)
+        .expect("descriptor render pipeline");
+    let _ = descriptor_render_pipeline.label();
+
+    let tile_color_attachments =
+        [TileRenderPipelineColorAttachmentDescriptor::new(pixel_format::BGRA8UNORM)];
+    let _tile_descriptor = TileRenderPipelineDescriptor::new(&fragment_fn, &tile_color_attachments);
 
     let queue = device.new_command_queue().expect("command queue");
     let bounded_queue = device
@@ -330,6 +410,25 @@ fn public_api_smoke() {
         .new_view(pixel_format::BGRA8UNORM)
         .expect("texture view");
     arg_encoder.set_texture(&texture_view, 1);
+
+    let descriptor_argument_encoder = device
+        .new_argument_encoder_with_descriptors(&[
+            ArgumentDescriptor::buffer(0, binding_access::READ_WRITE),
+            ArgumentDescriptor::texture(1, texture_type::TYPE_2D, binding_access::READ_ONLY),
+            ArgumentDescriptor::sampler(2),
+        ])
+        .expect("descriptor argument encoder");
+    assert!(descriptor_argument_encoder.encoded_length() > 0);
+    let descriptor_argument_buffer = device
+        .new_buffer(
+            descriptor_argument_encoder.encoded_length(),
+            resource_options::STORAGE_MODE_SHARED,
+        )
+        .expect("descriptor argument buffer");
+    descriptor_argument_encoder.set_argument_buffer(&descriptor_argument_buffer, 0);
+    descriptor_argument_encoder.set_buffer(&shared_buffer, 0, 0);
+    descriptor_argument_encoder.set_texture(&texture_view, 1);
+    descriptor_argument_encoder.set_sampler_state(&sampler_state, 2);
 
     let texture_backing = device
         .new_buffer(256, resource_options::STORAGE_MODE_SHARED)
@@ -412,8 +511,9 @@ fn public_api_smoke() {
     let compute_encoder: ComputeCommandEncoder = compute_command_buffer
         .new_compute_command_encoder()
         .expect("compute encoder");
-    compute_encoder.set_compute_pipeline_state(&pipeline);
+    compute_encoder.set_compute_pipeline_state(&descriptor_compute_pipeline);
     compute_encoder.set_buffer(&explicit_buffer, 0, 0);
+    compute_encoder.set_sampler_state(&sampler_state, 2);
     if let Some(fence) = fence_a.as_ref() {
         compute_encoder.wait_for_fence(fence);
     }
@@ -486,7 +586,9 @@ fn public_api_smoke() {
     if let Some(fence) = fence_b.as_ref() {
         render_encoder.wait_for_fence(fence);
     }
-    render_encoder.set_render_pipeline_state(&render_pipeline);
+    render_encoder.set_render_pipeline_state(&descriptor_render_pipeline);
+    render_encoder.set_depth_stencil_state(&depth_stencil_state);
+    render_encoder.set_fragment_sampler_state(&sampler_state, 0);
     render_encoder.set_vertex_buffer(&vertex_buffer, 0, 0);
     render_encoder.draw_primitives(primitive_type::TRIANGLE, 0, 3);
     if let Some(fence) = fence_c.as_ref() {
@@ -506,6 +608,60 @@ fn public_api_smoke() {
             .expect("post-render blit encoder");
         encoder.wait_for_fence(fence);
         encoder.end_encoding();
+    }
+
+    let mut spatial_scaler_descriptor =
+        SpatialScalerDescriptor::new(pixel_format::BGRA8UNORM, pixel_format::BGRA8UNORM, 4, 4, 8, 8);
+    spatial_scaler_descriptor.color_processing_mode =
+        spatial_scaler_color_processing_mode::LINEAR;
+    if SpatialScalerDescriptor::supports_device(&device) {
+        let spatial_output = device
+            .new_texture(TextureDescriptor::render_target_2d(8, 8, pixel_format::BGRA8UNORM))
+            .expect("spatial output texture");
+        if let Some(spatial_scaler) = device.new_spatial_scaler(&spatial_scaler_descriptor) {
+            let _ = spatial_scaler.color_texture_usage();
+            let _ = spatial_scaler.output_texture_usage();
+            spatial_scaler.configure(4, 4, &texture_view, &spatial_output, fence_a.as_ref());
+        }
+    }
+
+    if TemporalScalerDescriptor::supports_device(&device) {
+        let mut temporal_scaler_descriptor = TemporalScalerDescriptor::new(
+            pixel_format::BGRA8UNORM,
+            pixel_format::BGRA8UNORM,
+            pixel_format::RG16FLOAT,
+            pixel_format::BGRA8UNORM,
+            (4, 4),
+            (8, 8),
+        );
+        temporal_scaler_descriptor.auto_exposure_enabled = true;
+        temporal_scaler_descriptor.input_content_properties_enabled = true;
+        let min_scale = TemporalScalerDescriptor::supported_input_content_min_scale(&device);
+        let max_scale = TemporalScalerDescriptor::supported_input_content_max_scale(&device);
+        if min_scale > 0.0 && max_scale >= min_scale {
+            temporal_scaler_descriptor.input_content_min_scale = min_scale;
+            temporal_scaler_descriptor.input_content_max_scale = max_scale;
+        }
+        let temporal_output = device
+            .new_texture(TextureDescriptor::render_target_2d(8, 8, pixel_format::BGRA8UNORM))
+            .expect("temporal output texture");
+        if let Some(temporal_scaler) = device.new_temporal_scaler(&temporal_scaler_descriptor) {
+            let _ = temporal_scaler.color_texture_usage();
+            let _ = temporal_scaler.depth_texture_usage();
+            let _ = temporal_scaler.motion_texture_usage();
+            let _ = temporal_scaler.reactive_texture_usage();
+            let _ = temporal_scaler.output_texture_usage();
+            temporal_scaler.set_textures(TemporalScalerTextures {
+                color_texture: &texture_view,
+                depth_texture: &texture_view,
+                motion_texture: &texture_view,
+                output_texture: &temporal_output,
+                exposure_texture: None,
+                reactive_mask_texture: None,
+                fence: fence_a.as_ref(),
+            });
+            temporal_scaler.set_frame_state(TemporalScalerFrameState::new(4, 4));
+        }
     }
 
     if let Some(heap) = device.new_heap(1 << 20, storage_mode::SHARED) {

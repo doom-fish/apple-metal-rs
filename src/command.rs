@@ -1,6 +1,7 @@
 use crate::{
     ffi, util::take_optional_string, CommandBuffer, CommandQueue, ComputePipelineState,
-    CounterSampleBuffer, Event, Fence, MetalBuffer, MetalTexture, RenderPipelineState,
+    CounterSampleBuffer, DepthStencilState, Event, Fence, MetalBuffer, MetalTexture,
+    RenderPipelineState, SamplerState,
 };
 use core::ffi::c_void;
 use core::ops::Range;
@@ -250,6 +251,17 @@ impl ComputeCommandEncoder {
         };
     }
 
+    /// Bind a sampler state at `index`.
+    pub fn set_sampler_state(&self, sampler: &SamplerState, index: usize) {
+        unsafe {
+            ffi::am_compute_command_encoder_set_sampler_state(
+                self.as_ptr(),
+                sampler.as_ptr(),
+                index,
+            );
+        };
+    }
+
     /// Bind a visible function table at `index`.
     pub fn set_visible_function_table(&self, table: &crate::VisibleFunctionTable, index: usize) {
         unsafe {
@@ -364,6 +376,27 @@ impl RenderCommandEncoder {
                 buffer.as_ptr(),
                 offset,
                 index,
+            );
+        };
+    }
+
+    /// Bind a fragment sampler state at `index`.
+    pub fn set_fragment_sampler_state(&self, sampler: &SamplerState, index: usize) {
+        unsafe {
+            ffi::am_render_command_encoder_set_fragment_sampler_state(
+                self.as_ptr(),
+                sampler.as_ptr(),
+                index,
+            );
+        };
+    }
+
+    /// Bind a depth/stencil state object.
+    pub fn set_depth_stencil_state(&self, state: &DepthStencilState) {
+        unsafe {
+            ffi::am_render_command_encoder_set_depth_stencil_state(
+                self.as_ptr(),
+                state.as_ptr(),
             );
         };
     }

@@ -1055,3 +1055,9 @@ impl CaptureScope {
         unsafe { ffi::am_capture_scope_end(self.as_ptr()) };
     }
 }
+
+impl ArgumentEncoder {
+    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
+        Self { ptr }
+    }
+}

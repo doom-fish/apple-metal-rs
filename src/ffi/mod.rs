@@ -3,9 +3,15 @@
 mod advanced;
 mod command;
 mod core;
+mod metalfx;
+mod pipeline;
 mod render;
+mod state;
 
 pub use advanced::*;
 pub use command::*;
 pub use core::*;
+pub use metalfx::*;
+pub use pipeline::*;
 pub use render::*;
+pub use state::*;

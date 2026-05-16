@@ -11,14 +11,22 @@ use core::ffi::c_void;
 use core::ptr;
 
 pub(crate) mod advanced;
+pub(crate) mod argument;
 pub(crate) mod command;
 pub mod ffi;
+pub(crate) mod metalfx;
+pub(crate) mod pipeline;
 pub(crate) mod render;
+pub(crate) mod state;
 pub(crate) mod util;
 
 pub use advanced::*;
+pub use argument::*;
 pub use command::*;
+pub use metalfx::*;
+pub use pipeline::*;
 pub use render::*;
+pub use state::*;
 
 /// Common `MTLPixelFormat` constants.
 pub mod pixel_format {
@@ -511,6 +519,10 @@ impl ComputePipelineState {
     #[must_use]
     pub const fn as_ptr(&self) -> *mut c_void {
         self.ptr
+    }
+
+    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
+        Self { ptr }
     }
 }
 

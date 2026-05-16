@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.1 — State descriptors, public pipeline descriptors, and MetalFX scalers
+
+- Added safe wrappers for `MTLCompareFunction`, `MTLStencilOperation`,
+  `MTLStencilDescriptor`, `MTLDepthStencilDescriptor`,
+  `MTLDepthStencilState`, `MTLSamplerDescriptor`, and `MTLSamplerState`, plus
+  encoder bindings for sampler and depth/stencil state.
+- Added public argument-buffer descriptor coverage with
+  `MTLArgumentBuffersTier`, `MTLBindingAccess`, `MTLTextureType`,
+  `MTLArgumentDescriptor`, and descriptor-driven argument-encoder creation.
+- Added public compute/render/tile pipeline descriptor wrappers, including
+  blend/write-mask enums and descriptor-driven synchronous pipeline
+  compilation helpers.
+- Added limited `MetalFX` spatial and temporal scaler wrappers, linked the
+  `MetalFX.framework`, and refreshed the README / coverage audit for the new
+  surface.
+- Bumped the crate to `0.6.1`.
+
 ## 0.6.0 — Wider Metal resource, command, and advanced-object coverage
 
 - Added safe wrappers for richer `MTLDevice` capability queries, explicit
