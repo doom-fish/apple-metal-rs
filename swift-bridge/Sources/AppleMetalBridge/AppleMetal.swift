@@ -170,3 +170,74 @@ public func am_device_new_texture_from_iosurface(
     return Unmanaged.passRetained(tex as AnyObject).toOpaque()
 }
 #endif
+
+// MARK: - Command queue + command buffer + blit (v0.4)
+
+@_cdecl("am_device_new_command_queue")
+public func am_device_new_command_queue(_ device_handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+    guard let device_handle = device_handle,
+          let dev = Unmanaged<AnyObject>.fromOpaque(device_handle).takeUnretainedValue() as? MTLDevice,
+          let queue = dev.makeCommandQueue()
+    else { return nil }
+    return Unmanaged.passRetained(queue as AnyObject).toOpaque()
+}
+
+@_cdecl("am_command_queue_release")
+public func am_command_queue_release(_ handle: UnsafeMutableRawPointer?) {
+    guard let handle = handle else { return }
+    Unmanaged<AnyObject>.fromOpaque(handle).release()
+}
+
+@_cdecl("am_command_queue_new_command_buffer")
+public func am_command_queue_new_command_buffer(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+    guard let handle = handle,
+          let q = Unmanaged<AnyObject>.fromOpaque(handle).takeUnretainedValue() as? MTLCommandQueue,
+          let cb = q.makeCommandBuffer()
+    else { return nil }
+    return Unmanaged.passRetained(cb as AnyObject).toOpaque()
+}
+
+@_cdecl("am_command_buffer_release")
+public func am_command_buffer_release(_ handle: UnsafeMutableRawPointer?) {
+    guard let handle = handle else { return }
+    Unmanaged<AnyObject>.fromOpaque(handle).release()
+}
+
+@_cdecl("am_command_buffer_commit")
+public func am_command_buffer_commit(_ handle: UnsafeMutableRawPointer?) {
+    guard let handle = handle,
+          let cb = Unmanaged<AnyObject>.fromOpaque(handle).takeUnretainedValue() as? MTLCommandBuffer
+    else { return }
+    cb.commit()
+}
+
+@_cdecl("am_command_buffer_wait_until_completed")
+public func am_command_buffer_wait_until_completed(_ handle: UnsafeMutableRawPointer?) {
+    guard let handle = handle,
+          let cb = Unmanaged<AnyObject>.fromOpaque(handle).takeUnretainedValue() as? MTLCommandBuffer
+    else { return }
+    cb.waitUntilCompleted()
+}
+
+/// Blit a region from one buffer to another. Returns false on bad pointers.
+@_cdecl("am_command_buffer_blit_copy_buffer")
+public func am_command_buffer_blit_copy_buffer(
+    _ cb_handle: UnsafeMutableRawPointer?,
+    _ src_handle: UnsafeMutableRawPointer?,
+    _ src_offset: Int,
+    _ dst_handle: UnsafeMutableRawPointer?,
+    _ dst_offset: Int,
+    _ size: Int
+) -> Bool {
+    guard let cb_handle = cb_handle, let src_handle = src_handle, let dst_handle = dst_handle,
+          let cb = Unmanaged<AnyObject>.fromOpaque(cb_handle).takeUnretainedValue() as? MTLCommandBuffer,
+          let src = Unmanaged<AnyObject>.fromOpaque(src_handle).takeUnretainedValue() as? MTLBuffer,
+          let dst = Unmanaged<AnyObject>.fromOpaque(dst_handle).takeUnretainedValue() as? MTLBuffer,
+          let blit = cb.makeBlitCommandEncoder()
+    else { return false }
+    blit.copy(from: src, sourceOffset: src_offset,
+              to: dst, destinationOffset: dst_offset,
+              size: size)
+    blit.endEncoding()
+    return true
+}

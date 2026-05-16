@@ -1,6 +1,6 @@
 [package]
 name = "apple-metal"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/doom-fish/apple-metal-rs"
@@ -63,3 +63,6 @@ name = "01_get_device"
 
 [[example]]
 name = "02_caps_buffer_texture"
+
+[[example]]
+name = "03_command_buffer_blit"

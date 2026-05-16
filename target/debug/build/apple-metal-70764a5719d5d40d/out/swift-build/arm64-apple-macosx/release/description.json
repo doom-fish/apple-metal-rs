@@ -24,7 +24,7 @@
       "inputs" : [
         {
           "kind" : "file",
-          "name" : "/Users/perjohansson/dev/apple-metal-rs/swift-bridge/Sources/AppleMetalBridge/AppleMetal.swift"
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/package/apple-metal-0.3.0/swift-bridge/Sources/AppleMetalBridge/AppleMetal.swift"
         },
         {
           "kind" : "file",
@@ -106,7 +106,7 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
-        "/Users/perjohansson/dev/apple-metal-rs/swift-bridge/Sources/AppleMetalBridge/AppleMetal.swift"
+        "/Users/perjohansson/dev/apple-metal-rs/target/package/apple-metal-0.3.0/swift-bridge/Sources/AppleMetalBridge/AppleMetal.swift"
       ],
       "tempsPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-70764a5719d5d40d/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build",
       "wholeModuleOptimization" : true
@@ -123,7 +123,7 @@
       "-package-name",
       "swift_bridge",
       "-c",
-      "/Users/perjohansson/dev/apple-metal-rs/swift-bridge/Sources/AppleMetalBridge/AppleMetal.swift",
+      "/Users/perjohansson/dev/apple-metal-rs/target/package/apple-metal-0.3.0/swift-bridge/Sources/AppleMetalBridge/AppleMetal.swift",
       "-I",
       "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-70764a5719d5d40d/out/swift-build/arm64-apple-macosx/release/Modules",
       "-target",
@@ -206,7 +206,7 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/perjohansson/dev/apple-metal-rs/swift-bridge/Sources/AppleMetalBridge/AppleMetal.swift"
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/package/apple-metal-0.3.0/swift-bridge/Sources/AppleMetalBridge/AppleMetal.swift"
         }
       ],
       "outputFilePath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-70764a5719d5d40d/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/sources"

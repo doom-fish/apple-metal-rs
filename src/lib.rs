@@ -185,6 +185,17 @@ impl MetalDevice {
         }
     }
 
+    /// Create a new `MTLCommandQueue` to schedule GPU work.
+    #[must_use]
+    pub fn new_command_queue(&self) -> Option<CommandQueue> {
+        let p = unsafe { ffi::am_device_new_command_queue(self.ptr) };
+        if p.is_null() {
+            None
+        } else {
+            Some(CommandQueue { ptr: p })
+        }
+    }
+
     /// Wrap a raw `id<MTLDevice>` pointer **without** taking ownership.
     /// The returned handle will NOT release the underlying object on
     /// drop.
@@ -213,6 +224,102 @@ impl core::ops::Deref for ManuallyDropDevice {
     type Target = MetalDevice;
     fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+// ---- Command queue + command buffer ----
+
+/// Apple's `id<MTLCommandQueue>` — schedules GPU work.
+pub struct CommandQueue {
+    ptr: *mut c_void,
+}
+
+unsafe impl Send for CommandQueue {}
+unsafe impl Sync for CommandQueue {}
+
+impl Drop for CommandQueue {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            unsafe { ffi::am_command_queue_release(self.ptr) };
+            self.ptr = ptr::null_mut();
+        }
+    }
+}
+
+impl CommandQueue {
+    /// Create a new command buffer for recording GPU commands.
+    #[must_use]
+    pub fn new_command_buffer(&self) -> Option<CommandBuffer> {
+        let p = unsafe { ffi::am_command_queue_new_command_buffer(self.ptr) };
+        if p.is_null() {
+            None
+        } else {
+            Some(CommandBuffer { ptr: p })
+        }
+    }
+
+    /// Raw `id<MTLCommandQueue>` pointer.
+    #[must_use]
+    pub const fn as_ptr(&self) -> *mut c_void {
+        self.ptr
+    }
+}
+
+/// Apple's `id<MTLCommandBuffer>` — a recorded batch of GPU commands.
+pub struct CommandBuffer {
+    ptr: *mut c_void,
+}
+
+unsafe impl Send for CommandBuffer {}
+unsafe impl Sync for CommandBuffer {}
+
+impl Drop for CommandBuffer {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            unsafe { ffi::am_command_buffer_release(self.ptr) };
+            self.ptr = ptr::null_mut();
+        }
+    }
+}
+
+impl CommandBuffer {
+    /// Submit the recorded commands for execution.
+    pub fn commit(&self) {
+        unsafe { ffi::am_command_buffer_commit(self.ptr) };
+    }
+
+    /// Block the current thread until all submitted commands finish.
+    pub fn wait_until_completed(&self) {
+        unsafe { ffi::am_command_buffer_wait_until_completed(self.ptr) };
+    }
+
+    /// Record a blit copy from `src` into `dst` for `size` bytes.
+    /// Convenience for GPU↔GPU byte copies.
+    #[must_use] 
+    pub fn blit_copy_buffer(
+        &self,
+        src: &MetalBuffer,
+        src_offset: usize,
+        dst: &MetalBuffer,
+        dst_offset: usize,
+        size: usize,
+    ) -> bool {
+        unsafe {
+            ffi::am_command_buffer_blit_copy_buffer(
+                self.ptr,
+                src.as_ptr(),
+                src_offset,
+                dst.as_ptr(),
+                dst_offset,
+                size,
+            )
+        }
+    }
+
+    /// Raw `id<MTLCommandBuffer>` pointer.
+    #[must_use]
+    pub const fn as_ptr(&self) -> *mut c_void {
+        self.ptr
     }
 }
 
