@@ -1,0 +1,13 @@
+{
+  "": {
+    "dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/AppleCFBridge.d",
+    "object": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/AppleCFBridge.o",
+    "swift-dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/master.swiftdeps"
+  },
+  "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/AppleCFBridge/AppleCFBridge.swift": {
+    "object": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/AppleCFBridge.swift.o",
+    "swiftmodule": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/AppleCFBridge~partial.swiftmodule",
+    "swift-dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/AppleCFBridge.swiftdeps",
+    "diagnostics": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/AppleCFBridge.dia"
+  }
+}

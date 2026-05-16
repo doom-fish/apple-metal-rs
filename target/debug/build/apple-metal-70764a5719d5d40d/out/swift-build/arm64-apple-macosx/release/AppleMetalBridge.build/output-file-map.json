@@ -1,0 +1,13 @@
+{
+  "": {
+    "dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-70764a5719d5d40d/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/AppleMetalBridge.d",
+    "object": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-70764a5719d5d40d/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/AppleMetalBridge.o",
+    "swift-dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-70764a5719d5d40d/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/master.swiftdeps"
+  },
+  "/Users/perjohansson/dev/apple-metal-rs/swift-bridge/Sources/AppleMetalBridge/AppleMetal.swift": {
+    "object": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-70764a5719d5d40d/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/AppleMetal.swift.o",
+    "swiftmodule": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-70764a5719d5d40d/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/AppleMetal~partial.swiftmodule",
+    "swift-dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-70764a5719d5d40d/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/AppleMetal.swiftdeps",
+    "diagnostics": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-70764a5719d5d40d/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/AppleMetal.dia"
+  }
+}

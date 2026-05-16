@@ -12,7 +12,7 @@ fn main() {
         .expect("buffer create failed");
     println!("buffer {} bytes, contents={:?}", buf.length(), buf.contents().is_some());
     let n = buf.write_bytes(b"hello metal");
-    println!("wrote {} bytes", n);
+    println!("wrote {n} bytes");
 
     let tx = d.new_texture(TextureDescriptor::new_2d(256, 256, pixel_format::BGRA8UNORM))
         .expect("texture create failed");

@@ -1,0 +1,1157 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.AppleCFBridge-arm64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/sources",
+      "importPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/AppleCFBridge/AppleCFBridge.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/CoreGraphicsBridge.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/IOSurfaceBridge.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/DispatchBridge.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/CoreMediaBridge.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/CoreVideoBridge.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "AppleCFBridge",
+      "moduleOutputPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/AppleCFBridge.swiftmodule",
+      "objects" : [
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/AppleCFBridge.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx13.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "16",
+        "-serialize-diagnostics",
+        "-O",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/include/AppleCFBridge-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swift_bridge"
+      ],
+      "outputFileMapPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/AppleCFBridge.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/AppleCFBridge.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/AppleCFBridge/AppleCFBridge.swift"
+      ],
+      "tempsPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build",
+      "wholeModuleOptimization" : true
+    },
+    "C.CoreGraphicsBridge-arm64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/sources",
+      "importPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreGraphicsBridge/CoreGraphics.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "CoreGraphicsBridge",
+      "moduleOutputPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/CoreGraphicsBridge.swiftmodule",
+      "objects" : [
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/CoreGraphics.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx13.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "16",
+        "-serialize-diagnostics",
+        "-O",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/include/CoreGraphicsBridge-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swift_bridge"
+      ],
+      "outputFileMapPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/CoreGraphics.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/CoreGraphicsBridge.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreGraphicsBridge/CoreGraphics.swift"
+      ],
+      "tempsPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build",
+      "wholeModuleOptimization" : true
+    },
+    "C.CoreMediaBridge-arm64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build/sources",
+      "importPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreMediaBridge/CoreMedia.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "CoreMediaBridge",
+      "moduleOutputPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/CoreMediaBridge.swiftmodule",
+      "objects" : [
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build/CoreMedia.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx13.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "16",
+        "-serialize-diagnostics",
+        "-O",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build/include/CoreMediaBridge-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swift_bridge"
+      ],
+      "outputFileMapPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build/CoreMedia.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/CoreMediaBridge.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreMediaBridge/CoreMedia.swift"
+      ],
+      "tempsPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build",
+      "wholeModuleOptimization" : true
+    },
+    "C.CoreVideoBridge-arm64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build/sources",
+      "importPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreVideoBridge/CoreVideo.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "CoreVideoBridge",
+      "moduleOutputPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/CoreVideoBridge.swiftmodule",
+      "objects" : [
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build/CoreVideo.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx13.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "16",
+        "-serialize-diagnostics",
+        "-O",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build/include/CoreVideoBridge-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swift_bridge"
+      ],
+      "outputFileMapPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build/CoreVideo.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/CoreVideoBridge.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreVideoBridge/CoreVideo.swift"
+      ],
+      "tempsPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build",
+      "wholeModuleOptimization" : true
+    },
+    "C.DispatchBridge-arm64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/DispatchBridge.build/sources",
+      "importPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/DispatchBridge/Dispatch.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/DispatchBridge.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "DispatchBridge",
+      "moduleOutputPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/DispatchBridge.swiftmodule",
+      "objects" : [
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/DispatchBridge.build/Dispatch.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx13.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "16",
+        "-serialize-diagnostics",
+        "-O",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/DispatchBridge.build/include/DispatchBridge-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swift_bridge"
+      ],
+      "outputFileMapPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/DispatchBridge.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/DispatchBridge.build/Dispatch.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/DispatchBridge.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/DispatchBridge/Dispatch.swift"
+      ],
+      "tempsPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/DispatchBridge.build",
+      "wholeModuleOptimization" : true
+    },
+    "C.IOSurfaceBridge-arm64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/sources",
+      "importPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/IOSurfaceBridge/IOSurface.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "IOSurfaceBridge",
+      "moduleOutputPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/IOSurfaceBridge.swiftmodule",
+      "objects" : [
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/IOSurface.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx13.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "16",
+        "-serialize-diagnostics",
+        "-O",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/include/IOSurfaceBridge-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swift_bridge"
+      ],
+      "outputFileMapPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/IOSurface.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules/IOSurfaceBridge.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/IOSurfaceBridge/IOSurface.swift"
+      ],
+      "tempsPath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build",
+      "wholeModuleOptimization" : true
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "AppleCFBridge" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "AppleCFBridge",
+      "-package-name",
+      "swift_bridge",
+      "-c",
+      "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/AppleCFBridge/AppleCFBridge.swift",
+      "-I",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "-target",
+      "arm64-apple-macosx13.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "16",
+      "-serialize-diagnostics",
+      "-O",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/include/AppleCFBridge-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swift_bridge",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "CoreGraphicsBridge" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "CoreGraphicsBridge",
+      "-package-name",
+      "swift_bridge",
+      "-c",
+      "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreGraphicsBridge/CoreGraphics.swift",
+      "-I",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "-target",
+      "arm64-apple-macosx13.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "16",
+      "-serialize-diagnostics",
+      "-O",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/include/CoreGraphicsBridge-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swift_bridge",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "CoreMediaBridge" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "CoreMediaBridge",
+      "-package-name",
+      "swift_bridge",
+      "-c",
+      "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreMediaBridge/CoreMedia.swift",
+      "-I",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "-target",
+      "arm64-apple-macosx13.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "16",
+      "-serialize-diagnostics",
+      "-O",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build/include/CoreMediaBridge-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swift_bridge",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "CoreVideoBridge" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "CoreVideoBridge",
+      "-package-name",
+      "swift_bridge",
+      "-c",
+      "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreVideoBridge/CoreVideo.swift",
+      "-I",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "-target",
+      "arm64-apple-macosx13.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "16",
+      "-serialize-diagnostics",
+      "-O",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build/include/CoreVideoBridge-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swift_bridge",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "DispatchBridge" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "DispatchBridge",
+      "-package-name",
+      "swift_bridge",
+      "-c",
+      "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/DispatchBridge/Dispatch.swift",
+      "-I",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "-target",
+      "arm64-apple-macosx13.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "16",
+      "-serialize-diagnostics",
+      "-O",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/DispatchBridge.build/include/DispatchBridge-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swift_bridge",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "IOSurfaceBridge" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "IOSurfaceBridge",
+      "-package-name",
+      "swift_bridge",
+      "-c",
+      "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/IOSurfaceBridge/IOSurface.swift",
+      "-I",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/Modules",
+      "-target",
+      "arm64-apple-macosx13.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "16",
+      "-serialize-diagnostics",
+      "-O",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/include/IOSurfaceBridge-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swift_bridge",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "AppleCFBridge" : [
+      "CoreVideoBridge",
+      "CoreMediaBridge",
+      "DispatchBridge",
+      "IOSurfaceBridge",
+      "CoreGraphicsBridge"
+    ],
+    "CoreGraphicsBridge" : [
+
+    ],
+    "CoreMediaBridge" : [
+
+    ],
+    "CoreVideoBridge" : [
+
+    ],
+    "DispatchBridge" : [
+
+    ],
+    "IOSurfaceBridge" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/AppleCFBridge/AppleCFBridge.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/sources"
+    },
+    "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.build/AppleCFBridge.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/CoreGraphics.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build/CoreMedia.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build/CoreVideo.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/DispatchBridge.build/Dispatch.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/IOSurface.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/AppleCFBridge.product/Objects.LinkFileList"
+    },
+    "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreGraphicsBridge/CoreGraphics.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/sources"
+    },
+    "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreMediaBridge/CoreMedia.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build/sources"
+    },
+    "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/CoreVideoBridge/CoreVideo.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build/sources"
+    },
+    "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/DispatchBridge.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/DispatchBridge/Dispatch.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/DispatchBridge.build/sources"
+    },
+    "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.3.0/swift-bridge/Sources/IOSurfaceBridge/IOSurface.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/sources"
+    },
+    "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-e48a567ca7cdb97d/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}

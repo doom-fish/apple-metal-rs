@@ -5,97 +5,45 @@
 //! # API Documentation
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![allow(
-    clippy::missing_safety_doc,
-    clippy::too_many_lines,
-    clippy::doc_markdown,
-    clippy::module_name_repetitions,
-    non_camel_case_types,
-    clippy::upper_case_acronyms,
-    clippy::duplicated_attributes,
-    clippy::missing_const_for_fn,
-    clippy::ptr_as_ptr,
-    clippy::items_after_statements
-)]
+#![allow(clippy::missing_const_for_fn)]
 
 use core::ffi::c_void;
 use core::ptr;
-use std::ffi::CString;
 
-// ---- FFI ----
-
-type id = *mut c_void;
-type SEL = *const c_void;
-type Class = *const c_void;
-
-#[link(name = "Metal", kind = "framework")]
-#[link(name = "Foundation", kind = "framework")]
-#[link(name = "objc")]
-extern "C" {
-    fn MTLCreateSystemDefaultDevice() -> id;
-    fn objc_msgSend();
-    fn sel_registerName(name: *const i8) -> SEL;
-    fn objc_getClass(name: *const i8) -> Class;
-    fn objc_release(obj: id);
-}
-
-unsafe fn sel(name: &str) -> SEL {
-    let c = CString::new(name).expect("selector name has no NUL");
-    sel_registerName(c.as_ptr())
-}
-
-unsafe fn class_named(name: &str) -> Class {
-    let c = CString::new(name).expect("class name has no NUL");
-    objc_getClass(c.as_ptr())
-}
-
-// `objc_msgSend` is variadic; we cast it to the concrete signature per call.
-type MsgSend0 = unsafe extern "C" fn(id, SEL) -> id;
-type MsgSendUsize = unsafe extern "C" fn(id, SEL) -> usize;
-type MsgSendU32 = unsafe extern "C" fn(id, SEL) -> u32;
-type MsgSendTextureFromIOSurface =
-    unsafe extern "C" fn(id, SEL, id, *mut c_void, usize) -> id;
-type MsgSendTextureDescriptorInit =
-    unsafe extern "C" fn(id, SEL, u32, usize, usize, bool) -> id;
-type MsgSendSetUsage = unsafe extern "C" fn(id, SEL, usize);
-type MsgSendSetStorage = unsafe extern "C" fn(id, SEL, usize);
+pub mod ffi;
 
 /// Common `MTLPixelFormat` constants.
 pub mod pixel_format {
-    pub const A8UNORM: u32 = 1;
-    pub const R8UNORM: u32 = 10;
-    pub const R8SNORM: u32 = 12;
-    pub const R8UINT: u32 = 13;
-    pub const R8SINT: u32 = 14;
-    pub const R16UNORM: u32 = 20;
-    pub const R16SNORM: u32 = 22;
-    pub const R16UINT: u32 = 23;
-    pub const R16SINT: u32 = 24;
-    pub const R16FLOAT: u32 = 25;
-    pub const RG8UNORM: u32 = 30;
-    pub const RG8SNORM: u32 = 32;
-    pub const RG8UINT: u32 = 33;
-    pub const RG8SINT: u32 = 34;
-    pub const RGBA8UNORM: u32 = 70;
-    pub const RGBA8UNORM_SRGB: u32 = 71;
-    pub const RGBA8SNORM: u32 = 72;
-    pub const RGBA8UINT: u32 = 73;
-    pub const RGBA8SINT: u32 = 74;
-    pub const BGRA8UNORM: u32 = 80;
-    pub const BGRA8UNORM_SRGB: u32 = 81;
-    pub const R32FLOAT: u32 = 55;
-    pub const RG16FLOAT: u32 = 65;
-    pub const RGBA16FLOAT: u32 = 115;
-    pub const RGBA32FLOAT: u32 = 125;
-    pub const DEPTH32FLOAT: u32 = 252;
-    pub const STENCIL8: u32 = 253;
-    pub const BGRA10_XR: u32 = 552;
-    pub const BGR10_XR: u32 = 554;
+    pub const A8UNORM: usize = 1;
+    pub const R8UNORM: usize = 10;
+    pub const R8SNORM: usize = 12;
+    pub const R8UINT: usize = 13;
+    pub const R8SINT: usize = 14;
+    pub const R16UNORM: usize = 20;
+    pub const R16SNORM: usize = 22;
+    pub const R16UINT: usize = 23;
+    pub const R16SINT: usize = 24;
+    pub const R16FLOAT: usize = 25;
+    pub const RG8UNORM: usize = 30;
+    pub const RG8SNORM: usize = 32;
+    pub const RG8UINT: usize = 33;
+    pub const RG8SINT: usize = 34;
+    pub const RGBA8UNORM: usize = 70;
+    pub const RGBA8UNORM_SRGB: usize = 71;
+    pub const RGBA8SNORM: usize = 72;
+    pub const RGBA8UINT: usize = 73;
+    pub const RGBA8SINT: usize = 74;
+    pub const BGRA8UNORM: usize = 80;
+    pub const BGRA8UNORM_SRGB: usize = 81;
+    pub const R32FLOAT: usize = 55;
+    pub const RG16FLOAT: usize = 65;
+    pub const RGBA16FLOAT: usize = 115;
+    pub const RGBA32FLOAT: usize = 125;
+    pub const DEPTH32FLOAT: usize = 252;
+    pub const STENCIL8: usize = 253;
+    pub const BGRA10_XR: usize = 552;
+    pub const BGR10_XR: usize = 554;
 }
-
-const MTL_TEXTURE_USAGE_SHADER_READ: usize = 0x01;
-const MTL_TEXTURE_USAGE_SHADER_WRITE: usize = 0x02;
-const MTL_STORAGE_MODE_SHARED: usize = 0;
 
 /// `MTLStorageMode` enum values — memory residency hints.
 pub mod storage_mode {
@@ -115,6 +63,13 @@ pub mod resource_options {
     pub const HAZARD_TRACKING_MODE_DEFAULT: usize = 0;
     pub const HAZARD_TRACKING_MODE_UNTRACKED: usize = 1 << 8;
     pub const HAZARD_TRACKING_MODE_TRACKED: usize = 2 << 8;
+}
+
+/// `MTLTextureUsage` bitmask.
+pub mod texture_usage {
+    pub const SHADER_READ: usize = 0x01;
+    pub const SHADER_WRITE: usize = 0x02;
+    pub const RENDER_TARGET: usize = 0x04;
 }
 
 /// `MTLGPUFamily` — feature-family identifiers.
@@ -140,7 +95,8 @@ pub mod gpu_family {
 
 /// Apple's `id<MTLDevice>` — handle to a Metal GPU.
 pub struct MetalDevice {
-    ptr: id,
+    ptr: *mut c_void,
+    drop_on_release: bool,
 }
 
 unsafe impl Send for MetalDevice {}
@@ -148,8 +104,8 @@ unsafe impl Sync for MetalDevice {}
 
 impl Drop for MetalDevice {
     fn drop(&mut self) {
-        if !self.ptr.is_null() {
-            unsafe { objc_release(self.ptr) };
+        if self.drop_on_release && !self.ptr.is_null() {
+            unsafe { ffi::am_device_release(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
@@ -159,29 +115,79 @@ impl MetalDevice {
     /// Return the system's default Metal device.
     #[must_use]
     pub fn system_default() -> Option<Self> {
-        let p = unsafe { MTLCreateSystemDefaultDevice() };
+        let p = unsafe { ffi::am_device_system_default() };
         if p.is_null() {
             None
         } else {
-            Some(Self { ptr: p })
+            Some(Self {
+                ptr: p,
+                drop_on_release: true,
+            })
         }
     }
 
-    /// Raw `id<MTLDevice>` pointer — for interop with other Metal-using
-    /// Rust crates (`metal`, `objc2-metal`, ...).
+    /// Raw `id<MTLDevice>` pointer.
     #[must_use]
     pub const fn as_ptr(&self) -> *mut c_void {
         self.ptr
     }
 
+    /// True if the GPU uses unified memory (Apple Silicon).
+    #[must_use]
+    pub fn has_unified_memory(&self) -> bool {
+        unsafe { ffi::am_device_has_unified_memory(self.ptr) }
+    }
+
+    /// Recommended maximum working-set size in bytes.
+    #[must_use]
+    pub fn recommended_max_working_set_size(&self) -> u64 {
+        unsafe { ffi::am_device_recommended_max_working_set_size(self.ptr) }
+    }
+
+    /// True if this device supports the requested feature family —
+    /// see [`gpu_family`].
+    #[must_use]
+    pub fn supports_family(&self, family: i64) -> bool {
+        unsafe { ffi::am_device_supports_family(self.ptr, family) }
+    }
+
+    /// Allocate a GPU-visible buffer of `length` bytes.
+    /// `options` is an `MTLResourceOptions` bitmask (see
+    /// [`resource_options`]).
+    #[must_use]
+    pub fn new_buffer(&self, length: usize, options: usize) -> Option<MetalBuffer> {
+        let p = unsafe { ffi::am_device_new_buffer(self.ptr, length, options) };
+        if p.is_null() {
+            None
+        } else {
+            Some(MetalBuffer { ptr: p })
+        }
+    }
+
+    /// Allocate a fresh `MTLTexture` matching `descriptor`.
+    #[must_use]
+    pub fn new_texture(&self, descriptor: TextureDescriptor) -> Option<MetalTexture> {
+        let p = unsafe {
+            ffi::am_device_new_texture_2d(
+                self.ptr,
+                descriptor.pixel_format,
+                descriptor.width,
+                descriptor.height,
+                descriptor.mipmapped,
+                descriptor.usage,
+                descriptor.storage_mode,
+            )
+        };
+        if p.is_null() {
+            None
+        } else {
+            Some(MetalTexture { ptr: p })
+        }
+    }
+
     /// Wrap a raw `id<MTLDevice>` pointer **without** taking ownership.
     /// The returned handle will NOT release the underlying object on
-    /// drop, so the caller is responsible for keeping the original
-    /// owner alive for as long as this borrowed handle is used.
-    ///
-    /// Use this for short-lived bridging between crates (e.g. when
-    /// `screencapturekit::metal::MetalDevice::as_apple_metal()` wants
-    /// to expose its device to apple-metal helpers).
+    /// drop.
     ///
     /// # Safety
     ///
@@ -190,15 +196,17 @@ impl MetalDevice {
     #[must_use]
     pub unsafe fn from_raw_borrowed(ptr: *mut c_void) -> ManuallyDropDevice {
         ManuallyDropDevice {
-            inner: core::mem::ManuallyDrop::new(Self { ptr }),
+            inner: Self {
+                ptr,
+                drop_on_release: false,
+            },
         }
     }
 }
 
-/// Borrowed [`MetalDevice`] that does not release on drop. Deref to
-/// [`MetalDevice`] for use with anything that takes `&MetalDevice`.
+/// Borrowed [`MetalDevice`] that does not release on drop.
 pub struct ManuallyDropDevice {
-    inner: core::mem::ManuallyDrop<MetalDevice>,
+    inner: MetalDevice,
 }
 
 impl core::ops::Deref for ManuallyDropDevice {
@@ -208,65 +216,11 @@ impl core::ops::Deref for ManuallyDropDevice {
     }
 }
 
-impl MetalDevice {
-    /// True if the GPU uses unified memory (Apple Silicon) — i.e.
-    /// CPU and GPU share the same physical RAM. Wraps
-    /// `[MTLDevice hasUnifiedMemory]`.
-    #[must_use]
-    pub fn has_unified_memory(&self) -> bool {
-        unsafe {
-            type M = unsafe extern "C" fn(id, SEL) -> bool;
-            let m: M = core::mem::transmute(objc_msgSend as *const c_void);
-            m(self.ptr, sel("hasUnifiedMemory"))
-        }
-    }
-
-    /// Recommended maximum working-set size in bytes. Wraps
-    /// `[MTLDevice recommendedMaxWorkingSetSize]`.
-    #[must_use]
-    pub fn recommended_max_working_set_size(&self) -> u64 {
-        unsafe {
-            type M = unsafe extern "C" fn(id, SEL) -> u64;
-            let m: M = core::mem::transmute(objc_msgSend as *const c_void);
-            m(self.ptr, sel("recommendedMaxWorkingSetSize"))
-        }
-    }
-
-    /// True if this device supports the requested feature family —
-    /// see [`gpu_family`]. Wraps `[MTLDevice supportsFamily:]`.
-    #[must_use]
-    pub fn supports_family(&self, family: i64) -> bool {
-        unsafe {
-            type M = unsafe extern "C" fn(id, SEL, i64) -> bool;
-            let m: M = core::mem::transmute(objc_msgSend as *const c_void);
-            m(self.ptr, sel("supportsFamily:"), family)
-        }
-    }
-
-    /// Allocate a GPU-visible buffer of `length` bytes, zero-filled.
-    /// `options` is an `MTLResourceOptions` bitmask (see
-    /// [`resource_options`]). Wraps
-    /// `[MTLDevice newBufferWithLength:options:]`.
-    #[must_use]
-    pub fn new_buffer(&self, length: usize, options: usize) -> Option<MetalBuffer> {
-        unsafe {
-            type M = unsafe extern "C" fn(id, SEL, usize, usize) -> id;
-            let m: M = core::mem::transmute(objc_msgSend as *const c_void);
-            let buf = m(self.ptr, sel("newBufferWithLength:options:"), length, options);
-            if buf.is_null() {
-                None
-            } else {
-                Some(MetalBuffer { ptr: buf })
-            }
-        }
-    }
-}
-
 // ---- Buffer ----
 
 /// Apple's `id<MTLBuffer>` — a GPU-visible byte buffer.
 pub struct MetalBuffer {
-    ptr: id,
+    ptr: *mut c_void,
 }
 
 unsafe impl Send for MetalBuffer {}
@@ -275,33 +229,24 @@ unsafe impl Sync for MetalBuffer {}
 impl Drop for MetalBuffer {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { objc_release(self.ptr) };
+            unsafe { ffi::am_buffer_release(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
 }
 
 impl MetalBuffer {
-    /// Buffer length in bytes. Wraps `[MTLBuffer length]`.
+    /// Buffer length in bytes.
     #[must_use]
     pub fn length(&self) -> usize {
-        unsafe {
-            type M = unsafe extern "C" fn(id, SEL) -> usize;
-            let m: M = core::mem::transmute(objc_msgSend as *const c_void);
-            m(self.ptr, sel("length"))
-        }
+        unsafe { ffi::am_buffer_length(self.ptr) }
     }
 
     /// Raw `void *` to the buffer's CPU-visible bytes. `None` for
-    /// `MTLStorageMode::Private` (GPU-only) buffers. Wraps
-    /// `[MTLBuffer contents]`.
+    /// `MTLStorageMode::Private` (GPU-only) buffers.
     #[must_use]
     pub fn contents(&self) -> Option<*mut c_void> {
-        let p = unsafe {
-            type M = unsafe extern "C" fn(id, SEL) -> *mut c_void;
-            let m: M = core::mem::transmute(objc_msgSend as *const c_void);
-            m(self.ptr, sel("contents"))
-        };
+        let p = unsafe { ffi::am_buffer_contents(self.ptr) };
         if p.is_null() {
             None
         } else {
@@ -310,7 +255,7 @@ impl MetalBuffer {
     }
 
     /// Copy `src` into this buffer at byte offset `0`. Returns the
-    /// number of bytes actually written (`min(src.len(), length)`).
+    /// number of bytes actually written.
     #[must_use] 
     pub fn write_bytes(&self, src: &[u8]) -> usize {
         let Some(dst) = self.contents() else {
@@ -328,13 +273,12 @@ impl MetalBuffer {
     }
 }
 
-// ---- Texture descriptor builder ----
+// ---- Texture descriptor + texture ----
 
-/// Configuration for `MTLDevice::new_texture`. Mirrors the most-used
-/// `MTLTextureDescriptor` properties.
+/// Configuration for `MetalDevice::new_texture`.
 #[derive(Debug, Clone, Copy)]
 pub struct TextureDescriptor {
-    pub pixel_format: u32,
+    pub pixel_format: usize,
     pub width: usize,
     pub height: usize,
     pub mipmapped: bool,
@@ -343,67 +287,23 @@ pub struct TextureDescriptor {
 }
 
 impl TextureDescriptor {
-    /// Sensible defaults for a shader-read+write BGRA 2D texture in
-    /// shared storage.
+    /// Sensible defaults for a shader-read+write 2D texture in shared storage.
     #[must_use]
-    pub const fn new_2d(width: usize, height: usize, pixel_format: u32) -> Self {
+    pub const fn new_2d(width: usize, height: usize, pixel_format: usize) -> Self {
         Self {
             pixel_format,
             width,
             height,
             mipmapped: false,
-            usage: MTL_TEXTURE_USAGE_SHADER_READ | MTL_TEXTURE_USAGE_SHADER_WRITE,
-            storage_mode: MTL_STORAGE_MODE_SHARED,
+            usage: texture_usage::SHADER_READ | texture_usage::SHADER_WRITE,
+            storage_mode: storage_mode::SHARED,
         }
     }
 }
-
-impl MetalDevice {
-    /// Allocate a fresh `MTLTexture` matching `descriptor`. Wraps
-    /// `[MTLDevice newTextureWithDescriptor:]`.
-    #[must_use]
-    pub fn new_texture(&self, descriptor: TextureDescriptor) -> Option<MetalTexture> {
-        unsafe {
-            // Class method that returns an autoreleased MTLTextureDescriptor.
-            let desc_class = class_named("MTLTextureDescriptor");
-            let init: MsgSendTextureDescriptorInit =
-                core::mem::transmute(objc_msgSend as *const c_void);
-            let desc = init(
-                desc_class.cast_mut(),
-                sel("texture2DDescriptorWithPixelFormat:width:height:mipmapped:"),
-                descriptor.pixel_format,
-                descriptor.width,
-                descriptor.height,
-                descriptor.mipmapped,
-            );
-            if desc.is_null() {
-                return None;
-            }
-            let set_usage: MsgSendSetUsage =
-                core::mem::transmute(objc_msgSend as *const c_void);
-            set_usage(desc, sel("setUsage:"), descriptor.usage);
-            let set_storage: MsgSendSetStorage =
-                core::mem::transmute(objc_msgSend as *const c_void);
-            set_storage(desc, sel("setStorageMode:"), descriptor.storage_mode);
-
-            type Mtex = unsafe extern "C" fn(id, SEL, id) -> id;
-            let m: Mtex = core::mem::transmute(objc_msgSend as *const c_void);
-            let tx = m(self.ptr, sel("newTextureWithDescriptor:"), desc);
-            // desc is autoreleased — do NOT explicitly release.
-            if tx.is_null() {
-                None
-            } else {
-                Some(MetalTexture { ptr: tx })
-            }
-        }
-    }
-}
-
-// ---- Texture ----
 
 /// Apple's `id<MTLTexture>` — a GPU-resident 2D image.
 pub struct MetalTexture {
-    ptr: id,
+    ptr: *mut c_void,
 }
 
 unsafe impl Send for MetalTexture {}
@@ -412,7 +312,7 @@ unsafe impl Sync for MetalTexture {}
 impl Drop for MetalTexture {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { objc_release(self.ptr) };
+            unsafe { ffi::am_texture_release(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
@@ -422,28 +322,19 @@ impl MetalTexture {
     /// Texture width in pixels.
     #[must_use]
     pub fn width(&self) -> usize {
-        unsafe {
-            let m: MsgSendUsize = core::mem::transmute(objc_msgSend as *const c_void);
-            m(self.ptr, sel("width"))
-        }
+        unsafe { ffi::am_texture_width(self.ptr) }
     }
 
     /// Texture height in pixels.
     #[must_use]
     pub fn height(&self) -> usize {
-        unsafe {
-            let m: MsgSendUsize = core::mem::transmute(objc_msgSend as *const c_void);
-            m(self.ptr, sel("height"))
-        }
+        unsafe { ffi::am_texture_height(self.ptr) }
     }
 
     /// Underlying `MTLPixelFormat` enum value — see [`pixel_format`].
     #[must_use]
-    pub fn pixel_format(&self) -> u32 {
-        unsafe {
-            let m: MsgSendU32 = core::mem::transmute(objc_msgSend as *const c_void);
-            m(self.ptr, sel("pixelFormat"))
-        }
+    pub fn pixel_format(&self) -> usize {
+        unsafe { ffi::am_texture_pixel_format(self.ptr) }
     }
 
     /// Raw `id<MTLTexture>` pointer.
@@ -452,31 +343,25 @@ impl MetalTexture {
         self.ptr
     }
 
-    /// Wrap a raw `id<MTLTexture>` pointer. The pointer is taken
-    /// without retain; ensure the caller has already balanced any
-    /// retain/release on it.
+    /// Wrap a raw `id<MTLTexture>` pointer. Pointer is taken without
+    /// retain.
     ///
     /// # Safety
     ///
     /// `ptr` must be a valid `id<MTLTexture>` whose ownership the
-    /// caller is transferring to the returned [`MetalTexture`].
+    /// caller is transferring.
     #[must_use]
     pub const unsafe fn from_raw(ptr: *mut c_void) -> Self {
         Self { ptr }
     }
 }
 
-// ---- IOSurface extension trait ----
+// ---- IOSurface extension ----
 
 #[cfg(feature = "iosurface")]
 #[cfg_attr(docsrs, doc(cfg(feature = "iosurface")))]
 mod iosurface_ext {
-    use super::{
-        class_named, objc_msgSend, objc_release, pixel_format, sel, MetalDevice, MetalTexture,
-        MsgSend0, MsgSendSetStorage, MsgSendSetUsage, MsgSendTextureDescriptorInit,
-        MsgSendTextureFromIOSurface, MTL_STORAGE_MODE_SHARED, MTL_TEXTURE_USAGE_SHADER_READ,
-        MTL_TEXTURE_USAGE_SHADER_WRITE,
-    };
+    use super::{ffi, pixel_format, MetalDevice, MetalTexture};
     use apple_cf::iosurface::IOSurface;
     use core::ffi::c_void;
 
@@ -503,56 +388,25 @@ mod iosurface_ext {
             } else {
                 (self.width() / 2, self.height() / 2)
             };
-
-            unsafe {
-                let desc_class = class_named("MTLTextureDescriptor");
-                let m_alloc: MsgSend0 = core::mem::transmute(objc_msgSend as *const c_void);
-                let raw_desc = m_alloc(desc_class.cast_mut(), sel("alloc"));
-                let init: MsgSendTextureDescriptorInit =
-                    core::mem::transmute(objc_msgSend as *const c_void);
-                let desc = init(
-                    raw_desc,
-                    sel("texture2DDescriptorWithPixelFormat:width:height:mipmapped:"),
+            let p = unsafe {
+                ffi::am_device_new_texture_from_iosurface(
+                    device.as_ptr(),
+                    self.as_ptr().cast::<c_void>(),
+                    plane_index,
                     format,
                     width,
                     height,
-                    false,
-                );
-                if desc.is_null() {
-                    return None;
-                }
-                let set_usage: MsgSendSetUsage =
-                    core::mem::transmute(objc_msgSend as *const c_void);
-                set_usage(
-                    desc,
-                    sel("setUsage:"),
-                    MTL_TEXTURE_USAGE_SHADER_READ | MTL_TEXTURE_USAGE_SHADER_WRITE,
-                );
-                let set_storage: MsgSendSetStorage =
-                    core::mem::transmute(objc_msgSend as *const c_void);
-                set_storage(desc, sel("setStorageMode:"), MTL_STORAGE_MODE_SHARED);
-
-                let m_tx: MsgSendTextureFromIOSurface =
-                    core::mem::transmute(objc_msgSend as *const c_void);
-                let tx = m_tx(
-                    device.as_ptr(),
-                    sel("newTextureWithDescriptor:iosurface:plane:"),
-                    desc,
-                    self.as_ptr().cast::<c_void>(),
-                    plane_index,
-                );
-                objc_release(desc);
-                if tx.is_null() {
-                    None
-                } else {
-                    Some(MetalTexture::from_raw(tx))
-                }
+                )
+            };
+            if p.is_null() {
+                None
+            } else {
+                Some(unsafe { MetalTexture::from_raw(p) })
             }
         }
     }
 
-    /// Map an `IOSurface` `FourCC` + plane index to the matching `MTLPixelFormat`.
-    fn pixel_format_for_fourcc(fourcc: u32, plane_index: usize) -> Option<u32> {
+    fn pixel_format_for_fourcc(fourcc: u32, plane_index: usize) -> Option<usize> {
         const BGRA: u32 = u32::from_be_bytes(*b"BGRA");
         const L10R: u32 = u32::from_be_bytes(*b"l10r");
         const YUV420V: u32 = u32::from_be_bytes(*b"420v");

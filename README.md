@@ -19,7 +19,7 @@ let device = MetalDevice::system_default().expect("no Metal-capable GPU");
 println!("got Metal device {:p}", device.as_ptr());
 ```
 
-### Zero-copy from IOSurface
+### Zero-copy from `IOSurface`
 
 With the default `iosurface` feature:
 

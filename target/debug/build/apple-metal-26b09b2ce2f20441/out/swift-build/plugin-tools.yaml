@@ -1,0 +1,66 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "AppleMetalBridge-arm64-apple-macosx-release.a": ["<AppleMetalBridge-arm64-apple-macosx-release.a>"]
+  "AppleMetalBridge-arm64-apple-macosx-release.module": ["<AppleMetalBridge-arm64-apple-macosx-release.module>"]
+  "PackageStructure": ["<PackageStructure>"]
+  "main": ["<AppleMetalBridge-arm64-apple-macosx-release.a>","<AppleMetalBridge-arm64-apple-macosx-release.module>"]
+  "test": ["<AppleMetalBridge-arm64-apple-macosx-release.a>","<AppleMetalBridge-arm64-apple-macosx-release.module>"]
+default: "main"
+nodes:
+  "/Users/perjohansson/dev/apple-metal-rs/swift-bridge/Sources/AppleMetalBridge/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+commands:
+  "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/perjohansson/dev/apple-metal-rs/swift-bridge/Sources/AppleMetalBridge/AppleMetal.swift"]
+    outputs: ["/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/sources"]
+    description: "Write auxiliary file /Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/sources"
+
+  "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/AppleMetal.swift.o"]
+    outputs: ["/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.product/Objects.LinkFileList"
+
+  "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"]
+    outputs: ["/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+
+  "<AppleMetalBridge-arm64-apple-macosx-release.a>":
+    tool: phony
+    inputs: ["/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/libAppleMetalBridge.a"]
+    outputs: ["<AppleMetalBridge-arm64-apple-macosx-release.a>"]
+
+  "<AppleMetalBridge-arm64-apple-macosx-release.module>":
+    tool: phony
+    inputs: ["/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/AppleMetal.swift.o","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/Modules/AppleMetalBridge.swiftmodule"]
+    outputs: ["<AppleMetalBridge-arm64-apple-macosx-release.module>"]
+
+  "C.AppleMetalBridge-arm64-apple-macosx-release.a":
+    tool: shell
+    inputs: ["/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/AppleMetal.swift.o","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.product/Objects.LinkFileList"]
+    outputs: ["/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/libAppleMetalBridge.a"]
+    description: "Archiving /Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/libAppleMetalBridge.a"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/libtool","-static","-o","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/libAppleMetalBridge.a","@/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.product/Objects.LinkFileList"]
+
+  "C.AppleMetalBridge-arm64-apple-macosx-release.module":
+    tool: shell
+    inputs: ["/Users/perjohansson/dev/apple-metal-rs/swift-bridge/Sources/AppleMetalBridge/AppleMetal.swift","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/sources"]
+    outputs: ["/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/AppleMetal.swift.o","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/Modules/AppleMetalBridge.swiftmodule"]
+    description: "Compiling Swift Module 'AppleMetalBridge' (1 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","AppleMetalBridge","-emit-dependencies","-emit-module","-emit-module-path","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/Modules/AppleMetalBridge.swiftmodule","-output-file-map","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/output-file-map.json","-parse-as-library","-whole-module-optimization","-num-threads","16","-c","@/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/sources","-I","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/Modules","-target","arm64-apple-macosx11.0","-whole-module-optimization","-num-threads","16","-serialize-diagnostics","-O","-j16","-DSWIFT_PACKAGE","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-metal-26b09b2ce2f20441/out/swift-build/arm64-apple-macosx/release/AppleMetalBridge.build/include/AppleMetalBridge-Swift.h","-swift-version","5","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","swift_bridge"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/perjohansson/dev/apple-metal-rs/swift-bridge/Sources/AppleMetalBridge/","/Users/perjohansson/dev/apple-metal-rs/swift-bridge/Package.swift","/Users/perjohansson/dev/apple-metal-rs/swift-bridge/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+
