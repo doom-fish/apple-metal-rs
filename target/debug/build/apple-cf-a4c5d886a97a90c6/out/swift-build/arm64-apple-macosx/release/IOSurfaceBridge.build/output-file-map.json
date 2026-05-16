@@ -1,0 +1,13 @@
+{
+  "": {
+    "dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-a4c5d886a97a90c6/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/IOSurfaceBridge.d",
+    "object": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-a4c5d886a97a90c6/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/IOSurfaceBridge.o",
+    "swift-dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-a4c5d886a97a90c6/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/master.swiftdeps"
+  },
+  "/Users/perjohansson/dev/apple-cf-rs/swift-bridge/Sources/IOSurfaceBridge/IOSurface.swift": {
+    "object": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-a4c5d886a97a90c6/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/IOSurface.swift.o",
+    "swiftmodule": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-a4c5d886a97a90c6/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/IOSurface~partial.swiftmodule",
+    "swift-dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-a4c5d886a97a90c6/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/IOSurface.swiftdeps",
+    "diagnostics": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-a4c5d886a97a90c6/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/IOSurface.dia"
+  }
+}
