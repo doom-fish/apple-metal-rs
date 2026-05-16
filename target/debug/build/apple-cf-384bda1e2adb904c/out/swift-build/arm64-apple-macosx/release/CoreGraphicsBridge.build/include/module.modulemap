@@ -1,3 +1,0 @@
-module CoreGraphicsBridge {
-    header "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-384bda1e2adb904c/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/include/CoreGraphicsBridge-Swift.h"
-}

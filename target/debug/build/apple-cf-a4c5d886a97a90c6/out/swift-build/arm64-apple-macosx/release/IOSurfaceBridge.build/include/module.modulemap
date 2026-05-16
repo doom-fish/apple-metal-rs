@@ -1,3 +1,0 @@
-module IOSurfaceBridge {
-    header "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-a4c5d886a97a90c6/out/swift-build/arm64-apple-macosx/release/IOSurfaceBridge.build/include/IOSurfaceBridge-Swift.h"
-}

@@ -1,3 +1,0 @@
-module CoreMediaBridge {
-    header "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-8acf35ee9e57ce46/out/swift-build/arm64-apple-macosx/release/CoreMediaBridge.build/include/CoreMediaBridge-Swift.h"
-}

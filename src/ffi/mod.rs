@@ -57,4 +57,31 @@ extern "C" {
         dst_offset: usize,
         size: usize,
     ) -> bool;
+
+    // ---- Library + Function + ComputePipelineState + dispatch (v0.5) ----
+    pub fn am_device_new_library_with_source(
+        device_handle: *mut c_void,
+        source: *const core::ffi::c_char,
+        out_error_message: *mut *mut core::ffi::c_char,
+    ) -> *mut c_void;
+    pub fn am_library_release(handle: *mut c_void);
+    pub fn am_library_new_function(
+        lib_handle: *mut c_void,
+        name: *const core::ffi::c_char,
+    ) -> *mut c_void;
+    pub fn am_function_release(handle: *mut c_void);
+    pub fn am_device_new_compute_pipeline_state(
+        device_handle: *mut c_void,
+        fn_handle: *mut c_void,
+        out_error_message: *mut *mut core::ffi::c_char,
+    ) -> *mut c_void;
+    pub fn am_compute_pipeline_state_release(handle: *mut c_void);
+    pub fn am_command_buffer_dispatch_compute_1d(
+        cb_handle: *mut c_void,
+        pso_handle: *mut c_void,
+        buffers: *const *mut c_void,
+        buffer_count: usize,
+        threadgroups: usize,
+        threads_per_group: usize,
+    ) -> bool;
 }

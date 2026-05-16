@@ -1,3 +1,0 @@
-module CoreVideoBridge {
-    header "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-5a6cd6b9226cfc95/out/swift-build/arm64-apple-macosx/release/CoreVideoBridge.build/include/CoreVideoBridge-Swift.h"
-}

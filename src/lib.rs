@@ -196,6 +196,66 @@ impl MetalDevice {
         }
     }
 
+    /// Compile a Metal Shading Language source string into a runtime
+    /// `MTLLibrary`. On error, returns the localized Metal compiler
+    /// diagnostic.
+    ///
+    /// # Errors
+    ///
+    /// Returns the Metal compiler's localized error string on failure.
+    pub fn new_library_with_source(&self, source: &str) -> Result<MetalLibrary, String> {
+        let csrc = std::ffi::CString::new(source).map_err(|e| e.to_string())?;
+        let mut err_msg: *mut core::ffi::c_char = core::ptr::null_mut();
+        let p = unsafe {
+            ffi::am_device_new_library_with_source(self.ptr, csrc.as_ptr(), &mut err_msg)
+        };
+        if p.is_null() {
+            let msg = if err_msg.is_null() {
+                "MTLDevice.makeLibrary returned nil".to_string()
+            } else {
+                let s = unsafe { std::ffi::CStr::from_ptr(err_msg) }
+                    .to_string_lossy()
+                    .into_owned();
+                unsafe { libc::free(err_msg.cast()) };
+                s
+            };
+            Err(msg)
+        } else {
+            Ok(MetalLibrary { ptr: p })
+        }
+    }
+
+    /// Compile a kernel into a `MTLComputePipelineState` ready for
+    /// dispatch on a command buffer.
+    ///
+    /// # Errors
+    ///
+    /// Returns the Metal pipeline compiler's localized error string
+    /// on failure.
+    pub fn new_compute_pipeline_state(
+        &self,
+        function: &MetalFunction,
+    ) -> Result<ComputePipelineState, String> {
+        let mut err_msg: *mut core::ffi::c_char = core::ptr::null_mut();
+        let p = unsafe {
+            ffi::am_device_new_compute_pipeline_state(self.ptr, function.ptr, &mut err_msg)
+        };
+        if p.is_null() {
+            let msg = if err_msg.is_null() {
+                "MTLDevice.makeComputePipelineState returned nil".to_string()
+            } else {
+                let s = unsafe { std::ffi::CStr::from_ptr(err_msg) }
+                    .to_string_lossy()
+                    .into_owned();
+                unsafe { libc::free(err_msg.cast()) };
+                s
+            };
+            Err(msg)
+        } else {
+            Ok(ComputePipelineState { ptr: p })
+        }
+    }
+
     /// Wrap a raw `id<MTLDevice>` pointer **without** taking ownership.
     /// The returned handle will NOT release the underlying object on
     /// drop.
@@ -316,7 +376,120 @@ impl CommandBuffer {
         }
     }
 
+    /// Record a 1-D compute dispatch: binds `pso`, sets `buffers` at
+    /// argument slots `0..buffers.len()`, and dispatches `threadgroups`
+    /// of `threads_per_group` threads.
+    #[must_use]
+    pub fn dispatch_compute_1d(
+        &self,
+        pso: &ComputePipelineState,
+        buffers: &[&MetalBuffer],
+        threadgroups: usize,
+        threads_per_group: usize,
+    ) -> bool {
+        let raw: Vec<*mut c_void> = buffers.iter().map(|b| b.as_ptr()).collect();
+        unsafe {
+            ffi::am_command_buffer_dispatch_compute_1d(
+                self.ptr,
+                pso.ptr,
+                raw.as_ptr(),
+                raw.len(),
+                threadgroups,
+                threads_per_group,
+            )
+        }
+    }
+
     /// Raw `id<MTLCommandBuffer>` pointer.
+    #[must_use]
+    pub const fn as_ptr(&self) -> *mut c_void {
+        self.ptr
+    }
+}
+
+// ---- Library + Function + ComputePipelineState ----
+
+/// Apple's `id<MTLLibrary>` — compiled MSL source.
+pub struct MetalLibrary {
+    ptr: *mut c_void,
+}
+
+unsafe impl Send for MetalLibrary {}
+unsafe impl Sync for MetalLibrary {}
+
+impl Drop for MetalLibrary {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            unsafe { ffi::am_library_release(self.ptr) };
+            self.ptr = ptr::null_mut();
+        }
+    }
+}
+
+impl MetalLibrary {
+    /// Look up a kernel function by its source name.
+    #[must_use]
+    pub fn new_function(&self, name: &str) -> Option<MetalFunction> {
+        let cname = std::ffi::CString::new(name).ok()?;
+        let p = unsafe { ffi::am_library_new_function(self.ptr, cname.as_ptr()) };
+        if p.is_null() {
+            None
+        } else {
+            Some(MetalFunction { ptr: p })
+        }
+    }
+
+    /// Raw `id<MTLLibrary>` pointer.
+    #[must_use]
+    pub const fn as_ptr(&self) -> *mut c_void {
+        self.ptr
+    }
+}
+
+/// Apple's `id<MTLFunction>` — a single compiled shader entry point.
+pub struct MetalFunction {
+    ptr: *mut c_void,
+}
+
+unsafe impl Send for MetalFunction {}
+unsafe impl Sync for MetalFunction {}
+
+impl Drop for MetalFunction {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            unsafe { ffi::am_function_release(self.ptr) };
+            self.ptr = ptr::null_mut();
+        }
+    }
+}
+
+impl MetalFunction {
+    /// Raw `id<MTLFunction>` pointer.
+    #[must_use]
+    pub const fn as_ptr(&self) -> *mut c_void {
+        self.ptr
+    }
+}
+
+/// Apple's `id<MTLComputePipelineState>` — a compiled compute kernel.
+pub struct ComputePipelineState {
+    ptr: *mut c_void,
+}
+
+unsafe impl Send for ComputePipelineState {}
+unsafe impl Sync for ComputePipelineState {}
+
+impl Drop for ComputePipelineState {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            unsafe { ffi::am_compute_pipeline_state_release(self.ptr) };
+            self.ptr = ptr::null_mut();
+        }
+    }
+}
+
+impl ComputePipelineState {
+    /// Raw `id<MTLComputePipelineState>` pointer.
     #[must_use]
     pub const fn as_ptr(&self) -> *mut c_void {
         self.ptr
