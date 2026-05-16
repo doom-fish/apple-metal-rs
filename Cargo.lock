@@ -4,11 +4,11 @@ version = 3
 
 [[package]]
 name = "apple-cf"
-version = "0.4.0"
+version = "0.5.0"
 
 [[package]]
 name = "apple-metal"
-version = "0.4.0"
+version = "0.5.1"
 dependencies = [
  "apple-cf",
  "libc",
