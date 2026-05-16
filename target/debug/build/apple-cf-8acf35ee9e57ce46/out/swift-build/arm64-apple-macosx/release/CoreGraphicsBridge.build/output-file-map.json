@@ -1,0 +1,13 @@
+{
+  "": {
+    "dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-8acf35ee9e57ce46/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/CoreGraphicsBridge.d",
+    "object": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-8acf35ee9e57ce46/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/CoreGraphicsBridge.o",
+    "swift-dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-8acf35ee9e57ce46/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/master.swiftdeps"
+  },
+  "/Users/perjohansson/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/apple-cf-0.2.0/swift-bridge/Sources/CoreGraphicsBridge/CoreGraphics.swift": {
+    "object": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-8acf35ee9e57ce46/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/CoreGraphics.swift.o",
+    "swiftmodule": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-8acf35ee9e57ce46/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/CoreGraphics~partial.swiftmodule",
+    "swift-dependencies": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-8acf35ee9e57ce46/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/CoreGraphics.swiftdeps",
+    "diagnostics": "/Users/perjohansson/dev/apple-metal-rs/target/debug/build/apple-cf-8acf35ee9e57ce46/out/swift-build/arm64-apple-macosx/release/CoreGraphicsBridge.build/CoreGraphics.dia"
+  }
+}
