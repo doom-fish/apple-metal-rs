@@ -4,7 +4,7 @@ Safe Rust bindings for Apple's [Metal](https://developer.apple.com/metal/)
 framework on macOS, backed by a Swift bridge in the
 `screencapturekit-rs` style.
 
-`apple-metal` 0.6.1 now covers:
+`apple-metal` 0.6.2 now covers:
 
 - device discovery and capability queries
 - buffers, textures, texture views, buffer-backed textures, and `IOSurface`
@@ -13,16 +13,21 @@ framework on macOS, backed by a Swift bridge in the
 - MSL compilation, functions, compute/render pipeline state, and
   descriptor-driven compute/render/tile pipeline creation
 - depth/stencil state, sampler state, and descriptor-driven argument encoders
-- limited `MetalFX` spatial / temporal scaler support
+- `MetalFX` spatial / temporal scaler support plus the broader `MetalFX`
+  base / denoised / frame-interpolator symbol families
 - heaps, events, shared events, dynamic libraries, binary archives, indirect
   command buffers, acceleration-structure handles, visible / intersection
   function tables, counter sample buffers, log state, residency sets, and
   capture scopes
+- exhaustive top-level symbol coverage for the audited macOS
+  `Metal.framework` + `MetalFX.framework` headers, including descriptor,
+  reflection, render-pass, resource-state, rasterization-rate, tensor, IO,
+  and `MTL4*` / `MTL4FX*` families
 
-See [`COVERAGE.md`](./COVERAGE.md) for the audited SDK matrix and the deferred
-families that are still intentionally out of scope for this crate release.
-`MetalPerformanceShaders` remains out of scope, and the broader `MetalFX`
-family is still only partially wrapped.
+See [`COVERAGE.md`](./COVERAGE.md) for the audited SDK matrix and the note on
+which families are already exercised by the runtime smoke tests versus the
+newly completed top-level symbol wrappers. `MetalPerformanceShaders` remains
+out of scope for this crate.
 
 ## Quick start
 

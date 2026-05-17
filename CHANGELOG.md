@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.6.2 — Exhaustive top-level Metal / MetalFX symbol coverage
+
+- Completed the audited top-level symbol surface for the macOS `Metal.framework`
+  and `MetalFX.framework` headers, closing every remaining gap from the
+  coverage audit.
+- Added exhaustive safe wrappers for the remaining descriptor, reflection,
+  resource-state, rasterization-rate, tensor, IO, function-stitching,
+  MetalFX base / denoised / frame-interpolator, and `MTL4*` / `MTL4FX*`
+  families.
+- Added bridge-backed runtime helpers for descriptor-class construction,
+  device enumeration / observation, IO compression contexts, and exported
+  Metal string constants.
+- Added `tests/exhaustive_symbols.rs` to compile-smoke the full audited symbol
+  surface.
+- Bumped the crate to `0.6.2`.
+
 ## 0.6.1 — State descriptors, public pipeline descriptors, and MetalFX scalers
 
 - Added safe wrappers for `MTLCompareFunction`, `MTLStencilOperation`,

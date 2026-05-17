@@ -15,11 +15,13 @@ use apple_metal::{
     ArgumentEncoder, BinaryArchive, BlitCommandEncoder, CaptureManager, CommandBuffer,
     CommandQueue, ComputeCommandEncoder, ComputePipelineDescriptor, ComputePipelineState,
     DepthStencilDescriptor, DynamicLibrary, Event, Fence, IndirectCommandBuffer, MetalBuffer,
-    MetalDevice, MetalFunction, MetalLibrary, MetalTexture, RenderCommandEncoder,
-    RenderPipelineColorAttachmentDescriptor, RenderPipelineDescriptor, RenderPipelineState,
-    ResidencySet, SamplerDescriptor, SpatialScalerDescriptor, StencilDescriptor,
-    TemporalScalerDescriptor, TemporalScalerFrameState, TemporalScalerTextures,
-    TextureDescriptor, TileRenderPipelineColorAttachmentDescriptor, TileRenderPipelineDescriptor,
+    MetalCommandQueueDescriptor, MetalDevice, MetalFunction, MetalHeapDescriptor,
+    MetalLibrary, MetalTexture, RenderCommandEncoder, RenderPipelineColorAttachmentDescriptor,
+    RenderPipelineDescriptor, RenderPipelineState, ResidencySet, SamplerDescriptor,
+    SpatialScalerDescriptor, StencilDescriptor, TemporalScalerDescriptor,
+    TemporalScalerFrameState, TemporalScalerTextures, TextureDescriptor,
+    TileRenderPipelineColorAttachmentDescriptor, TileRenderPipelineDescriptor,
+    copy_all_devices, metal_library_error_domain,
 };
 use std::fs;
 use std::path::PathBuf;
@@ -252,6 +254,10 @@ fn public_api_smoke() {
     let borrowed = unsafe { MetalDevice::from_raw_borrowed(device.as_ptr()) };
     assert_eq!(borrowed.has_unified_memory(), device.has_unified_memory());
     assert!(!device.name().is_empty());
+    assert!(!copy_all_devices().is_empty());
+    assert!(metal_library_error_domain().is_some());
+    assert!(MetalCommandQueueDescriptor::new().is_some());
+    assert!(MetalHeapDescriptor::new().is_some());
     let _ = device.registry_id();
     let _ = device.supports_dynamic_libraries();
     let _ = device.supports_render_dynamic_libraries();
