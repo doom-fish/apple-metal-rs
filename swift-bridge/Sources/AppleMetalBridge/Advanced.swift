@@ -83,6 +83,7 @@ public func am_device_new_command_queue_with_max_command_buffer_count(
     return am_retain(queue as AnyObject)
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_device_new_command_queue_with_log_state")
 public func am_device_new_command_queue_with_log_state(
     _ handle: UnsafeMutableRawPointer?,
@@ -286,6 +287,7 @@ public func am_device_new_counter_sample_buffer(
     }
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_device_new_log_state")
 public func am_device_new_log_state(
     _ handle: UnsafeMutableRawPointer?,
@@ -310,6 +312,7 @@ public func am_device_new_log_state(
     }
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_device_new_residency_set")
 public func am_device_new_residency_set(
     _ handle: UnsafeMutableRawPointer?,
@@ -336,6 +339,7 @@ public func am_device_new_residency_set(
     }
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_command_queue_add_residency_set")
 public func am_command_queue_add_residency_set(
     _ handle: UnsafeMutableRawPointer?,
@@ -348,6 +352,7 @@ public func am_command_queue_add_residency_set(
     queue.addResidencySet(residencySet)
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_command_queue_remove_residency_set")
 public func am_command_queue_remove_residency_set(
     _ handle: UnsafeMutableRawPointer?,
@@ -840,6 +845,7 @@ public func am_counter_sample_buffer_resolve_range(
     }
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_add_buffer")
 public func am_residency_set_add_buffer(
     _ handle: UnsafeMutableRawPointer?,
@@ -852,6 +858,7 @@ public func am_residency_set_add_buffer(
     residencySet.addAllocation(buffer)
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_add_texture")
 public func am_residency_set_add_texture(
     _ handle: UnsafeMutableRawPointer?,
@@ -864,6 +871,7 @@ public func am_residency_set_add_texture(
     residencySet.addAllocation(texture)
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_add_heap")
 public func am_residency_set_add_heap(
     _ handle: UnsafeMutableRawPointer?,
@@ -876,6 +884,7 @@ public func am_residency_set_add_heap(
     residencySet.addAllocation(heap)
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_remove_buffer")
 public func am_residency_set_remove_buffer(
     _ handle: UnsafeMutableRawPointer?,
@@ -888,6 +897,7 @@ public func am_residency_set_remove_buffer(
     residencySet.removeAllocation(buffer)
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_remove_texture")
 public func am_residency_set_remove_texture(
     _ handle: UnsafeMutableRawPointer?,
@@ -900,6 +910,7 @@ public func am_residency_set_remove_texture(
     residencySet.removeAllocation(texture)
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_remove_heap")
 public func am_residency_set_remove_heap(
     _ handle: UnsafeMutableRawPointer?,
@@ -912,6 +923,7 @@ public func am_residency_set_remove_heap(
     residencySet.removeAllocation(heap)
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_remove_all_allocations")
 public func am_residency_set_remove_all_allocations(_ handle: UnsafeMutableRawPointer?) {
     guard #available(macOS 15.0, *),
@@ -920,6 +932,7 @@ public func am_residency_set_remove_all_allocations(_ handle: UnsafeMutableRawPo
     residencySet.removeAllAllocations()
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_contains_buffer")
 public func am_residency_set_contains_buffer(
     _ handle: UnsafeMutableRawPointer?,
@@ -932,6 +945,7 @@ public func am_residency_set_contains_buffer(
     return residencySet.containsAllocation(buffer)
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_contains_texture")
 public func am_residency_set_contains_texture(
     _ handle: UnsafeMutableRawPointer?,
@@ -944,6 +958,7 @@ public func am_residency_set_contains_texture(
     return residencySet.containsAllocation(texture)
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_allocation_count")
 public func am_residency_set_allocation_count(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard #available(macOS 15.0, *),
@@ -952,6 +967,7 @@ public func am_residency_set_allocation_count(_ handle: UnsafeMutableRawPointer?
     return residencySet.allocationCount
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_commit")
 public func am_residency_set_commit(_ handle: UnsafeMutableRawPointer?) {
     guard #available(macOS 15.0, *),
@@ -960,6 +976,7 @@ public func am_residency_set_commit(_ handle: UnsafeMutableRawPointer?) {
     residencySet.commit()
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_request_residency")
 public func am_residency_set_request_residency(_ handle: UnsafeMutableRawPointer?) {
     guard #available(macOS 15.0, *),
@@ -968,6 +985,7 @@ public func am_residency_set_request_residency(_ handle: UnsafeMutableRawPointer
     residencySet.requestResidency()
 }
 
+@available(macOS 15.0, *)
 @_cdecl("am_residency_set_end_residency")
 public func am_residency_set_end_residency(_ handle: UnsafeMutableRawPointer?) {
     guard #available(macOS 15.0, *),

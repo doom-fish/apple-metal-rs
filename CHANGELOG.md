@@ -1,5 +1,53 @@
 # Changelog
 
+## 0.8.0 — Gate macOS 15+/26+ Swift APIs behind `@available` / `#available`
+
+### Swift bridge compatibility
+
+The Swift bridge previously compiled only on a macOS 26 machine because
+`@_cdecl` thunks that use macOS 15+ types (`MTLLogState`,
+`MTLLogStateDescriptor`, `MTLResidencySet`, `MTLResidencySetDescriptor`,
+`MTLCommandQueueDescriptor.logState`) lacked the `@available(macOS 15.0, *)`
+attribute on their function declarations.  Without that attribute the Swift
+compiler resolves the type names at the deployment-target level (macOS 11 as
+declared in `Package.swift`), which fails on any CI runner whose SDK pre-dates
+macOS 15 (e.g., GitHub Actions `macos-14` with Xcode 15).
+
+Every affected `@_cdecl` function already contained the correct
+`guard #available(macOS 15.0, *)` runtime guard in its body, providing a safe
+nil/0/false fallback on older operating systems.  This release adds the
+matching compile-time `@available(macOS 15.0, *)` attribute above the
+`@_cdecl` line on all 18 such functions, completing the two-layer guard
+pattern required by the Swift compiler.
+
+**Affected functions (all now `@available(macOS 15.0, *)`):**
+- `am_device_new_command_queue_with_log_state`
+- `am_device_new_log_state`
+- `am_device_new_residency_set`
+- `am_command_queue_add_residency_set`
+- `am_command_queue_remove_residency_set`
+- `am_residency_set_add_buffer`
+- `am_residency_set_add_texture`
+- `am_residency_set_add_heap`
+- `am_residency_set_remove_buffer`
+- `am_residency_set_remove_texture`
+- `am_residency_set_remove_heap`
+- `am_residency_set_remove_all_allocations`
+- `am_residency_set_contains_buffer`
+- `am_residency_set_contains_texture`
+- `am_residency_set_allocation_count`
+- `am_residency_set_commit`
+- `am_residency_set_request_residency`
+- `am_residency_set_end_residency`
+
+**macOS 26+ sampler properties** (`MTLSamplerDescriptor.reductionMode` and
+`lodBias`) remain guarded by the existing `if #available(macOS 26.0, *)` block
+inside `am_device_new_sampler_state`; no function-level attribute is needed
+there because only a portion of that function body requires the newer SDK.
+
+**Behaviour on older OS versions is unchanged:** callers on macOS < 15 receive
+`nil` / `false` / `0` from the guarded thunks rather than crashing.
+
 ## 0.7.0 — Close all audit-v2 gaps (0 remaining)
 
 ### Coverage
