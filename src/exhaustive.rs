@@ -1,8 +1,13 @@
-#![allow(clippy::module_name_repetitions, clippy::too_many_lines, clippy::type_complexity)]
+#![allow(
+    clippy::module_name_repetitions,
+    clippy::too_many_lines,
+    clippy::type_complexity
+)]
 
 use crate::{
-    ffi, util::{c_string, take_optional_string}, ComputePipelineState, DynamicLibrary,
-    MetalDevice, MetalLibrary, RenderPipelineState,
+    ffi,
+    util::{c_string, take_optional_string},
+    ComputePipelineState, DynamicLibrary, MetalDevice, MetalLibrary, RenderPipelineState,
 };
 use core::ffi::{c_char, c_void};
 use core::ptr;
@@ -131,16 +136,24 @@ pub type MetalAutoreleasedArgument = MetalArgument;
 pub type MetalArgumentType = MetalBindingType;
 pub type MetalAutoreleasedComputePipelineReflection = MetalComputePipelineReflection;
 pub type MetalAutoreleasedRenderPipelineReflection = MetalRenderPipelineReflection;
-pub type MetalNewLibraryCompletionHandler = Box<dyn FnMut(Result<MetalLibrary, String>) + Send + 'static>;
-pub type MetalNewDynamicLibraryCompletionHandler = Box<dyn FnMut(Result<DynamicLibrary, String>) + Send + 'static>;
+pub type MetalNewLibraryCompletionHandler =
+    Box<dyn FnMut(Result<MetalLibrary, String>) + Send + 'static>;
+pub type MetalNewDynamicLibraryCompletionHandler =
+    Box<dyn FnMut(Result<DynamicLibrary, String>) + Send + 'static>;
 pub type MetalNewComputePipelineStateCompletionHandler =
     Box<dyn FnMut(Result<ComputePipelineState, String>) + Send + 'static>;
-pub type MetalNewComputePipelineStateWithReflectionCompletionHandler =
-    Box<dyn FnMut(Result<(ComputePipelineState, MetalComputePipelineReflection), String>) + Send + 'static>;
+pub type MetalNewComputePipelineStateWithReflectionCompletionHandler = Box<
+    dyn FnMut(Result<(ComputePipelineState, MetalComputePipelineReflection), String>)
+        + Send
+        + 'static,
+>;
 pub type MetalNewRenderPipelineStateCompletionHandler =
     Box<dyn FnMut(Result<RenderPipelineState, String>) + Send + 'static>;
-pub type MetalNewRenderPipelineStateWithReflectionCompletionHandler =
-    Box<dyn FnMut(Result<(RenderPipelineState, MetalRenderPipelineReflection), String>) + Send + 'static>;
+pub type MetalNewRenderPipelineStateWithReflectionCompletionHandler = Box<
+    dyn FnMut(Result<(RenderPipelineState, MetalRenderPipelineReflection), String>)
+        + Send
+        + 'static,
+>;
 pub type MetalTimestamp = u64;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -166,11 +179,17 @@ pub struct MetalSize {
 impl MetalSize {
     #[must_use]
     pub const fn new(width: usize, height: usize, depth: usize) -> Self {
-        Self { width, height, depth }
+        Self {
+            width,
+            height,
+            depth,
+        }
     }
 }
 
-raw_value_type!(pub struct MetalGpuAddress(u64););
+raw_value_type!(
+    pub struct MetalGpuAddress(u64);
+);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct MetalOrigin {
@@ -302,12 +321,19 @@ impl MetalPackedFloat4x3 {
     }
 }
 
-raw_value_type!(pub struct MetalSparseTextureMappingMode(usize););
+raw_value_type!(
+    pub struct MetalSparseTextureMappingMode(usize);
+);
 
-opaque_symbol_handle!(pub struct MetalDeviceObserver;);
+opaque_symbol_handle!(
+    pub struct MetalDeviceObserver;
+);
 
-pub type MetalDeviceObserverCallback =
-    unsafe extern "C" fn(device: *mut c_void, notification_name: *const c_char, user_data: *mut c_void);
+pub type MetalDeviceObserverCallback = unsafe extern "C" fn(
+    device: *mut c_void,
+    notification_name: *const c_char,
+    user_data: *mut c_void,
+);
 
 impl MetalDeviceObserver {
     pub fn remove(&self) {
@@ -329,8 +355,12 @@ pub unsafe fn copy_all_devices_with_observer(
 ) -> (Vec<MetalDevice>, Option<MetalDeviceObserver>) {
     let mut count = 0;
     let mut observer = ptr::null_mut();
-    let ptr = ffi::am_copy_all_devices_with_observer(&mut count, &mut observer, callback, user_data);
-    (take_device_array(ptr, count), MetalDeviceObserver::wrap(observer))
+    let ptr =
+        ffi::am_copy_all_devices_with_observer(&mut count, &mut observer, callback, user_data);
+    (
+        take_device_array(ptr, count),
+        MetalDeviceObserver::wrap(observer),
+    )
 }
 
 pub fn remove_device_observer(observer: &MetalDeviceObserver) {
@@ -432,156 +462,464 @@ metal_string_constant!(pub fn metal_library_error_domain => "MTLLibraryErrorDoma
 metal_string_constant!(pub fn metal_log_state_error_domain => "MTLLogStateErrorDomain";);
 metal_string_constant!(pub fn metal_tensor_domain => "MTLTensorDomain";);
 
-raw_value_type!(pub struct Metal4AlphaToCoverageState(usize););
-raw_value_type!(pub struct Metal4AlphaToOneState(usize););
-raw_value_type!(pub struct Metal4BinaryFunctionOptions(usize););
-raw_value_type!(pub struct Metal4BlendState(usize););
-raw_value_type!(pub struct Metal4CommandQueueError(usize););
-raw_value_type!(pub struct Metal4CompilerTaskStatus(usize););
-raw_value_type!(pub struct Metal4CounterHeapType(usize););
-raw_value_type!(pub struct Metal4IndirectCommandBufferSupportState(usize););
-raw_value_type!(pub struct Metal4LogicalToPhysicalColorAttachmentMappingState(usize););
-raw_value_type!(pub struct Metal4PipelineDataSetSerializerConfiguration(usize););
-raw_value_type!(pub struct Metal4RenderEncoderOptions(usize););
-raw_value_type!(pub struct Metal4ShaderReflection(usize););
-raw_value_type!(pub struct Metal4TimestampGranularity(usize););
-raw_value_type!(pub struct Metal4VisibilityOptions(usize););
-raw_value_type!(pub struct MetalAccelerationStructureInstanceDescriptorType(usize););
-raw_value_type!(pub struct MetalAccelerationStructureInstanceOptions(usize););
-raw_value_type!(pub struct MetalAccelerationStructureRefitOptions(usize););
-raw_value_type!(pub struct MetalAccelerationStructureUsage(usize););
-raw_value_type!(pub struct MetalArgumentAccess(usize););
-raw_value_type!(pub struct MetalAttributeFormat(usize););
-raw_value_type!(pub struct MetalBarrierScope(usize););
-raw_value_type!(pub struct MetalBinaryArchiveError(usize););
-raw_value_type!(pub struct MetalBindingType(usize););
-raw_value_type!(pub struct MetalBlitOption(usize););
-raw_value_type!(pub struct MetalBufferSparseTier(usize););
-raw_value_type!(pub struct MetalCaptureError(usize););
-raw_value_type!(pub struct MetalCommandBufferError(usize););
-raw_value_type!(pub struct MetalCommandBufferErrorOption(usize););
-raw_value_type!(pub struct MetalCommandEncoderErrorState(usize););
-raw_value_type!(pub struct MetalCompileSymbolVisibility(usize););
-raw_value_type!(pub struct MetalCounterSampleBufferError(usize););
-raw_value_type!(pub struct MetalCullMode(usize););
-raw_value_type!(pub struct MetalCurveBasis(usize););
-raw_value_type!(pub struct MetalCurveEndCaps(usize););
-raw_value_type!(pub struct MetalCurveType(usize););
-raw_value_type!(pub struct MetalDataType(usize););
-raw_value_type!(pub struct MetalDepthClipMode(usize););
-raw_value_type!(pub struct MetalDeviceLocation(usize););
-raw_value_type!(pub struct MetalDispatchType(usize););
-raw_value_type!(pub struct MetalDynamicLibraryError(usize););
-raw_value_type!(pub struct MetalFeatureSet(usize););
-raw_value_type!(pub struct MetalFunctionLogType(usize););
-raw_value_type!(pub struct MetalFunctionOptions(usize););
-raw_value_type!(pub struct MetalFunctionType(usize););
-raw_value_type!(pub struct MetalHeapType(usize););
-raw_value_type!(pub struct MetalIndexType(usize););
-raw_value_type!(pub struct MetalIoCommandQueueType(usize););
-raw_value_type!(pub struct MetalIoCompressionMethod(usize););
-raw_value_type!(pub struct MetalIoCompressionStatus(usize););
-raw_value_type!(pub struct MetalIoPriority(usize););
-raw_value_type!(pub struct MetalIoStatus(usize););
-raw_value_type!(pub struct MetalLanguageVersion(usize););
-raw_value_type!(pub struct MetalLibraryError(usize););
-raw_value_type!(pub struct MetalLibraryOptimizationLevel(usize););
-raw_value_type!(pub struct MetalLibraryType(usize););
-raw_value_type!(pub struct MetalLogStateError(usize););
-raw_value_type!(pub struct MetalMathFloatingPointFunctions(usize););
-raw_value_type!(pub struct MetalMathMode(usize););
-raw_value_type!(pub struct MetalMatrixLayout(usize););
-raw_value_type!(pub struct MetalMotionBorderMode(usize););
-raw_value_type!(pub struct MetalMultisampleDepthResolveFilter(usize););
-raw_value_type!(pub struct MetalMultisampleStencilResolveFilter(usize););
-raw_value_type!(pub struct MetalMutability(usize););
-raw_value_type!(pub struct MetalPatchType(usize););
-raw_value_type!(pub struct MetalPipelineOption(usize););
-raw_value_type!(pub struct MetalPrimitiveTopologyClass(usize););
-raw_value_type!(pub struct MetalReadWriteTextureTier(usize););
-raw_value_type!(pub struct MetalRenderStages(usize););
-raw_value_type!(pub struct MetalResourceUsage(usize););
-raw_value_type!(pub struct MetalShaderValidation(usize););
-raw_value_type!(pub struct MetalSparsePageSize(usize););
-raw_value_type!(pub struct MetalSparseTextureRegionAlignmentMode(usize););
-raw_value_type!(pub struct MetalStages(usize););
-raw_value_type!(pub struct MetalStepFunction(usize););
-raw_value_type!(pub struct MetalStitchedLibraryOptions(usize););
-raw_value_type!(pub struct MetalStoreActionOptions(usize););
-raw_value_type!(pub struct MetalTensorDataType(usize););
-raw_value_type!(pub struct MetalTensorError(usize););
-raw_value_type!(pub struct MetalTensorUsage(usize););
-raw_value_type!(pub struct MetalTessellationControlPointIndexType(usize););
-raw_value_type!(pub struct MetalTessellationFactorFormat(usize););
-raw_value_type!(pub struct MetalTessellationFactorStepFunction(usize););
-raw_value_type!(pub struct MetalTessellationPartitionMode(usize););
-raw_value_type!(pub struct MetalTextureCompressionType(usize););
-raw_value_type!(pub struct MetalTextureSparseTier(usize););
-raw_value_type!(pub struct MetalTextureSwizzle(usize););
-raw_value_type!(pub struct MetalTransformType(usize););
-raw_value_type!(pub struct MetalTriangleFillMode(usize););
-raw_value_type!(pub struct MetalVertexFormat(usize););
-raw_value_type!(pub struct MetalVertexStepFunction(usize););
-raw_value_type!(pub struct MetalVisibilityResultMode(usize););
-raw_value_type!(pub struct MetalVisibilityResultType(usize););
-raw_value_type!(pub struct MetalWinding(usize););
-opaque_symbol_handle!(pub struct Metal4Archive;);
-opaque_symbol_handle!(pub struct Metal4ArgumentTable;);
-opaque_symbol_handle!(pub struct Metal4BinaryFunction;);
-opaque_symbol_handle!(pub struct Metal4CommandAllocator;);
-opaque_symbol_handle!(pub struct Metal4CommandBuffer;);
-opaque_symbol_handle!(pub struct Metal4CommandEncoder;);
-opaque_symbol_handle!(pub struct Metal4CommandQueue;);
-opaque_symbol_handle!(pub struct Metal4CommitFeedback;);
-opaque_symbol_handle!(pub struct Metal4Compiler;);
-opaque_symbol_handle!(pub struct Metal4CompilerTask;);
-opaque_symbol_handle!(pub struct Metal4ComputeCommandEncoder;);
-opaque_symbol_handle!(pub struct Metal4CounterHeap;);
-opaque_symbol_handle!(pub struct Metal4FxFrameInterpolator;);
-opaque_symbol_handle!(pub struct Metal4FxSpatialScaler;);
-opaque_symbol_handle!(pub struct Metal4FxTemporalDenoisedScaler;);
-opaque_symbol_handle!(pub struct Metal4FxTemporalScaler;);
-opaque_symbol_handle!(pub struct Metal4MachineLearningCommandEncoder;);
-opaque_symbol_handle!(pub struct Metal4MachineLearningPipelineState;);
-opaque_symbol_handle!(pub struct Metal4PipelineDataSetSerializer;);
-opaque_symbol_handle!(pub struct Metal4RenderCommandEncoder;);
-opaque_symbol_handle!(pub struct MetalAccelerationStructureCommandEncoder;);
-opaque_symbol_handle!(pub struct MetalAllocation;);
-opaque_symbol_handle!(pub struct MetalBinding;);
-opaque_symbol_handle!(pub struct MetalBufferBinding;);
-opaque_symbol_handle!(pub struct MetalCommandBufferEncoderInfo;);
-opaque_symbol_handle!(pub struct MetalCommandEncoder;);
-opaque_symbol_handle!(pub struct MetalCounter;);
-opaque_symbol_handle!(pub struct MetalDrawable;);
-opaque_symbol_handle!(pub struct MetalFunctionHandle;);
-opaque_symbol_handle!(pub struct MetalFunctionLog;);
-opaque_symbol_handle!(pub struct MetalFunctionLogDebugLocation;);
-opaque_symbol_handle!(pub struct MetalFunctionStitchingAttribute;);
-opaque_symbol_handle!(pub struct MetalFunctionStitchingNode;);
-opaque_symbol_handle!(pub struct MetalFxFrameInterpolator;);
-opaque_symbol_handle!(pub struct MetalFxFrameInterpolatorBase;);
-opaque_symbol_handle!(pub struct MetalFxSpatialScalerBase;);
-opaque_symbol_handle!(pub struct MetalFxTemporalDenoisedScaler;);
-opaque_symbol_handle!(pub struct MetalFxTemporalDenoisedScalerBase;);
-opaque_symbol_handle!(pub struct MetalFxTemporalScalerBase;);
-opaque_symbol_handle!(pub struct MetalIndirectComputeCommand;);
-opaque_symbol_handle!(pub struct MetalIndirectRenderCommand;);
-opaque_symbol_handle!(pub struct MetalIoCommandBuffer;);
-opaque_symbol_handle!(pub struct MetalIoCommandQueue;);
-opaque_symbol_handle!(pub struct MetalIoFileHandle;);
-opaque_symbol_handle!(pub struct MetalIoScratchBuffer;);
-opaque_symbol_handle!(pub struct MetalIoScratchBufferAllocator;);
-opaque_symbol_handle!(pub struct MetalLogContainer;);
-opaque_symbol_handle!(pub struct MetalObjectPayloadBinding;);
-opaque_symbol_handle!(pub struct MetalParallelRenderCommandEncoder;);
-opaque_symbol_handle!(pub struct MetalRasterizationRateMap;);
-opaque_symbol_handle!(pub struct MetalResource;);
-opaque_symbol_handle!(pub struct MetalResourceStateCommandEncoder;);
-opaque_symbol_handle!(pub struct MetalResourceViewPool;);
-opaque_symbol_handle!(pub struct MetalTensorBinding;);
-opaque_symbol_handle!(pub struct MetalTextureBinding;);
-opaque_symbol_handle!(pub struct MetalTextureViewPool;);
-opaque_symbol_handle!(pub struct MetalThreadgroupBinding;);
+raw_value_type!(
+    pub struct Metal4AlphaToCoverageState(usize);
+);
+raw_value_type!(
+    pub struct Metal4AlphaToOneState(usize);
+);
+raw_value_type!(
+    pub struct Metal4BinaryFunctionOptions(usize);
+);
+raw_value_type!(
+    pub struct Metal4BlendState(usize);
+);
+raw_value_type!(
+    pub struct Metal4CommandQueueError(usize);
+);
+raw_value_type!(
+    pub struct Metal4CompilerTaskStatus(usize);
+);
+raw_value_type!(
+    pub struct Metal4CounterHeapType(usize);
+);
+raw_value_type!(
+    pub struct Metal4IndirectCommandBufferSupportState(usize);
+);
+raw_value_type!(
+    pub struct Metal4LogicalToPhysicalColorAttachmentMappingState(usize);
+);
+raw_value_type!(
+    pub struct Metal4PipelineDataSetSerializerConfiguration(usize);
+);
+raw_value_type!(
+    pub struct Metal4RenderEncoderOptions(usize);
+);
+raw_value_type!(
+    pub struct Metal4ShaderReflection(usize);
+);
+raw_value_type!(
+    pub struct Metal4TimestampGranularity(usize);
+);
+raw_value_type!(
+    pub struct Metal4VisibilityOptions(usize);
+);
+raw_value_type!(
+    pub struct MetalAccelerationStructureInstanceDescriptorType(usize);
+);
+raw_value_type!(
+    pub struct MetalAccelerationStructureInstanceOptions(usize);
+);
+raw_value_type!(
+    pub struct MetalAccelerationStructureRefitOptions(usize);
+);
+raw_value_type!(
+    pub struct MetalAccelerationStructureUsage(usize);
+);
+raw_value_type!(
+    pub struct MetalArgumentAccess(usize);
+);
+raw_value_type!(
+    pub struct MetalAttributeFormat(usize);
+);
+raw_value_type!(
+    pub struct MetalBarrierScope(usize);
+);
+raw_value_type!(
+    pub struct MetalBinaryArchiveError(usize);
+);
+raw_value_type!(
+    pub struct MetalBindingType(usize);
+);
+raw_value_type!(
+    pub struct MetalBlitOption(usize);
+);
+raw_value_type!(
+    pub struct MetalBufferSparseTier(usize);
+);
+raw_value_type!(
+    pub struct MetalCaptureError(usize);
+);
+raw_value_type!(
+    pub struct MetalCommandBufferError(usize);
+);
+raw_value_type!(
+    pub struct MetalCommandBufferErrorOption(usize);
+);
+raw_value_type!(
+    pub struct MetalCommandEncoderErrorState(usize);
+);
+raw_value_type!(
+    pub struct MetalCompileSymbolVisibility(usize);
+);
+raw_value_type!(
+    pub struct MetalCounterSampleBufferError(usize);
+);
+raw_value_type!(
+    pub struct MetalCullMode(usize);
+);
+raw_value_type!(
+    pub struct MetalCurveBasis(usize);
+);
+raw_value_type!(
+    pub struct MetalCurveEndCaps(usize);
+);
+raw_value_type!(
+    pub struct MetalCurveType(usize);
+);
+raw_value_type!(
+    pub struct MetalDataType(usize);
+);
+raw_value_type!(
+    pub struct MetalDepthClipMode(usize);
+);
+raw_value_type!(
+    pub struct MetalDeviceLocation(usize);
+);
+raw_value_type!(
+    pub struct MetalDispatchType(usize);
+);
+raw_value_type!(
+    pub struct MetalDynamicLibraryError(usize);
+);
+raw_value_type!(
+    pub struct MetalFeatureSet(usize);
+);
+raw_value_type!(
+    pub struct MetalFunctionLogType(usize);
+);
+raw_value_type!(
+    pub struct MetalFunctionOptions(usize);
+);
+raw_value_type!(
+    pub struct MetalFunctionType(usize);
+);
+raw_value_type!(
+    pub struct MetalHeapType(usize);
+);
+raw_value_type!(
+    pub struct MetalIndexType(usize);
+);
+raw_value_type!(
+    pub struct MetalIoCommandQueueType(usize);
+);
+raw_value_type!(
+    pub struct MetalIoCompressionMethod(usize);
+);
+raw_value_type!(
+    pub struct MetalIoCompressionStatus(usize);
+);
+raw_value_type!(
+    pub struct MetalIoPriority(usize);
+);
+raw_value_type!(
+    pub struct MetalIoStatus(usize);
+);
+raw_value_type!(
+    pub struct MetalLanguageVersion(usize);
+);
+raw_value_type!(
+    pub struct MetalLibraryError(usize);
+);
+raw_value_type!(
+    pub struct MetalLibraryOptimizationLevel(usize);
+);
+raw_value_type!(
+    pub struct MetalLibraryType(usize);
+);
+raw_value_type!(
+    pub struct MetalLogStateError(usize);
+);
+raw_value_type!(
+    pub struct MetalMathFloatingPointFunctions(usize);
+);
+raw_value_type!(
+    pub struct MetalMathMode(usize);
+);
+raw_value_type!(
+    pub struct MetalMatrixLayout(usize);
+);
+raw_value_type!(
+    pub struct MetalMotionBorderMode(usize);
+);
+raw_value_type!(
+    pub struct MetalMultisampleDepthResolveFilter(usize);
+);
+raw_value_type!(
+    pub struct MetalMultisampleStencilResolveFilter(usize);
+);
+raw_value_type!(
+    pub struct MetalMutability(usize);
+);
+raw_value_type!(
+    pub struct MetalPatchType(usize);
+);
+raw_value_type!(
+    pub struct MetalPipelineOption(usize);
+);
+raw_value_type!(
+    pub struct MetalPrimitiveTopologyClass(usize);
+);
+raw_value_type!(
+    pub struct MetalReadWriteTextureTier(usize);
+);
+raw_value_type!(
+    pub struct MetalRenderStages(usize);
+);
+raw_value_type!(
+    pub struct MetalResourceUsage(usize);
+);
+raw_value_type!(
+    pub struct MetalShaderValidation(usize);
+);
+raw_value_type!(
+    pub struct MetalSparsePageSize(usize);
+);
+raw_value_type!(
+    pub struct MetalSparseTextureRegionAlignmentMode(usize);
+);
+raw_value_type!(
+    pub struct MetalStages(usize);
+);
+raw_value_type!(
+    pub struct MetalStepFunction(usize);
+);
+raw_value_type!(
+    pub struct MetalStitchedLibraryOptions(usize);
+);
+raw_value_type!(
+    pub struct MetalStoreActionOptions(usize);
+);
+raw_value_type!(
+    pub struct MetalTensorDataType(usize);
+);
+raw_value_type!(
+    pub struct MetalTensorError(usize);
+);
+raw_value_type!(
+    pub struct MetalTensorUsage(usize);
+);
+raw_value_type!(
+    pub struct MetalTessellationControlPointIndexType(usize);
+);
+raw_value_type!(
+    pub struct MetalTessellationFactorFormat(usize);
+);
+raw_value_type!(
+    pub struct MetalTessellationFactorStepFunction(usize);
+);
+raw_value_type!(
+    pub struct MetalTessellationPartitionMode(usize);
+);
+raw_value_type!(
+    pub struct MetalTextureCompressionType(usize);
+);
+raw_value_type!(
+    pub struct MetalTextureSparseTier(usize);
+);
+raw_value_type!(
+    pub struct MetalTextureSwizzle(usize);
+);
+raw_value_type!(
+    pub struct MetalTransformType(usize);
+);
+raw_value_type!(
+    pub struct MetalTriangleFillMode(usize);
+);
+raw_value_type!(
+    pub struct MetalVertexFormat(usize);
+);
+raw_value_type!(
+    pub struct MetalVertexStepFunction(usize);
+);
+raw_value_type!(
+    pub struct MetalVisibilityResultMode(usize);
+);
+raw_value_type!(
+    pub struct MetalVisibilityResultType(usize);
+);
+raw_value_type!(
+    pub struct MetalWinding(usize);
+);
+opaque_symbol_handle!(
+    pub struct Metal4Archive;
+);
+opaque_symbol_handle!(
+    pub struct Metal4ArgumentTable;
+);
+opaque_symbol_handle!(
+    pub struct Metal4BinaryFunction;
+);
+opaque_symbol_handle!(
+    pub struct Metal4CommandAllocator;
+);
+opaque_symbol_handle!(
+    pub struct Metal4CommandBuffer;
+);
+opaque_symbol_handle!(
+    pub struct Metal4CommandEncoder;
+);
+opaque_symbol_handle!(
+    pub struct Metal4CommandQueue;
+);
+opaque_symbol_handle!(
+    pub struct Metal4CommitFeedback;
+);
+opaque_symbol_handle!(
+    pub struct Metal4Compiler;
+);
+opaque_symbol_handle!(
+    pub struct Metal4CompilerTask;
+);
+opaque_symbol_handle!(
+    pub struct Metal4ComputeCommandEncoder;
+);
+opaque_symbol_handle!(
+    pub struct Metal4CounterHeap;
+);
+opaque_symbol_handle!(
+    pub struct Metal4FxFrameInterpolator;
+);
+opaque_symbol_handle!(
+    pub struct Metal4FxSpatialScaler;
+);
+opaque_symbol_handle!(
+    pub struct Metal4FxTemporalDenoisedScaler;
+);
+opaque_symbol_handle!(
+    pub struct Metal4FxTemporalScaler;
+);
+opaque_symbol_handle!(
+    pub struct Metal4MachineLearningCommandEncoder;
+);
+opaque_symbol_handle!(
+    pub struct Metal4MachineLearningPipelineState;
+);
+opaque_symbol_handle!(
+    pub struct Metal4PipelineDataSetSerializer;
+);
+opaque_symbol_handle!(
+    pub struct Metal4RenderCommandEncoder;
+);
+opaque_symbol_handle!(
+    pub struct MetalAccelerationStructureCommandEncoder;
+);
+opaque_symbol_handle!(
+    pub struct MetalAllocation;
+);
+opaque_symbol_handle!(
+    pub struct MetalBinding;
+);
+opaque_symbol_handle!(
+    pub struct MetalBufferBinding;
+);
+opaque_symbol_handle!(
+    pub struct MetalCommandBufferEncoderInfo;
+);
+opaque_symbol_handle!(
+    pub struct MetalCommandEncoder;
+);
+opaque_symbol_handle!(
+    pub struct MetalCounter;
+);
+opaque_symbol_handle!(
+    pub struct MetalDrawable;
+);
+opaque_symbol_handle!(
+    pub struct MetalFunctionHandle;
+);
+opaque_symbol_handle!(
+    pub struct MetalFunctionLog;
+);
+opaque_symbol_handle!(
+    pub struct MetalFunctionLogDebugLocation;
+);
+opaque_symbol_handle!(
+    pub struct MetalFunctionStitchingAttribute;
+);
+opaque_symbol_handle!(
+    pub struct MetalFunctionStitchingNode;
+);
+opaque_symbol_handle!(
+    pub struct MetalFxFrameInterpolator;
+);
+opaque_symbol_handle!(
+    pub struct MetalFxFrameInterpolatorBase;
+);
+opaque_symbol_handle!(
+    pub struct MetalFxSpatialScalerBase;
+);
+opaque_symbol_handle!(
+    pub struct MetalFxTemporalDenoisedScaler;
+);
+opaque_symbol_handle!(
+    pub struct MetalFxTemporalDenoisedScalerBase;
+);
+opaque_symbol_handle!(
+    pub struct MetalFxTemporalScalerBase;
+);
+opaque_symbol_handle!(
+    pub struct MetalIndirectComputeCommand;
+);
+opaque_symbol_handle!(
+    /// `id<MTLIndirectComputeCommandEncoder>` — encodes indirect compute dispatches.
+    pub struct MetalIndirectComputeCommandEncoder;
+);
+opaque_symbol_handle!(
+    pub struct MetalIndirectRenderCommand;
+);
+opaque_symbol_handle!(
+    /// `id<MTLIndirectRenderCommandEncoder>` — encodes indirect render commands.
+    pub struct MetalIndirectRenderCommandEncoder;
+);
+opaque_symbol_handle!(
+    pub struct MetalIoCommandBuffer;
+);
+opaque_symbol_handle!(
+    pub struct MetalIoCommandQueue;
+);
+opaque_symbol_handle!(
+    pub struct MetalIoFileHandle;
+);
+opaque_symbol_handle!(
+    pub struct MetalIoScratchBuffer;
+);
+opaque_symbol_handle!(
+    pub struct MetalIoScratchBufferAllocator;
+);
+opaque_symbol_handle!(
+    pub struct MetalLogContainer;
+);
+opaque_symbol_handle!(
+    pub struct MetalObjectPayloadBinding;
+);
+opaque_symbol_handle!(
+    pub struct MetalParallelRenderCommandEncoder;
+);
+opaque_symbol_handle!(
+    pub struct MetalRasterizationRateMap;
+);
+opaque_symbol_handle!(
+    pub struct MetalResource;
+);
+opaque_symbol_handle!(
+    pub struct MetalResourceStateCommandEncoder;
+);
+opaque_symbol_handle!(
+    pub struct MetalResourceViewPool;
+);
+opaque_symbol_handle!(
+    pub struct MetalTensorBinding;
+);
+opaque_symbol_handle!(
+    pub struct MetalTextureBinding;
+);
+opaque_symbol_handle!(
+    pub struct MetalTextureViewPool;
+);
+opaque_symbol_handle!(
+    pub struct MetalThreadgroupBinding;
+);
 opaque_symbol_class!(pub struct Metal4AccelerationStructureBoundingBoxGeometryDescriptor => "MTL4AccelerationStructureBoundingBoxGeometryDescriptor";);
 opaque_symbol_class!(pub struct Metal4AccelerationStructureCurveGeometryDescriptor => "MTL4AccelerationStructureCurveGeometryDescriptor";);
 opaque_symbol_class!(pub struct Metal4AccelerationStructureDescriptor => "MTL4AccelerationStructureDescriptor";);
@@ -646,6 +984,10 @@ opaque_symbol_class!(pub struct MetalBlitPassSampleBufferAttachmentDescriptor =>
 opaque_symbol_class!(pub struct MetalBlitPassSampleBufferAttachmentDescriptorArray => "MTLBlitPassSampleBufferAttachmentDescriptorArray";);
 opaque_symbol_class!(pub struct MetalBufferLayoutDescriptor => "MTLBufferLayoutDescriptor";);
 opaque_symbol_class!(pub struct MetalBufferLayoutDescriptorArray => "MTLBufferLayoutDescriptorArray";);
+opaque_symbol_class!(
+    /// `MTLCaptureDescriptor` — configures a GPU capture session.
+    pub struct MetalCaptureDescriptor => "MTLCaptureDescriptor";
+);
 opaque_symbol_class!(pub struct MetalCommandBufferDescriptor => "MTLCommandBufferDescriptor";);
 opaque_symbol_class!(pub struct MetalCommandQueueDescriptor => "MTLCommandQueueDescriptor";);
 opaque_symbol_class!(pub struct MetalCompileOptions => "MTLCompileOptions";);

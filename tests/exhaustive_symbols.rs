@@ -93,7 +93,8 @@ fn exhaustive_symbol_surface_compiles() {
     touch_type::<apple_metal::MetalAccelerationStructureMotionTriangleGeometryDescriptor>();
     touch_type::<apple_metal::MetalAccelerationStructurePassDescriptor>();
     touch_type::<apple_metal::MetalAccelerationStructurePassSampleBufferAttachmentDescriptor>();
-    touch_type::<apple_metal::MetalAccelerationStructurePassSampleBufferAttachmentDescriptorArray>();
+    touch_type::<apple_metal::MetalAccelerationStructurePassSampleBufferAttachmentDescriptorArray>(
+    );
     touch_type::<apple_metal::MetalAccelerationStructureRefitOptions>();
     touch_type::<apple_metal::MetalAccelerationStructureTriangleGeometryDescriptor>();
     touch_type::<apple_metal::MetalAccelerationStructureUsage>();
@@ -123,6 +124,7 @@ fn exhaustive_symbol_surface_compiles() {
     touch_type::<apple_metal::MetalBufferLayoutDescriptor>();
     touch_type::<apple_metal::MetalBufferLayoutDescriptorArray>();
     touch_type::<apple_metal::MetalBufferSparseTier>();
+    touch_type::<apple_metal::MetalCaptureDescriptor>();
     touch_type::<apple_metal::MetalCaptureError>();
     touch_type::<apple_metal::MetalCommandBufferDescriptor>();
     touch_type::<apple_metal::MetalCommandBufferEncoderInfo>();
@@ -186,8 +188,10 @@ fn exhaustive_symbol_surface_compiles() {
     touch_type::<apple_metal::MetalIndexType>();
     touch_type::<apple_metal::MetalIndirectCommandBufferDescriptor>();
     touch_type::<apple_metal::MetalIndirectComputeCommand>();
+    touch_type::<apple_metal::MetalIndirectComputeCommandEncoder>();
     touch_type::<apple_metal::MetalIndirectInstanceAccelerationStructureDescriptor>();
     touch_type::<apple_metal::MetalIndirectRenderCommand>();
+    touch_type::<apple_metal::MetalIndirectRenderCommandEncoder>();
     touch_type::<apple_metal::MetalInstanceAccelerationStructureDescriptor>();
     touch_type::<apple_metal::MetalIntersectionFunctionDescriptor>();
     touch_type::<apple_metal::MetalIntersectionFunctionTableDescriptor>();
@@ -326,8 +330,10 @@ fn exhaustive_symbol_surface_compiles() {
     let _: fn() -> Option<String> = apple_metal::metal_common_counter_fragment_cycles;
     let _: fn() -> Option<String> = apple_metal::metal_common_counter_fragment_invocations;
     let _: fn() -> Option<String> = apple_metal::metal_common_counter_fragments_passed;
-    let _: fn() -> Option<String> = apple_metal::metal_common_counter_post_tessellation_vertex_cycles;
-    let _: fn() -> Option<String> = apple_metal::metal_common_counter_post_tessellation_vertex_invocations;
+    let _: fn() -> Option<String> =
+        apple_metal::metal_common_counter_post_tessellation_vertex_cycles;
+    let _: fn() -> Option<String> =
+        apple_metal::metal_common_counter_post_tessellation_vertex_invocations;
     let _: fn() -> Option<String> = apple_metal::metal_common_counter_render_target_write_cycles;
     let _: fn() -> Option<String> = apple_metal::metal_common_counter_set_stage_utilization;
     let _: fn() -> Option<String> = apple_metal::metal_common_counter_set_statistic;

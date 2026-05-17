@@ -6,7 +6,7 @@ use apple_metal::{
     RenderPipelineState, TextureDescriptor,
 };
 
-pub const COMPUTE_SRC: &str = r#"
+pub const COMPUTE_SRC: &str = r"
 #include <metal_stdlib>
 using namespace metal;
 
@@ -28,9 +28,9 @@ kernel void use_args(constant Args &args [[buffer(0)]],
         args.buffer[0] = 7;
     }
 }
-"#;
+";
 
-pub const RENDER_SRC: &str = r#"
+pub const RENDER_SRC: &str = r"
 #include <metal_stdlib>
 using namespace metal;
 
@@ -53,7 +53,7 @@ vertex VertexOut fullscreen_vertex(uint vertex_id [[vertex_id]]) {
 fragment float4 solid_fragment() {
     return float4(0.2, 0.4, 0.8, 1.0);
 }
-"#;
+";
 
 pub fn device() -> MetalDevice {
     MetalDevice::system_default().expect("Metal device available")

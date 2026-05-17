@@ -213,7 +213,10 @@ impl FrameInterpolatableScaler for TemporalScaler {}
 impl MetalDevice {
     /// Create a `MTLFXSpatialScaler` for this device.
     #[must_use]
-    pub fn new_spatial_scaler(&self, descriptor: &SpatialScalerDescriptor) -> Option<SpatialScaler> {
+    pub fn new_spatial_scaler(
+        &self,
+        descriptor: &SpatialScalerDescriptor,
+    ) -> Option<SpatialScaler> {
         SpatialScaler::wrap(unsafe {
             ffi::am_device_new_spatial_scaler(
                 self.as_ptr(),

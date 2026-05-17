@@ -1,9 +1,5 @@
 use crate::{
-    ffi,
-    util::take_optional_string,
-    ComputePipelineState,
-    MetalDevice,
-    MetalFunction,
+    ffi, util::take_optional_string, ComputePipelineState, MetalDevice, MetalFunction,
     RenderPipelineState,
 };
 

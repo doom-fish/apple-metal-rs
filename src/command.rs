@@ -394,10 +394,7 @@ impl RenderCommandEncoder {
     /// Bind a depth/stencil state object.
     pub fn set_depth_stencil_state(&self, state: &DepthStencilState) {
         unsafe {
-            ffi::am_render_command_encoder_set_depth_stencil_state(
-                self.as_ptr(),
-                state.as_ptr(),
-            );
+            ffi::am_render_command_encoder_set_depth_stencil_state(self.as_ptr(), state.as_ptr());
         };
     }
 

@@ -17,10 +17,6 @@ extern "C" {
         method: usize,
         chunk_size: usize,
     ) -> *mut c_void;
-    pub fn am_io_compression_context_append_data(
-        handle: *mut c_void,
-        data: *const u8,
-        size: usize,
-    );
+    pub fn am_io_compression_context_append_data(handle: *mut c_void, data: *const u8, size: usize);
     pub fn am_io_flush_and_destroy_compression_context(handle: *mut c_void) -> usize;
 }

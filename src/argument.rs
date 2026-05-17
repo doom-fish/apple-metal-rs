@@ -150,6 +150,8 @@ impl MetalDevice {
 impl ArgumentEncoder {
     /// Encode a sampler binding at `index`.
     pub fn set_sampler_state(&self, sampler: &SamplerState, index: usize) {
-        unsafe { ffi::am_argument_encoder_set_sampler_state(self.as_ptr(), sampler.as_ptr(), index) };
+        unsafe {
+            ffi::am_argument_encoder_set_sampler_state(self.as_ptr(), sampler.as_ptr(), index);
+        };
     }
 }

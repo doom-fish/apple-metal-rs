@@ -5,23 +5,22 @@
 )]
 
 use apple_metal::{
-    argument_buffers_tier, binding_access, blend_factor, blend_operation,
-    capture_destination, color_write_mask, command_buffer_status, compare_function,
+    argument_buffers_tier, binding_access, blend_factor, blend_operation, capture_destination,
+    color_write_mask, command_buffer_status, compare_function, copy_all_devices,
     counter_sampling_point, indirect_command_type, intersection_function_signature, load_action,
-    log_level, pixel_format, primitive_type, purgeable_state, resource_options,
-    sampler_address_mode, sampler_border_color, sampler_min_mag_filter, sampler_mip_filter,
-    sampler_reduction_mode, spatial_scaler_color_processing_mode, stencil_operation,
-    storage_mode, store_action, texture_type, texture_usage, ArgumentDescriptor,
+    log_level, metal_library_error_domain, pixel_format, primitive_type, purgeable_state,
+    resource_options, sampler_address_mode, sampler_border_color, sampler_min_mag_filter,
+    sampler_mip_filter, sampler_reduction_mode, spatial_scaler_color_processing_mode,
+    stencil_operation, storage_mode, store_action, texture_type, texture_usage, ArgumentDescriptor,
     ArgumentEncoder, BinaryArchive, BlitCommandEncoder, CaptureManager, CommandBuffer,
     CommandQueue, ComputeCommandEncoder, ComputePipelineDescriptor, ComputePipelineState,
     DepthStencilDescriptor, DynamicLibrary, Event, Fence, IndirectCommandBuffer, MetalBuffer,
-    MetalCommandQueueDescriptor, MetalDevice, MetalFunction, MetalHeapDescriptor,
-    MetalLibrary, MetalTexture, RenderCommandEncoder, RenderPipelineColorAttachmentDescriptor,
+    MetalCommandQueueDescriptor, MetalDevice, MetalFunction, MetalHeapDescriptor, MetalLibrary,
+    MetalTexture, RenderCommandEncoder, RenderPipelineColorAttachmentDescriptor,
     RenderPipelineDescriptor, RenderPipelineState, ResidencySet, SamplerDescriptor,
-    SpatialScalerDescriptor, StencilDescriptor, TemporalScalerDescriptor,
-    TemporalScalerFrameState, TemporalScalerTextures, TextureDescriptor,
-    TileRenderPipelineColorAttachmentDescriptor, TileRenderPipelineDescriptor,
-    copy_all_devices, metal_library_error_domain,
+    SpatialScalerDescriptor, StencilDescriptor, TemporalScalerDescriptor, TemporalScalerFrameState,
+    TemporalScalerTextures, TextureDescriptor, TileRenderPipelineColorAttachmentDescriptor,
+    TileRenderPipelineDescriptor,
 };
 use std::fs;
 use std::path::PathBuf;
@@ -322,8 +321,7 @@ fn public_api_smoke() {
         RenderPipelineColorAttachmentDescriptor::new(pixel_format::BGRA8UNORM);
     color_attachment_descriptor.blending_enabled = true;
     color_attachment_descriptor.source_rgb_blend_factor = blend_factor::SOURCE_ALPHA;
-    color_attachment_descriptor.destination_rgb_blend_factor =
-        blend_factor::ONE_MINUS_SOURCE_ALPHA;
+    color_attachment_descriptor.destination_rgb_blend_factor = blend_factor::ONE_MINUS_SOURCE_ALPHA;
     color_attachment_descriptor.rgb_blend_operation = blend_operation::ADD;
     color_attachment_descriptor.source_alpha_blend_factor = blend_factor::ONE;
     color_attachment_descriptor.destination_alpha_blend_factor = blend_factor::ZERO;
@@ -340,8 +338,9 @@ fn public_api_smoke() {
         .expect("descriptor render pipeline");
     let _ = descriptor_render_pipeline.label();
 
-    let tile_color_attachments =
-        [TileRenderPipelineColorAttachmentDescriptor::new(pixel_format::BGRA8UNORM)];
+    let tile_color_attachments = [TileRenderPipelineColorAttachmentDescriptor::new(
+        pixel_format::BGRA8UNORM,
+    )];
     let _tile_descriptor = TileRenderPipelineDescriptor::new(&fragment_fn, &tile_color_attachments);
 
     let queue = device.new_command_queue().expect("command queue");
@@ -616,13 +615,22 @@ fn public_api_smoke() {
         encoder.end_encoding();
     }
 
-    let mut spatial_scaler_descriptor =
-        SpatialScalerDescriptor::new(pixel_format::BGRA8UNORM, pixel_format::BGRA8UNORM, 4, 4, 8, 8);
-    spatial_scaler_descriptor.color_processing_mode =
-        spatial_scaler_color_processing_mode::LINEAR;
+    let mut spatial_scaler_descriptor = SpatialScalerDescriptor::new(
+        pixel_format::BGRA8UNORM,
+        pixel_format::BGRA8UNORM,
+        4,
+        4,
+        8,
+        8,
+    );
+    spatial_scaler_descriptor.color_processing_mode = spatial_scaler_color_processing_mode::LINEAR;
     if SpatialScalerDescriptor::supports_device(&device) {
         let spatial_output = device
-            .new_texture(TextureDescriptor::render_target_2d(8, 8, pixel_format::BGRA8UNORM))
+            .new_texture(TextureDescriptor::render_target_2d(
+                8,
+                8,
+                pixel_format::BGRA8UNORM,
+            ))
             .expect("spatial output texture");
         if let Some(spatial_scaler) = device.new_spatial_scaler(&spatial_scaler_descriptor) {
             let _ = spatial_scaler.color_texture_usage();
@@ -649,7 +657,11 @@ fn public_api_smoke() {
             temporal_scaler_descriptor.input_content_max_scale = max_scale;
         }
         let temporal_output = device
-            .new_texture(TextureDescriptor::render_target_2d(8, 8, pixel_format::BGRA8UNORM))
+            .new_texture(TextureDescriptor::render_target_2d(
+                8,
+                8,
+                pixel_format::BGRA8UNORM,
+            ))
             .expect("temporal output texture");
         if let Some(temporal_scaler) = device.new_temporal_scaler(&temporal_scaler_descriptor) {
             let _ = temporal_scaler.color_texture_usage();
