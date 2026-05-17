@@ -186,7 +186,10 @@ public func am_temporal_scaler_texture_usage(
     case 2:
         return Int(scaler.motionTextureUsage.rawValue)
     case 3:
-        return Int(scaler.reactiveTextureUsage.rawValue)
+        if #available(macOS 14.4, *) {
+            return Int(scaler.reactiveTextureUsage.rawValue)
+        }
+        return 0
     case 4:
         return Int(scaler.outputTextureUsage.rawValue)
     default:
@@ -218,7 +221,9 @@ public func am_temporal_scaler_set_textures(
     scaler.motionTexture = motionTexture
     scaler.outputTexture = outputTexture
     scaler.exposureTexture = am_borrow(exposureTextureHandle)
-    scaler.reactiveMaskTexture = am_borrow(reactiveMaskTextureHandle)
+    if #available(macOS 14.4, *) {
+        scaler.reactiveMaskTexture = am_borrow(reactiveMaskTextureHandle)
+    }
     scaler.fence = am_borrow(fenceHandle)
 }
 
