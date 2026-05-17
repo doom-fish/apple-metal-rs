@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.3 — Split integration coverage for bridge areas
+
+- Added focused integration tests for depth/stencil state, sampler state,
+  argument encoders, heaps, shared events, and fences under `tests/`.
+- Kept the audited top-level Metal / MetalFX symbol surface unchanged while
+  broadening runtime validation coverage beyond the original smoke test split.
+- Bumped the crate to `0.6.3`.
+
 ## 0.6.2 — Exhaustive top-level Metal / MetalFX symbol coverage
 
 - Completed the audited top-level symbol surface for the macOS `Metal.framework`

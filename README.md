@@ -4,7 +4,7 @@ Safe Rust bindings for Apple's [Metal](https://developer.apple.com/metal/)
 framework on macOS, backed by a Swift bridge in the
 `screencapturekit-rs` style.
 
-`apple-metal` 0.6.2 now covers:
+`apple-metal` 0.6.3 now covers:
 
 - device discovery and capability queries
 - buffers, textures, texture views, buffer-backed textures, and `IOSurface`
@@ -25,9 +25,9 @@ framework on macOS, backed by a Swift bridge in the
   and `MTL4*` / `MTL4FX*` families
 
 See [`COVERAGE.md`](./COVERAGE.md) for the audited SDK matrix and the note on
-which families are already exercised by the runtime smoke tests versus the
-newly completed top-level symbol wrappers. `MetalPerformanceShaders` remains
-out of scope for this crate.
+which families are exercised by the focused integration tests versus the
+broader audited symbol wrappers. `MetalPerformanceShaders` remains out of
+scope for this crate.
 
 ## Quick start
 
