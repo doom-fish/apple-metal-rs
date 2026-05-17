@@ -130,6 +130,8 @@ pub struct MetalDevice {
     drop_on_release: bool,
 }
 
+// SAFETY: `id<MTLDevice>` is thread-safe: creation, capability queries, and
+// resource allocation all synchronize internally via ObjC ARC + Metal's own locks.
 unsafe impl Send for MetalDevice {}
 unsafe impl Sync for MetalDevice {}
 
@@ -322,6 +324,8 @@ pub struct CommandQueue {
     ptr: *mut c_void,
 }
 
+// SAFETY: `id<MTLCommandQueue>` is documented by Apple as thread-safe; multiple
+// threads may independently create command buffers from the same queue.
 unsafe impl Send for CommandQueue {}
 unsafe impl Sync for CommandQueue {}
 
@@ -358,6 +362,9 @@ pub struct CommandBuffer {
     ptr: *mut c_void,
 }
 
+// SAFETY: `id<MTLCommandBuffer>` is safe to move across threads.  Its `&self`
+// methods are read-only status queries; mutable encoding operations require
+// `&mut CommandEncoder` (a separate type), so Sync is sound.
 unsafe impl Send for CommandBuffer {}
 unsafe impl Sync for CommandBuffer {}
 
@@ -442,6 +449,8 @@ pub struct MetalLibrary {
     ptr: *mut c_void,
 }
 
+// SAFETY: `id<MTLLibrary>` is immutable after creation; all its methods are
+// thread-safe per Apple documentation.
 unsafe impl Send for MetalLibrary {}
 unsafe impl Sync for MetalLibrary {}
 
@@ -479,6 +488,8 @@ pub struct MetalFunction {
     ptr: *mut c_void,
 }
 
+// SAFETY: `id<MTLFunction>` is immutable after creation and its handle is safe
+// to share across threads.
 unsafe impl Send for MetalFunction {}
 unsafe impl Sync for MetalFunction {}
 
@@ -504,6 +515,8 @@ pub struct ComputePipelineState {
     ptr: *mut c_void,
 }
 
+// SAFETY: `id<MTLComputePipelineState>` is immutable after creation and
+// thread-safe per Apple documentation.
 unsafe impl Send for ComputePipelineState {}
 unsafe impl Sync for ComputePipelineState {}
 
@@ -535,6 +548,10 @@ pub struct MetalBuffer {
     ptr: *mut c_void,
 }
 
+// SAFETY: `id<MTLBuffer>` is a GPU resource handle.  Reference-count manipulation
+// is atomic (ObjC ARC); concurrent reads of immutable state (length, GPU address)
+// are safe.  CPU-side writes via `contents()` are the caller's responsibility to
+// synchronize — the same rule that applies to any `*mut` slice.
 unsafe impl Send for MetalBuffer {}
 unsafe impl Sync for MetalBuffer {}
 
@@ -618,6 +635,8 @@ pub struct MetalTexture {
     ptr: *mut c_void,
 }
 
+// SAFETY: `id<MTLTexture>` is a GPU resource handle.  ObjC ARC operations are
+// atomic; descriptor queries are read-only and thread-safe.
 unsafe impl Send for MetalTexture {}
 unsafe impl Sync for MetalTexture {}
 

@@ -20,6 +20,9 @@ macro_rules! opaque_symbol_handle {
             ptr: *mut c_void,
         }
 
+        // SAFETY: Metal ObjC objects use atomic reference counting and are safe
+        // to move across threads.  All `&self` methods on these types are either
+        // read-only or call ObjC methods documented as thread-safe by Apple.
         unsafe impl Send for $name {}
         unsafe impl Sync for $name {}
 
@@ -38,7 +41,14 @@ macro_rules! opaque_symbol_handle {
                 self.ptr
             }
 
-            #[allow(clippy::missing_safety_doc)]
+            /// Wrap a raw, +1-retained opaque handle returned by the Swift bridge.
+            ///
+            /// # Safety
+            ///
+            /// `ptr` must be a valid, non-null, +1-retained Objective-C object pointer
+            /// whose ownership is being transferred to this value.  Passing a
+            /// pointer that is already owned by another instance causes a
+            /// double-release.
             #[must_use]
             pub unsafe fn from_raw(ptr: *mut c_void) -> Self {
                 Self { ptr }
@@ -114,6 +124,17 @@ macro_rules! metal_string_constant {
     };
 }
 
+/// Consume a heap-allocated array of retained device pointers produced by
+/// `am_copy_all_devices`, wrapping each into a [`MetalDevice`] and freeing
+/// the array allocation.
+///
+/// # Safety
+///
+/// * `ptr` must be either null or a valid pointer to `count` consecutive
+///   `*mut c_void` values, each holding a +1-retained `id<MTLDevice>`.
+/// * The array itself must have been allocated with `malloc` (it is freed
+///   with `libc::free` here).
+/// * `count` must equal the number of elements allocated at `ptr`.
 unsafe fn take_device_array(ptr: *mut *mut c_void, count: usize) -> Vec<MetalDevice> {
     if ptr.is_null() || count == 0 {
         return Vec::new();
@@ -348,7 +369,15 @@ pub fn copy_all_devices() -> Vec<MetalDevice> {
     unsafe { take_device_array(ptr, count) }
 }
 
-#[allow(clippy::missing_safety_doc)]
+/// Enumerate all Metal devices while registering a hot-plug/removal observer.
+///
+/// # Safety
+///
+/// * `callback`, if `Some`, must be a valid function pointer that remains
+///   valid for the lifetime of the returned `MetalDeviceObserver`.
+/// * `user_data` is forwarded to `callback` without inspection; the caller
+///   is responsible for ensuring it remains valid and for any required
+///   synchronization.
 pub unsafe fn copy_all_devices_with_observer(
     callback: Option<MetalDeviceObserverCallback>,
     user_data: *mut c_void,
@@ -386,7 +415,14 @@ impl MetalIoCompressionContext {
         self.ptr
     }
 
-    #[allow(clippy::missing_safety_doc)]
+    /// Wrap a raw `MTLIOCompressionContext` pointer returned by the Swift bridge.
+    ///
+    /// # Safety
+    ///
+    /// `ptr` must be a valid, non-null `MTLIOCompressionContext *` whose
+    /// ownership is transferred to this value.  The context will be flushed
+    /// and destroyed when this value is dropped or `flush_and_destroy` is
+    /// called.  Do not use `ptr` after calling this function.
     #[must_use]
     pub unsafe fn from_raw(ptr: *mut c_void) -> Self {
         Self { ptr }

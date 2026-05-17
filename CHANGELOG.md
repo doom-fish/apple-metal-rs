@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.8.1 — Quality pass: unsafe/Send+Sync hygiene
+
+### Unsafe correctness
+
+- **`opaque_handle!` macro** (advanced.rs): added `unsafe impl Send` and
+  `unsafe impl Sync` for all 15 opaque-handle types it generates (`Heap`,
+  `Event`, `Fence`, `DynamicLibrary`, `BinaryArchive`, `ArgumentEncoder`,
+  `IndirectCommandBuffer`, `AccelerationStructure`,
+  `IntersectionFunctionTable`, `VisibleFunctionTable`,
+  `CounterSampleBuffer`, `LogState`, `ResidencySet`, `CaptureManager`,
+  `CaptureScope`).  These types wrap Metal ObjC protocol objects whose
+  reference counting is atomic and whose API is documented as thread-safe;
+  the missing impls were an inconsistency relative to the equivalent types
+  in `lib.rs` and `exhaustive.rs`.
+
+- **`unsafe impl Send/Sync` in lib.rs and render.rs**: added `// SAFETY:`
+  justification comments to all eight declarations explaining the Metal
+  thread-safety guarantee.
+
+- **`opaque_symbol_handle!` macro** (exhaustive.rs): added `// SAFETY:`
+  comment to its `unsafe impl Send/Sync` block.
+
+- **`take_device_array`** (exhaustive.rs): added `/// # Safety` doc
+  explaining pointer, length, and allocator preconditions.
+
+- **`copy_all_devices_with_observer`** (exhaustive.rs): replaced
+  `#[allow(clippy::missing_safety_doc)]` with a proper `/// # Safety`
+  section documenting callback and user-data lifetime requirements.
+
+- **`opaque_symbol_handle!::from_raw`** (exhaustive.rs): replaced
+  `#[allow(clippy::missing_safety_doc)]` with a `/// # Safety` doc
+  describing the +1-retain ownership transfer contract.
+
+- **`MetalIoCompressionContext::from_raw`** (exhaustive.rs): same — real
+  safety doc replacing the `#[allow]` attribute.
+
 ## 0.8.0 — Gate macOS 15+/26+ Swift APIs behind `@available` / `#available`
 
 ### Swift bridge compatibility

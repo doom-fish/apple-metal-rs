@@ -32,6 +32,8 @@ pub struct RenderPipelineState {
     ptr: *mut c_void,
 }
 
+// SAFETY: `id<MTLRenderPipelineState>` is immutable after creation and
+// thread-safe per Apple documentation.
 unsafe impl Send for RenderPipelineState {}
 unsafe impl Sync for RenderPipelineState {}
 

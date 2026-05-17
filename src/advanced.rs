@@ -15,9 +15,18 @@ macro_rules! opaque_handle {
             ptr: *mut c_void,
         }
 
+        // SAFETY: Metal ObjC objects use atomic reference counting and are safe
+        // to move across threads.  All `&self` methods on these types either read
+        // immutable state or call ObjC methods documented as thread-safe by Apple.
+        unsafe impl Send for $name {}
+        unsafe impl Sync for $name {}
+
         impl Drop for $name {
             fn drop(&mut self) {
                 if !self.ptr.is_null() {
+                    // SAFETY: `ptr` is a non-null, +1-retained ObjC handle
+                    // exclusively owned by this struct.  Setting it to null
+                    // immediately prevents any subsequent release.
                     unsafe { ffi::am_object_release(self.ptr) };
                     self.ptr = core::ptr::null_mut();
                 }
