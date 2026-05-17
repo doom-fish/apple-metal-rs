@@ -11,7 +11,7 @@ dependencies = [
 
 [[package]]
 name = "apple-metal"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "apple-cf",
  "libc",
