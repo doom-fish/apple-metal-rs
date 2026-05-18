@@ -4,6 +4,7 @@ use core::ffi::c_void;
 macro_rules! opaque_metalfx_handle {
     ($(#[$meta:meta])* pub struct $name:ident;) => {
         $(#[$meta])*
+/// Mirrors the `Metal` framework counterpart for this type.
         pub struct $name {
             ptr: *mut c_void,
         }
@@ -18,6 +19,7 @@ macro_rules! opaque_metalfx_handle {
         }
 
         impl $name {
+/// Mirrors the `Metal` framework constant `fn`.
             #[must_use]
             pub const fn as_ptr(&self) -> *mut c_void {
                 self.ptr
@@ -36,8 +38,11 @@ macro_rules! opaque_metalfx_handle {
 
 /// `MTLFXSpatialScalerColorProcessingMode` enum values.
 pub mod spatial_scaler_color_processing_mode {
+/// Mirrors the `Metal` framework constant `PERCEPTUAL`.
     pub const PERCEPTUAL: isize = 0;
+/// Mirrors the `Metal` framework constant `LINEAR`.
     pub const LINEAR: isize = 1;
+/// Mirrors the `Metal` framework constant `HDR`.
     pub const HDR: isize = 2;
 }
 
@@ -47,12 +52,19 @@ pub trait FrameInterpolatableScaler {}
 /// Safe Rust description of `MTLFXSpatialScalerDescriptor`.
 #[derive(Debug, Clone, Copy)]
 pub struct SpatialScalerDescriptor {
+/// Mirrors the `Metal` framework property for `color_texture_format`.
     pub color_texture_format: usize,
+/// Mirrors the `Metal` framework property for `output_texture_format`.
     pub output_texture_format: usize,
+/// Mirrors the `Metal` framework property for `input_width`.
     pub input_width: usize,
+/// Mirrors the `Metal` framework property for `input_height`.
     pub input_height: usize,
+/// Mirrors the `Metal` framework property for `output_width`.
     pub output_width: usize,
+/// Mirrors the `Metal` framework property for `output_height`.
     pub output_height: usize,
+/// Mirrors the `Metal` framework property for `color_processing_mode`.
     pub color_processing_mode: isize,
 }
 
@@ -89,20 +101,35 @@ impl SpatialScalerDescriptor {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Copy)]
 pub struct TemporalScalerDescriptor {
+/// Mirrors the `Metal` framework property for `color_texture_format`.
     pub color_texture_format: usize,
+/// Mirrors the `Metal` framework property for `depth_texture_format`.
     pub depth_texture_format: usize,
+/// Mirrors the `Metal` framework property for `motion_texture_format`.
     pub motion_texture_format: usize,
+/// Mirrors the `Metal` framework property for `output_texture_format`.
     pub output_texture_format: usize,
+/// Mirrors the `Metal` framework property for `input_width`.
     pub input_width: usize,
+/// Mirrors the `Metal` framework property for `input_height`.
     pub input_height: usize,
+/// Mirrors the `Metal` framework property for `output_width`.
     pub output_width: usize,
+/// Mirrors the `Metal` framework property for `output_height`.
     pub output_height: usize,
+/// Mirrors the `Metal` framework property for `auto_exposure_enabled`.
     pub auto_exposure_enabled: bool,
+/// Mirrors the `Metal` framework property for `requires_synchronous_initialization`.
     pub requires_synchronous_initialization: bool,
+/// Mirrors the `Metal` framework property for `input_content_properties_enabled`.
     pub input_content_properties_enabled: bool,
+/// Mirrors the `Metal` framework property for `input_content_min_scale`.
     pub input_content_min_scale: f32,
+/// Mirrors the `Metal` framework property for `input_content_max_scale`.
     pub input_content_max_scale: f32,
+/// Mirrors the `Metal` framework property for `reactive_mask_texture_enabled`.
     pub reactive_mask_texture_enabled: bool,
+/// Mirrors the `Metal` framework property for `reactive_mask_texture_format`.
     pub reactive_mask_texture_format: usize,
 }
 
@@ -158,26 +185,42 @@ impl TemporalScalerDescriptor {
 /// Per-frame bindings for `MTLFXTemporalScaler`.
 #[derive(Clone, Copy)]
 pub struct TemporalScalerTextures<'a> {
+/// Mirrors the `Metal` framework property for `color_texture`.
     pub color_texture: &'a MetalTexture,
+/// Mirrors the `Metal` framework property for `depth_texture`.
     pub depth_texture: &'a MetalTexture,
+/// Mirrors the `Metal` framework property for `motion_texture`.
     pub motion_texture: &'a MetalTexture,
+/// Mirrors the `Metal` framework property for `output_texture`.
     pub output_texture: &'a MetalTexture,
+/// Mirrors the `Metal` framework property for `exposure_texture`.
     pub exposure_texture: Option<&'a MetalTexture>,
+/// Mirrors the `Metal` framework property for `reactive_mask_texture`.
     pub reactive_mask_texture: Option<&'a MetalTexture>,
+/// Mirrors the `Metal` framework property for `fence`.
     pub fence: Option<&'a Fence>,
 }
 
 /// Per-frame mutable state for `MTLFXTemporalScaler`.
 #[derive(Debug, Clone, Copy)]
 pub struct TemporalScalerFrameState {
+/// Mirrors the `Metal` framework property for `input_content_width`.
     pub input_content_width: usize,
+/// Mirrors the `Metal` framework property for `input_content_height`.
     pub input_content_height: usize,
+/// Mirrors the `Metal` framework property for `pre_exposure`.
     pub pre_exposure: f32,
+/// Mirrors the `Metal` framework property for `jitter_offset_x`.
     pub jitter_offset_x: f32,
+/// Mirrors the `Metal` framework property for `jitter_offset_y`.
     pub jitter_offset_y: f32,
+/// Mirrors the `Metal` framework property for `motion_vector_scale_x`.
     pub motion_vector_scale_x: f32,
+/// Mirrors the `Metal` framework property for `motion_vector_scale_y`.
     pub motion_vector_scale_y: f32,
+/// Mirrors the `Metal` framework property for `reset`.
     pub reset: bool,
+/// Mirrors the `Metal` framework property for `depth_reversed`.
     pub depth_reversed: bool,
 }
 

@@ -5,6 +5,7 @@ use std::ffi::CString;
 macro_rules! opaque_state {
     ($(#[$meta:meta])* pub struct $name:ident;) => {
         $(#[$meta])*
+/// Mirrors the `Metal` framework counterpart for this type.
         pub struct $name {
             ptr: *mut c_void,
         }
@@ -19,6 +20,7 @@ macro_rules! opaque_state {
         }
 
         impl $name {
+/// Mirrors the `Metal` framework constant `fn`.
             #[must_use]
             pub const fn as_ptr(&self) -> *mut c_void {
                 self.ptr
@@ -38,73 +40,112 @@ macro_rules! opaque_state {
 
 /// `MTLCompareFunction` enum values.
 pub mod compare_function {
+/// Mirrors the `Metal` framework constant `NEVER`.
     pub const NEVER: usize = 0;
+/// Mirrors the `Metal` framework constant `LESS`.
     pub const LESS: usize = 1;
+/// Mirrors the `Metal` framework constant `EQUAL`.
     pub const EQUAL: usize = 2;
+/// Mirrors the `Metal` framework constant `LESS_EQUAL`.
     pub const LESS_EQUAL: usize = 3;
+/// Mirrors the `Metal` framework constant `GREATER`.
     pub const GREATER: usize = 4;
+/// Mirrors the `Metal` framework constant `NOT_EQUAL`.
     pub const NOT_EQUAL: usize = 5;
+/// Mirrors the `Metal` framework constant `GREATER_EQUAL`.
     pub const GREATER_EQUAL: usize = 6;
+/// Mirrors the `Metal` framework constant `ALWAYS`.
     pub const ALWAYS: usize = 7;
 }
 
 /// `MTLStencilOperation` enum values.
 pub mod stencil_operation {
+/// Mirrors the `Metal` framework constant `KEEP`.
     pub const KEEP: usize = 0;
+/// Mirrors the `Metal` framework constant `ZERO`.
     pub const ZERO: usize = 1;
+/// Mirrors the `Metal` framework constant `REPLACE`.
     pub const REPLACE: usize = 2;
+/// Mirrors the `Metal` framework constant `INCREMENT_CLAMP`.
     pub const INCREMENT_CLAMP: usize = 3;
+/// Mirrors the `Metal` framework constant `DECREMENT_CLAMP`.
     pub const DECREMENT_CLAMP: usize = 4;
+/// Mirrors the `Metal` framework constant `INVERT`.
     pub const INVERT: usize = 5;
+/// Mirrors the `Metal` framework constant `INCREMENT_WRAP`.
     pub const INCREMENT_WRAP: usize = 6;
+/// Mirrors the `Metal` framework constant `DECREMENT_WRAP`.
     pub const DECREMENT_WRAP: usize = 7;
 }
 
 /// `MTLSamplerMinMagFilter` enum values.
 pub mod sampler_min_mag_filter {
+/// Mirrors the `Metal` framework constant `NEAREST`.
     pub const NEAREST: usize = 0;
+/// Mirrors the `Metal` framework constant `LINEAR`.
     pub const LINEAR: usize = 1;
 }
 
 /// `MTLSamplerMipFilter` enum values.
 pub mod sampler_mip_filter {
+/// Mirrors the `Metal` framework constant `NOT_MIPMAPPED`.
     pub const NOT_MIPMAPPED: usize = 0;
+/// Mirrors the `Metal` framework constant `NEAREST`.
     pub const NEAREST: usize = 1;
+/// Mirrors the `Metal` framework constant `LINEAR`.
     pub const LINEAR: usize = 2;
 }
 
 /// `MTLSamplerAddressMode` enum values.
 pub mod sampler_address_mode {
+/// Mirrors the `Metal` framework constant `CLAMP_TO_EDGE`.
     pub const CLAMP_TO_EDGE: usize = 0;
+/// Mirrors the `Metal` framework constant `MIRROR_CLAMP_TO_EDGE`.
     pub const MIRROR_CLAMP_TO_EDGE: usize = 1;
+/// Mirrors the `Metal` framework constant `REPEAT`.
     pub const REPEAT: usize = 2;
+/// Mirrors the `Metal` framework constant `MIRROR_REPEAT`.
     pub const MIRROR_REPEAT: usize = 3;
+/// Mirrors the `Metal` framework constant `CLAMP_TO_ZERO`.
     pub const CLAMP_TO_ZERO: usize = 4;
+/// Mirrors the `Metal` framework constant `CLAMP_TO_BORDER_COLOR`.
     pub const CLAMP_TO_BORDER_COLOR: usize = 5;
 }
 
 /// `MTLSamplerBorderColor` enum values.
 pub mod sampler_border_color {
+/// Mirrors the `Metal` framework constant `TRANSPARENT_BLACK`.
     pub const TRANSPARENT_BLACK: usize = 0;
+/// Mirrors the `Metal` framework constant `OPAQUE_BLACK`.
     pub const OPAQUE_BLACK: usize = 1;
+/// Mirrors the `Metal` framework constant `OPAQUE_WHITE`.
     pub const OPAQUE_WHITE: usize = 2;
 }
 
 /// `MTLSamplerReductionMode` enum values.
 pub mod sampler_reduction_mode {
+/// Mirrors the `Metal` framework constant `WEIGHTED_AVERAGE`.
     pub const WEIGHTED_AVERAGE: usize = 0;
+/// Mirrors the `Metal` framework constant `MINIMUM`.
     pub const MINIMUM: usize = 1;
+/// Mirrors the `Metal` framework constant `MAXIMUM`.
     pub const MAXIMUM: usize = 2;
 }
 
 /// Rust description of `MTLStencilDescriptor`.
 #[derive(Debug, Clone, Copy)]
 pub struct StencilDescriptor {
+/// Mirrors the `Metal` framework property for `stencil_compare_function`.
     pub stencil_compare_function: usize,
+/// Mirrors the `Metal` framework property for `stencil_failure_operation`.
     pub stencil_failure_operation: usize,
+/// Mirrors the `Metal` framework property for `depth_failure_operation`.
     pub depth_failure_operation: usize,
+/// Mirrors the `Metal` framework property for `depth_stencil_pass_operation`.
     pub depth_stencil_pass_operation: usize,
+/// Mirrors the `Metal` framework property for `read_mask`.
     pub read_mask: u32,
+/// Mirrors the `Metal` framework property for `write_mask`.
     pub write_mask: u32,
 }
 
@@ -139,10 +180,15 @@ impl StencilDescriptor {
 /// Rust description of `MTLDepthStencilDescriptor`.
 #[derive(Debug, Clone, Default)]
 pub struct DepthStencilDescriptor {
+/// Mirrors the `Metal` framework property for `depth_compare_function`.
     pub depth_compare_function: usize,
+/// Mirrors the `Metal` framework property for `depth_write_enabled`.
     pub depth_write_enabled: bool,
+/// Mirrors the `Metal` framework property for `front_face_stencil`.
     pub front_face_stencil: Option<StencilDescriptor>,
+/// Mirrors the `Metal` framework property for `back_face_stencil`.
     pub back_face_stencil: Option<StencilDescriptor>,
+/// Mirrors the `Metal` framework property for `label`.
     pub label: Option<String>,
 }
 
@@ -163,22 +209,39 @@ impl DepthStencilDescriptor {
 /// Rust description of `MTLSamplerDescriptor`.
 #[derive(Debug, Clone)]
 pub struct SamplerDescriptor {
+/// Mirrors the `Metal` framework property for `min_filter`.
     pub min_filter: usize,
+/// Mirrors the `Metal` framework property for `mag_filter`.
     pub mag_filter: usize,
+/// Mirrors the `Metal` framework property for `mip_filter`.
     pub mip_filter: usize,
+/// Mirrors the `Metal` framework property for `max_anisotropy`.
     pub max_anisotropy: usize,
+/// Mirrors the `Metal` framework property for `s_address_mode`.
     pub s_address_mode: usize,
+/// Mirrors the `Metal` framework property for `t_address_mode`.
     pub t_address_mode: usize,
+/// Mirrors the `Metal` framework property for `r_address_mode`.
     pub r_address_mode: usize,
+/// Mirrors the `Metal` framework property for `border_color`.
     pub border_color: usize,
+/// Mirrors the `Metal` framework property for `reduction_mode`.
     pub reduction_mode: usize,
+/// Mirrors the `Metal` framework property for `normalized_coordinates`.
     pub normalized_coordinates: bool,
+/// Mirrors the `Metal` framework property for `lod_min_clamp`.
     pub lod_min_clamp: f32,
+/// Mirrors the `Metal` framework property for `lod_max_clamp`.
     pub lod_max_clamp: f32,
+/// Mirrors the `Metal` framework property for `lod_average`.
     pub lod_average: bool,
+/// Mirrors the `Metal` framework property for `lod_bias`.
     pub lod_bias: f32,
+/// Mirrors the `Metal` framework property for `compare_function`.
     pub compare_function: usize,
+/// Mirrors the `Metal` framework property for `support_argument_buffers`.
     pub support_argument_buffers: bool,
+/// Mirrors the `Metal` framework property for `label`.
     pub label: Option<String>,
 }
 

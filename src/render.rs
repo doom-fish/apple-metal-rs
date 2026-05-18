@@ -5,25 +5,37 @@ use core::ffi::c_void;
 
 /// `MTLPrimitiveType` enum values.
 pub mod primitive_type {
+/// Mirrors the `Metal` framework constant `POINT`.
     pub const POINT: usize = 0;
+/// Mirrors the `Metal` framework constant `LINE`.
     pub const LINE: usize = 1;
+/// Mirrors the `Metal` framework constant `LINE_STRIP`.
     pub const LINE_STRIP: usize = 2;
+/// Mirrors the `Metal` framework constant `TRIANGLE`.
     pub const TRIANGLE: usize = 3;
+/// Mirrors the `Metal` framework constant `TRIANGLE_STRIP`.
     pub const TRIANGLE_STRIP: usize = 4;
 }
 
 /// `MTLLoadAction` enum values.
 pub mod load_action {
+/// Mirrors the `Metal` framework constant `DONT_CARE`.
     pub const DONT_CARE: usize = 0;
+/// Mirrors the `Metal` framework constant `LOAD`.
     pub const LOAD: usize = 1;
+/// Mirrors the `Metal` framework constant `CLEAR`.
     pub const CLEAR: usize = 2;
 }
 
 /// `MTLStoreAction` enum values.
 pub mod store_action {
+/// Mirrors the `Metal` framework constant `DONT_CARE`.
     pub const DONT_CARE: usize = 0;
+/// Mirrors the `Metal` framework constant `STORE`.
     pub const STORE: usize = 1;
+/// Mirrors the `Metal` framework constant `MULTISAMPLE_RESOLVE`.
     pub const MULTISAMPLE_RESOLVE: usize = 2;
+/// Mirrors the `Metal` framework constant `STORE_AND_MULTISAMPLE_RESOLVE`.
     pub const STORE_AND_MULTISAMPLE_RESOLVE: usize = 3;
 }
 
@@ -47,6 +59,7 @@ impl Drop for RenderPipelineState {
 }
 
 impl RenderPipelineState {
+/// Mirrors the `Metal` framework constant `fn`.
     #[must_use]
     pub const fn as_ptr(&self) -> *mut c_void {
         self.ptr

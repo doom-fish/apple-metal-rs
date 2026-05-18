@@ -9,6 +9,7 @@ use core::ops::Range;
 macro_rules! opaque_encoder {
     ($(#[$meta:meta])* pub struct $name:ident;) => {
         $(#[$meta])*
+/// Mirrors the `Metal` framework counterpart for this type.
         pub struct $name {
             ptr: *mut c_void,
         }
@@ -23,6 +24,7 @@ macro_rules! opaque_encoder {
         }
 
         impl $name {
+/// Mirrors the `Metal` framework constant `fn`.
             #[must_use]
             pub const fn as_ptr(&self) -> *mut c_void {
                 self.ptr
@@ -41,11 +43,17 @@ macro_rules! opaque_encoder {
 
 /// `MTLCommandBufferStatus` enum values.
 pub mod command_buffer_status {
+/// Mirrors the `Metal` framework constant `NOT_ENQUEUED`.
     pub const NOT_ENQUEUED: usize = 0;
+/// Mirrors the `Metal` framework constant `ENQUEUED`.
     pub const ENQUEUED: usize = 1;
+/// Mirrors the `Metal` framework constant `COMMITTED`.
     pub const COMMITTED: usize = 2;
+/// Mirrors the `Metal` framework constant `SCHEDULED`.
     pub const SCHEDULED: usize = 3;
+/// Mirrors the `Metal` framework constant `COMPLETED`.
     pub const COMPLETED: usize = 4;
+/// Mirrors the `Metal` framework constant `ERROR`.
     pub const ERROR: usize = 5;
 }
 

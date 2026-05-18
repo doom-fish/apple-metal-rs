@@ -6,28 +6,43 @@ const DATA_TYPE_POINTER: usize = 60;
 
 /// `MTLArgumentBuffersTier` enum values.
 pub mod argument_buffers_tier {
+/// Mirrors the `Metal` framework constant `TIER1`.
     pub const TIER1: usize = 0;
+/// Mirrors the `Metal` framework constant `TIER2`.
     pub const TIER2: usize = 1;
 }
 
 /// `MTLBindingAccess` enum values.
 pub mod binding_access {
+/// Mirrors the `Metal` framework constant `READ_ONLY`.
     pub const READ_ONLY: usize = 0;
+/// Mirrors the `Metal` framework constant `READ_WRITE`.
     pub const READ_WRITE: usize = 1;
+/// Mirrors the `Metal` framework constant `WRITE_ONLY`.
     pub const WRITE_ONLY: usize = 2;
 }
 
 /// `MTLTextureType` enum values.
 pub mod texture_type {
+/// Mirrors the `Metal` framework constant `TYPE_1D`.
     pub const TYPE_1D: usize = 0;
+/// Mirrors the `Metal` framework constant `TYPE_1D_ARRAY`.
     pub const TYPE_1D_ARRAY: usize = 1;
+/// Mirrors the `Metal` framework constant `TYPE_2D`.
     pub const TYPE_2D: usize = 2;
+/// Mirrors the `Metal` framework constant `TYPE_2D_ARRAY`.
     pub const TYPE_2D_ARRAY: usize = 3;
+/// Mirrors the `Metal` framework constant `TYPE_2D_MULTISAMPLE`.
     pub const TYPE_2D_MULTISAMPLE: usize = 4;
+/// Mirrors the `Metal` framework constant `CUBE`.
     pub const CUBE: usize = 5;
+/// Mirrors the `Metal` framework constant `CUBE_ARRAY`.
     pub const CUBE_ARRAY: usize = 6;
+/// Mirrors the `Metal` framework constant `TYPE_3D`.
     pub const TYPE_3D: usize = 7;
+/// Mirrors the `Metal` framework constant `TYPE_2D_MULTISAMPLE_ARRAY`.
     pub const TYPE_2D_MULTISAMPLE_ARRAY: usize = 8;
+/// Mirrors the `Metal` framework constant `TEXTURE_BUFFER`.
     pub const TEXTURE_BUFFER: usize = 9;
 }
 
