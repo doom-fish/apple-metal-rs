@@ -1,6 +1,6 @@
 [package]
 name = "apple-metal"
-version = "0.8.1"
+version = "0.8.2"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/doom-fish/apple-metal-rs"
@@ -45,7 +45,7 @@ iosurface = ["dep:apple-cf"]
 
 [dependencies]
 libc = "0.2"
-apple-cf = { path = "../apple-cf-rs", version = ">=0.6.0, <0.8", default-features = false, features = ["iosurface"], optional = true }
+apple-cf = { path = "../apple-cf-rs", version = ">=0.6.0, <0.9", default-features = false, features = ["iosurface"], optional = true }
 
 [dev-dependencies]
 
