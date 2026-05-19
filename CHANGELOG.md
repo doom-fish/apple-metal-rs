@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.8.5] - 2026-05-19
+
+- Added an owned `MetalTensor` wrapper for the `MTLTensor` protocol so sibling crates can pass tensor handles across FFI without falling back to raw pointers.
+
 ## [0.8.4] - 2026-05-18
 
 - Add one-line docs across the public safe and FFI surfaces, raising public-item rustdoc coverage to 100.0%.

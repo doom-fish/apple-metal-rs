@@ -1,7 +1,7 @@
 # apple-metal-rs coverage audit (vs MacOSX26.2.sdk)
 
-SDK_PUBLIC_SYMBOLS: 430
-VERIFIED: 430
+SDK_PUBLIC_SYMBOLS: 431
+VERIFIED: 431
 GAPS: 0
 EXEMPT: 0
 COVERAGE_PCT: 100.00
@@ -397,6 +397,7 @@ Scope: top-level public symbols from `Metal.framework` + `MetalFX.framework` hea
 | `MTLStoreActionOptions` | enum | `MTLRenderPass.h` | `MetalStoreActionOptions` |
 | `MTLStructMember` | interface | `MTLArgument.h` | `MetalStructMember::new` |
 | `MTLStructType` | interface | `MTLArgument.h` | `MetalStructType::new` |
+| `MTLTensor` | protocol | `MTLTensor.h` | `MetalTensor` |
 | `MTLTensorBinding` | protocol | `MTLArgument.h` | `MetalTensorBinding` |
 | `MTLTensorDataType` | enum | `MTLTensor.h` | `MetalTensorDataType` |
 | `MTLTensorDescriptor` | interface | `MTLTensor.h` | `MetalTensorDescriptor::new` |
