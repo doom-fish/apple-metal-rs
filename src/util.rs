@@ -18,5 +18,6 @@ pub unsafe fn take_optional_string(ptr: *mut core::ffi::c_char) -> Option<String
 
 /// Calls the `Metal` framework counterpart for `take_string`.
 pub unsafe fn take_string(ptr: *mut core::ffi::c_char) -> String {
-    take_optional_string(ptr).unwrap_or_default()
+    doom_fish_utils::ffi_string::take_owned_cstring_c(ptr, |p| libc::free(p.cast()))
+        .unwrap_or_default()
 }

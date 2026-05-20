@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.8.7] - 2026-05-20
+
+- Migrated local `take_string` body to call `doom_fish_utils::ffi_string::take_owned_cstring_c`. Centralises the duplicated FFI take-string pattern fleet-wide. No public API change.
+
 ## [0.8.6] - 2026-05-20
 
 - Added pure-CPU doctests across descriptor and packed-vector types (`MetalCoordinate2D`, `MetalGpuAddress`, `MetalOrigin`, `MetalRegion`, `MetalResourceId`, `MetalSize`, and the `MetalPackedFloat*` family) so the public API is discoverable without a GPU.
