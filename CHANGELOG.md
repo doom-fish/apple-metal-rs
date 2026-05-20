@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.8.6] - 2026-05-20
+
+- Added pure-CPU doctests across descriptor and packed-vector types (`MetalCoordinate2D`, `MetalGpuAddress`, `MetalOrigin`, `MetalRegion`, `MetalResourceId`, `MetalSize`, and the `MetalPackedFloat*` family) so the public API is discoverable without a GPU.
+
 ## [0.8.5] - 2026-05-19
 
 - Added an owned `MetalTensor` wrapper for the `MTLTensor` protocol so sibling crates can pass tensor handles across FFI without falling back to raw pointers.

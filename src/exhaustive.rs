@@ -201,6 +201,16 @@ pub type MetalNewRenderPipelineStateWithReflectionCompletionHandler = Box<
 pub type MetalTimestamp = u64;
 
 /// Mirrors the `Metal` framework counterpart for `MetalCoordinate2D`.
+///
+/// # Examples
+///
+/// ```
+/// use apple_metal::MetalCoordinate2D;
+///
+/// let texel = MetalCoordinate2D::new(0.25, 0.75);
+/// assert_eq!(texel.x, 0.25);
+/// assert_eq!(texel.y, 0.75);
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct MetalCoordinate2D {
     /// Mirrors the `Metal` framework property for `x`.
@@ -218,6 +228,16 @@ impl MetalCoordinate2D {
 }
 
 /// Mirrors the `Metal` framework counterpart for `MetalSize`.
+///
+/// # Examples
+///
+/// ```
+/// use apple_metal::MetalSize;
+///
+/// let threads = MetalSize::new(8, 4, 1);
+/// assert_eq!(threads.width * threads.height, 32);
+/// assert_eq!(threads.depth, 1);
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct MetalSize {
     /// Mirrors the `Metal` framework property for `width`.
@@ -242,10 +262,28 @@ impl MetalSize {
 
 raw_value_type!(
     /// Mirrors the `Metal` framework counterpart for `MetalGpuAddress`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use apple_metal::MetalGpuAddress;
+    ///
+    /// let address = MetalGpuAddress::from_raw(0x1_0000);
+    /// assert_eq!(address.as_raw(), 0x1_0000);
+    /// ```
     pub struct MetalGpuAddress(u64);
 );
 
 /// Mirrors the `Metal` framework counterpart for `MetalOrigin`.
+///
+/// # Examples
+///
+/// ```
+/// use apple_metal::MetalOrigin;
+///
+/// let origin = MetalOrigin::new(4, 2, 1);
+/// assert_eq!((origin.x, origin.y, origin.z), (4, 2, 1));
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct MetalOrigin {
     /// Mirrors the `Metal` framework property for `x`.
@@ -265,6 +303,16 @@ impl MetalOrigin {
 }
 
 /// Mirrors the `Metal` framework counterpart for `MetalRegion`.
+///
+/// # Examples
+///
+/// ```
+/// use apple_metal::MetalRegion;
+///
+/// let region = MetalRegion::new_2d(4, 8, 16, 32);
+/// assert_eq!(region.origin.x, 4);
+/// assert_eq!(region.size.height, 32);
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct MetalRegion {
     /// Mirrors the `Metal` framework property for `origin`.
@@ -316,6 +364,15 @@ impl MetalRegion {
 }
 
 /// Mirrors the `Metal` framework counterpart for `MetalResourceId`.
+///
+/// # Examples
+///
+/// ```
+/// use apple_metal::MetalResourceId;
+///
+/// let resource_id = MetalResourceId::new(42);
+/// assert_eq!(resource_id.value, 42);
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct MetalResourceId {
@@ -332,6 +389,15 @@ impl MetalResourceId {
 }
 
 /// Mirrors the `Metal` framework counterpart for `MetalPackedFloat3`.
+///
+/// # Examples
+///
+/// ```
+/// use apple_metal::MetalPackedFloat3;
+///
+/// let normal = MetalPackedFloat3::new(0.0, 0.0, 1.0);
+/// assert_eq!(normal.z, 1.0);
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct MetalPackedFloat3 {
     /// Mirrors the `Metal` framework property for `x`.
@@ -351,6 +417,15 @@ impl MetalPackedFloat3 {
 }
 
 /// Mirrors the `Metal` framework counterpart for `MetalPackedFloatQuaternion`.
+///
+/// # Examples
+///
+/// ```
+/// use apple_metal::MetalPackedFloatQuaternion;
+///
+/// let rotation = MetalPackedFloatQuaternion::default();
+/// assert_eq!(rotation, MetalPackedFloatQuaternion::new(0.0, 0.0, 0.0, 1.0));
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct MetalPackedFloatQuaternion {
     /// Mirrors the `Metal` framework property for `x`.
@@ -383,6 +458,20 @@ impl MetalPackedFloatQuaternion {
 }
 
 /// Mirrors the `Metal` framework counterpart for `MetalPackedFloat4x3`.
+///
+/// # Examples
+///
+/// ```
+/// use apple_metal::{MetalPackedFloat3, MetalPackedFloat4x3};
+///
+/// let basis = MetalPackedFloat4x3::new(
+///     MetalPackedFloat3::new(1.0, 0.0, 0.0),
+///     MetalPackedFloat3::new(0.0, 1.0, 0.0),
+///     MetalPackedFloat3::new(0.0, 0.0, 1.0),
+///     MetalPackedFloat3::new(4.0, 5.0, 6.0),
+/// );
+/// assert_eq!(basis.columns[3].y, 5.0);
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct MetalPackedFloat4x3 {
     /// Mirrors the `Metal` framework property for `columns`.
