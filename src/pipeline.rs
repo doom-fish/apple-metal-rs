@@ -5,94 +5,94 @@ use crate::{
 
 /// `MTLBlendFactor` enum values.
 pub mod blend_factor {
-/// Mirrors the `Metal` framework constant `ZERO`.
+    /// Mirrors the `Metal` framework constant `ZERO`.
     pub const ZERO: usize = 0;
-/// Mirrors the `Metal` framework constant `ONE`.
+    /// Mirrors the `Metal` framework constant `ONE`.
     pub const ONE: usize = 1;
-/// Mirrors the `Metal` framework constant `SOURCE_COLOR`.
+    /// Mirrors the `Metal` framework constant `SOURCE_COLOR`.
     pub const SOURCE_COLOR: usize = 2;
-/// Mirrors the `Metal` framework constant `ONE_MINUS_SOURCE_COLOR`.
+    /// Mirrors the `Metal` framework constant `ONE_MINUS_SOURCE_COLOR`.
     pub const ONE_MINUS_SOURCE_COLOR: usize = 3;
-/// Mirrors the `Metal` framework constant `SOURCE_ALPHA`.
+    /// Mirrors the `Metal` framework constant `SOURCE_ALPHA`.
     pub const SOURCE_ALPHA: usize = 4;
-/// Mirrors the `Metal` framework constant `ONE_MINUS_SOURCE_ALPHA`.
+    /// Mirrors the `Metal` framework constant `ONE_MINUS_SOURCE_ALPHA`.
     pub const ONE_MINUS_SOURCE_ALPHA: usize = 5;
-/// Mirrors the `Metal` framework constant `DESTINATION_COLOR`.
+    /// Mirrors the `Metal` framework constant `DESTINATION_COLOR`.
     pub const DESTINATION_COLOR: usize = 6;
-/// Mirrors the `Metal` framework constant `ONE_MINUS_DESTINATION_COLOR`.
+    /// Mirrors the `Metal` framework constant `ONE_MINUS_DESTINATION_COLOR`.
     pub const ONE_MINUS_DESTINATION_COLOR: usize = 7;
-/// Mirrors the `Metal` framework constant `DESTINATION_ALPHA`.
+    /// Mirrors the `Metal` framework constant `DESTINATION_ALPHA`.
     pub const DESTINATION_ALPHA: usize = 8;
-/// Mirrors the `Metal` framework constant `ONE_MINUS_DESTINATION_ALPHA`.
+    /// Mirrors the `Metal` framework constant `ONE_MINUS_DESTINATION_ALPHA`.
     pub const ONE_MINUS_DESTINATION_ALPHA: usize = 9;
-/// Mirrors the `Metal` framework constant `SOURCE_ALPHA_SATURATED`.
+    /// Mirrors the `Metal` framework constant `SOURCE_ALPHA_SATURATED`.
     pub const SOURCE_ALPHA_SATURATED: usize = 10;
-/// Mirrors the `Metal` framework constant `BLEND_COLOR`.
+    /// Mirrors the `Metal` framework constant `BLEND_COLOR`.
     pub const BLEND_COLOR: usize = 11;
-/// Mirrors the `Metal` framework constant `ONE_MINUS_BLEND_COLOR`.
+    /// Mirrors the `Metal` framework constant `ONE_MINUS_BLEND_COLOR`.
     pub const ONE_MINUS_BLEND_COLOR: usize = 12;
-/// Mirrors the `Metal` framework constant `BLEND_ALPHA`.
+    /// Mirrors the `Metal` framework constant `BLEND_ALPHA`.
     pub const BLEND_ALPHA: usize = 13;
-/// Mirrors the `Metal` framework constant `ONE_MINUS_BLEND_ALPHA`.
+    /// Mirrors the `Metal` framework constant `ONE_MINUS_BLEND_ALPHA`.
     pub const ONE_MINUS_BLEND_ALPHA: usize = 14;
-/// Mirrors the `Metal` framework constant `SOURCE1_COLOR`.
+    /// Mirrors the `Metal` framework constant `SOURCE1_COLOR`.
     pub const SOURCE1_COLOR: usize = 15;
-/// Mirrors the `Metal` framework constant `ONE_MINUS_SOURCE1_COLOR`.
+    /// Mirrors the `Metal` framework constant `ONE_MINUS_SOURCE1_COLOR`.
     pub const ONE_MINUS_SOURCE1_COLOR: usize = 16;
-/// Mirrors the `Metal` framework constant `SOURCE1_ALPHA`.
+    /// Mirrors the `Metal` framework constant `SOURCE1_ALPHA`.
     pub const SOURCE1_ALPHA: usize = 17;
-/// Mirrors the `Metal` framework constant `ONE_MINUS_SOURCE1_ALPHA`.
+    /// Mirrors the `Metal` framework constant `ONE_MINUS_SOURCE1_ALPHA`.
     pub const ONE_MINUS_SOURCE1_ALPHA: usize = 18;
-/// Mirrors the `Metal` framework constant `UNSPECIALIZED`.
+    /// Mirrors the `Metal` framework constant `UNSPECIALIZED`.
     pub const UNSPECIALIZED: usize = 19;
 }
 
 /// `MTLBlendOperation` enum values.
 pub mod blend_operation {
-/// Mirrors the `Metal` framework constant `ADD`.
+    /// Mirrors the `Metal` framework constant `ADD`.
     pub const ADD: usize = 0;
-/// Mirrors the `Metal` framework constant `SUBTRACT`.
+    /// Mirrors the `Metal` framework constant `SUBTRACT`.
     pub const SUBTRACT: usize = 1;
-/// Mirrors the `Metal` framework constant `REVERSE_SUBTRACT`.
+    /// Mirrors the `Metal` framework constant `REVERSE_SUBTRACT`.
     pub const REVERSE_SUBTRACT: usize = 2;
-/// Mirrors the `Metal` framework constant `MIN`.
+    /// Mirrors the `Metal` framework constant `MIN`.
     pub const MIN: usize = 3;
-/// Mirrors the `Metal` framework constant `MAX`.
+    /// Mirrors the `Metal` framework constant `MAX`.
     pub const MAX: usize = 4;
-/// Mirrors the `Metal` framework constant `UNSPECIALIZED`.
+    /// Mirrors the `Metal` framework constant `UNSPECIALIZED`.
     pub const UNSPECIALIZED: usize = 5;
 }
 
 /// `MTLColorWriteMask` bitmask values.
 pub mod color_write_mask {
-/// Mirrors the `Metal` framework constant `NONE`.
+    /// Mirrors the `Metal` framework constant `NONE`.
     pub const NONE: usize = 0;
-/// Mirrors the `Metal` framework constant `RED`.
+    /// Mirrors the `Metal` framework constant `RED`.
     pub const RED: usize = 0x1 << 3;
-/// Mirrors the `Metal` framework constant `GREEN`.
+    /// Mirrors the `Metal` framework constant `GREEN`.
     pub const GREEN: usize = 0x1 << 2;
-/// Mirrors the `Metal` framework constant `BLUE`.
+    /// Mirrors the `Metal` framework constant `BLUE`.
     pub const BLUE: usize = 0x1 << 1;
-/// Mirrors the `Metal` framework constant `ALPHA`.
+    /// Mirrors the `Metal` framework constant `ALPHA`.
     pub const ALPHA: usize = 0x1 << 0;
-/// Mirrors the `Metal` framework constant `ALL`.
+    /// Mirrors the `Metal` framework constant `ALL`.
     pub const ALL: usize = 0xf;
-/// Mirrors the `Metal` framework constant `UNSPECIALIZED`.
+    /// Mirrors the `Metal` framework constant `UNSPECIALIZED`.
     pub const UNSPECIALIZED: usize = 0x10;
 }
 
 /// Safe Rust description of `MTLComputePipelineDescriptor`.
 #[derive(Clone, Copy)]
 pub struct ComputePipelineDescriptor<'a> {
-/// Mirrors the `Metal` framework property for `label`.
+    /// Mirrors the `Metal` framework property for `label`.
     pub label: Option<&'a str>,
-/// Mirrors the `Metal` framework property for `compute_function`.
+    /// Mirrors the `Metal` framework property for `compute_function`.
     pub compute_function: &'a MetalFunction,
-/// Mirrors the `Metal` framework property for `thread_group_size_is_multiple_of_thread_execution_width`.
+    /// Mirrors the `Metal` framework property for `thread_group_size_is_multiple_of_thread_execution_width`.
     pub thread_group_size_is_multiple_of_thread_execution_width: bool,
-/// Mirrors the `Metal` framework property for `max_total_threads_per_threadgroup`.
+    /// Mirrors the `Metal` framework property for `max_total_threads_per_threadgroup`.
     pub max_total_threads_per_threadgroup: usize,
-/// Mirrors the `Metal` framework property for `support_indirect_command_buffers`.
+    /// Mirrors the `Metal` framework property for `support_indirect_command_buffers`.
     pub support_indirect_command_buffers: bool,
 }
 
@@ -113,23 +113,23 @@ impl<'a> ComputePipelineDescriptor<'a> {
 /// Safe Rust description of `MTLRenderPipelineColorAttachmentDescriptor`.
 #[derive(Debug, Clone, Copy)]
 pub struct RenderPipelineColorAttachmentDescriptor {
-/// Mirrors the `Metal` framework property for `pixel_format`.
+    /// Mirrors the `Metal` framework property for `pixel_format`.
     pub pixel_format: usize,
-/// Mirrors the `Metal` framework property for `blending_enabled`.
+    /// Mirrors the `Metal` framework property for `blending_enabled`.
     pub blending_enabled: bool,
-/// Mirrors the `Metal` framework property for `source_rgb_blend_factor`.
+    /// Mirrors the `Metal` framework property for `source_rgb_blend_factor`.
     pub source_rgb_blend_factor: usize,
-/// Mirrors the `Metal` framework property for `destination_rgb_blend_factor`.
+    /// Mirrors the `Metal` framework property for `destination_rgb_blend_factor`.
     pub destination_rgb_blend_factor: usize,
-/// Mirrors the `Metal` framework property for `rgb_blend_operation`.
+    /// Mirrors the `Metal` framework property for `rgb_blend_operation`.
     pub rgb_blend_operation: usize,
-/// Mirrors the `Metal` framework property for `source_alpha_blend_factor`.
+    /// Mirrors the `Metal` framework property for `source_alpha_blend_factor`.
     pub source_alpha_blend_factor: usize,
-/// Mirrors the `Metal` framework property for `destination_alpha_blend_factor`.
+    /// Mirrors the `Metal` framework property for `destination_alpha_blend_factor`.
     pub destination_alpha_blend_factor: usize,
-/// Mirrors the `Metal` framework property for `alpha_blend_operation`.
+    /// Mirrors the `Metal` framework property for `alpha_blend_operation`.
     pub alpha_blend_operation: usize,
-/// Mirrors the `Metal` framework property for `write_mask`.
+    /// Mirrors the `Metal` framework property for `write_mask`.
     pub write_mask: usize,
 }
 
@@ -185,27 +185,27 @@ impl RenderPipelineColorAttachmentDescriptor {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Copy)]
 pub struct RenderPipelineDescriptor<'a> {
-/// Mirrors the `Metal` framework property for `label`.
+    /// Mirrors the `Metal` framework property for `label`.
     pub label: Option<&'a str>,
-/// Mirrors the `Metal` framework property for `vertex_function`.
+    /// Mirrors the `Metal` framework property for `vertex_function`.
     pub vertex_function: &'a MetalFunction,
-/// Mirrors the `Metal` framework property for `fragment_function`.
+    /// Mirrors the `Metal` framework property for `fragment_function`.
     pub fragment_function: Option<&'a MetalFunction>,
-/// Mirrors the `Metal` framework property for `color_attachments`.
+    /// Mirrors the `Metal` framework property for `color_attachments`.
     pub color_attachments: &'a [RenderPipelineColorAttachmentDescriptor],
-/// Mirrors the `Metal` framework property for `raster_sample_count`.
+    /// Mirrors the `Metal` framework property for `raster_sample_count`.
     pub raster_sample_count: usize,
-/// Mirrors the `Metal` framework property for `alpha_to_coverage_enabled`.
+    /// Mirrors the `Metal` framework property for `alpha_to_coverage_enabled`.
     pub alpha_to_coverage_enabled: bool,
-/// Mirrors the `Metal` framework property for `alpha_to_one_enabled`.
+    /// Mirrors the `Metal` framework property for `alpha_to_one_enabled`.
     pub alpha_to_one_enabled: bool,
-/// Mirrors the `Metal` framework property for `rasterization_enabled`.
+    /// Mirrors the `Metal` framework property for `rasterization_enabled`.
     pub rasterization_enabled: bool,
-/// Mirrors the `Metal` framework property for `support_indirect_command_buffers`.
+    /// Mirrors the `Metal` framework property for `support_indirect_command_buffers`.
     pub support_indirect_command_buffers: bool,
-/// Mirrors the `Metal` framework property for `depth_attachment_pixel_format`.
+    /// Mirrors the `Metal` framework property for `depth_attachment_pixel_format`.
     pub depth_attachment_pixel_format: usize,
-/// Mirrors the `Metal` framework property for `stencil_attachment_pixel_format`.
+    /// Mirrors the `Metal` framework property for `stencil_attachment_pixel_format`.
     pub stencil_attachment_pixel_format: usize,
 }
 
@@ -236,7 +236,7 @@ impl<'a> RenderPipelineDescriptor<'a> {
 /// Safe Rust description of `MTLTileRenderPipelineColorAttachmentDescriptor`.
 #[derive(Debug, Clone, Copy)]
 pub struct TileRenderPipelineColorAttachmentDescriptor {
-/// Mirrors the `Metal` framework property for `pixel_format`.
+    /// Mirrors the `Metal` framework property for `pixel_format`.
     pub pixel_format: usize,
 }
 
@@ -251,17 +251,17 @@ impl TileRenderPipelineColorAttachmentDescriptor {
 /// Safe Rust description of `MTLTileRenderPipelineDescriptor`.
 #[derive(Clone, Copy)]
 pub struct TileRenderPipelineDescriptor<'a> {
-/// Mirrors the `Metal` framework property for `label`.
+    /// Mirrors the `Metal` framework property for `label`.
     pub label: Option<&'a str>,
-/// Mirrors the `Metal` framework property for `tile_function`.
+    /// Mirrors the `Metal` framework property for `tile_function`.
     pub tile_function: &'a MetalFunction,
-/// Mirrors the `Metal` framework property for `color_attachments`.
+    /// Mirrors the `Metal` framework property for `color_attachments`.
     pub color_attachments: &'a [TileRenderPipelineColorAttachmentDescriptor],
-/// Mirrors the `Metal` framework property for `raster_sample_count`.
+    /// Mirrors the `Metal` framework property for `raster_sample_count`.
     pub raster_sample_count: usize,
-/// Mirrors the `Metal` framework property for `threadgroup_size_matches_tile_size`.
+    /// Mirrors the `Metal` framework property for `threadgroup_size_matches_tile_size`.
     pub threadgroup_size_matches_tile_size: bool,
-/// Mirrors the `Metal` framework property for `max_total_threads_per_threadgroup`.
+    /// Mirrors the `Metal` framework property for `max_total_threads_per_threadgroup`.
     pub max_total_threads_per_threadgroup: usize,
 }
 

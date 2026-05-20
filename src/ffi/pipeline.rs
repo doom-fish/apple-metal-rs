@@ -1,7 +1,7 @@
 use core::ffi::c_void;
 
 extern "C" {
-/// Calls the `Metal` framework counterpart for `am_device_new_compute_pipeline_state_with_descriptor`.
+    /// Calls the `Metal` framework counterpart for `am_device_new_compute_pipeline_state_with_descriptor`.
     pub fn am_device_new_compute_pipeline_state_with_descriptor(
         device_handle: *mut c_void,
         function_handle: *mut c_void,
@@ -12,7 +12,7 @@ extern "C" {
         out_error_message: *mut *mut core::ffi::c_char,
     ) -> *mut c_void;
 
-/// Calls the `Metal` framework counterpart for `am_device_new_render_pipeline_state_with_descriptor`.
+    /// Calls the `Metal` framework counterpart for `am_device_new_render_pipeline_state_with_descriptor`.
     pub fn am_device_new_render_pipeline_state_with_descriptor(
         device_handle: *mut c_void,
         vertex_handle: *mut c_void,
@@ -30,7 +30,7 @@ extern "C" {
         out_error_message: *mut *mut core::ffi::c_char,
     ) -> *mut c_void;
 
-/// Calls the `Metal` framework counterpart for `am_device_new_tile_render_pipeline_state`.
+    /// Calls the `Metal` framework counterpart for `am_device_new_tile_render_pipeline_state`.
     pub fn am_device_new_tile_render_pipeline_state(
         device_handle: *mut c_void,
         tile_function_handle: *mut c_void,

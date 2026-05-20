@@ -54,75 +54,75 @@ macro_rules! opaque_handle {
 
 /// `MTLIndirectCommandType` bit values.
 pub mod indirect_command_type {
-/// Mirrors the `Metal` framework constant `DRAW`.
+    /// Mirrors the `Metal` framework constant `DRAW`.
     pub const DRAW: usize = 1 << 0;
-/// Mirrors the `Metal` framework constant `DRAW_INDEXED`.
+    /// Mirrors the `Metal` framework constant `DRAW_INDEXED`.
     pub const DRAW_INDEXED: usize = 1 << 1;
-/// Mirrors the `Metal` framework constant `CONCURRENT_DISPATCH`.
+    /// Mirrors the `Metal` framework constant `CONCURRENT_DISPATCH`.
     pub const CONCURRENT_DISPATCH: usize = 1 << 5;
-/// Mirrors the `Metal` framework constant `CONCURRENT_DISPATCH_THREADS`.
+    /// Mirrors the `Metal` framework constant `CONCURRENT_DISPATCH_THREADS`.
     pub const CONCURRENT_DISPATCH_THREADS: usize = 1 << 6;
 }
 
 /// `MTLCounterSamplingPoint` enum values.
 pub mod counter_sampling_point {
-/// Mirrors the `Metal` framework constant `AT_STAGE_BOUNDARY`.
+    /// Mirrors the `Metal` framework constant `AT_STAGE_BOUNDARY`.
     pub const AT_STAGE_BOUNDARY: usize = 0;
-/// Mirrors the `Metal` framework constant `AT_DRAW_BOUNDARY`.
+    /// Mirrors the `Metal` framework constant `AT_DRAW_BOUNDARY`.
     pub const AT_DRAW_BOUNDARY: usize = 1;
-/// Mirrors the `Metal` framework constant `AT_DISPATCH_BOUNDARY`.
+    /// Mirrors the `Metal` framework constant `AT_DISPATCH_BOUNDARY`.
     pub const AT_DISPATCH_BOUNDARY: usize = 2;
-/// Mirrors the `Metal` framework constant `AT_TILE_DISPATCH_BOUNDARY`.
+    /// Mirrors the `Metal` framework constant `AT_TILE_DISPATCH_BOUNDARY`.
     pub const AT_TILE_DISPATCH_BOUNDARY: usize = 3;
-/// Mirrors the `Metal` framework constant `AT_BLIT_BOUNDARY`.
+    /// Mirrors the `Metal` framework constant `AT_BLIT_BOUNDARY`.
     pub const AT_BLIT_BOUNDARY: usize = 4;
 }
 
 /// `MTLLogLevel` enum values.
 pub mod log_level {
-/// Mirrors the `Metal` framework constant `UNDEFINED`.
+    /// Mirrors the `Metal` framework constant `UNDEFINED`.
     pub const UNDEFINED: usize = 0;
-/// Mirrors the `Metal` framework constant `DEBUG`.
+    /// Mirrors the `Metal` framework constant `DEBUG`.
     pub const DEBUG: usize = 1;
-/// Mirrors the `Metal` framework constant `INFO`.
+    /// Mirrors the `Metal` framework constant `INFO`.
     pub const INFO: usize = 2;
-/// Mirrors the `Metal` framework constant `NOTICE`.
+    /// Mirrors the `Metal` framework constant `NOTICE`.
     pub const NOTICE: usize = 3;
-/// Mirrors the `Metal` framework constant `ERROR`.
+    /// Mirrors the `Metal` framework constant `ERROR`.
     pub const ERROR: usize = 4;
-/// Mirrors the `Metal` framework constant `FAULT`.
+    /// Mirrors the `Metal` framework constant `FAULT`.
     pub const FAULT: usize = 5;
 }
 
 /// `MTLPurgeableState` enum values.
 pub mod purgeable_state {
-/// Mirrors the `Metal` framework constant `KEEP_CURRENT`.
+    /// Mirrors the `Metal` framework constant `KEEP_CURRENT`.
     pub const KEEP_CURRENT: usize = 1;
-/// Mirrors the `Metal` framework constant `NON_VOLATILE`.
+    /// Mirrors the `Metal` framework constant `NON_VOLATILE`.
     pub const NON_VOLATILE: usize = 2;
-/// Mirrors the `Metal` framework constant `VOLATILE`.
+    /// Mirrors the `Metal` framework constant `VOLATILE`.
     pub const VOLATILE: usize = 3;
-/// Mirrors the `Metal` framework constant `EMPTY`.
+    /// Mirrors the `Metal` framework constant `EMPTY`.
     pub const EMPTY: usize = 4;
 }
 
 /// `MTLCaptureDestination` enum values.
 pub mod capture_destination {
-/// Mirrors the `Metal` framework constant `DEVELOPER_TOOLS`.
+    /// Mirrors the `Metal` framework constant `DEVELOPER_TOOLS`.
     pub const DEVELOPER_TOOLS: usize = 1;
-/// Mirrors the `Metal` framework constant `GPU_TRACE_DOCUMENT`.
+    /// Mirrors the `Metal` framework constant `GPU_TRACE_DOCUMENT`.
     pub const GPU_TRACE_DOCUMENT: usize = 2;
 }
 
 /// `MTLIntersectionFunctionSignature` bit values.
 pub mod intersection_function_signature {
-/// Mirrors the `Metal` framework constant `NONE`.
+    /// Mirrors the `Metal` framework constant `NONE`.
     pub const NONE: usize = 0;
-/// Mirrors the `Metal` framework constant `INSTANCING`.
+    /// Mirrors the `Metal` framework constant `INSTANCING`.
     pub const INSTANCING: usize = 1 << 0;
-/// Mirrors the `Metal` framework constant `TRIANGLE_DATA`.
+    /// Mirrors the `Metal` framework constant `TRIANGLE_DATA`.
     pub const TRIANGLE_DATA: usize = 1 << 1;
-/// Mirrors the `Metal` framework constant `WORLD_SPACE_DATA`.
+    /// Mirrors the `Metal` framework constant `WORLD_SPACE_DATA`.
     pub const WORLD_SPACE_DATA: usize = 1 << 2;
 }
 

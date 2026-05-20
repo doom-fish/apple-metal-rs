@@ -1,7 +1,7 @@
 use core::ffi::c_void;
 
 extern "C" {
-/// Calls the `Metal` framework counterpart for `am_device_new_render_pipeline_state`.
+    /// Calls the `Metal` framework counterpart for `am_device_new_render_pipeline_state`.
     pub fn am_device_new_render_pipeline_state(
         device_handle: *mut c_void,
         vertex_handle: *mut c_void,
@@ -11,6 +11,6 @@ extern "C" {
         out_error_message: *mut *mut core::ffi::c_char,
     ) -> *mut c_void;
 
-/// Calls the `Metal` framework counterpart for `am_object_copy_label`.
+    /// Calls the `Metal` framework counterpart for `am_object_copy_label`.
     pub fn am_object_copy_label(handle: *mut c_void) -> *mut core::ffi::c_char;
 }

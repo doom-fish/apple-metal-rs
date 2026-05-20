@@ -1,22 +1,22 @@
 use core::ffi::c_void;
 
 extern "C" {
-/// Calls the `Metal` framework counterpart for `am_device_argument_buffers_support`.
+    /// Calls the `Metal` framework counterpart for `am_device_argument_buffers_support`.
     pub fn am_device_argument_buffers_support(handle: *mut c_void) -> usize;
-/// Calls the `Metal` framework counterpart for `am_device_new_argument_encoder_with_descriptors`.
+    /// Calls the `Metal` framework counterpart for `am_device_new_argument_encoder_with_descriptors`.
     pub fn am_device_new_argument_encoder_with_descriptors(
         handle: *mut c_void,
         descriptors: *const usize,
         descriptor_count: usize,
     ) -> *mut c_void;
-/// Calls the `Metal` framework counterpart for `am_argument_encoder_set_sampler_state`.
+    /// Calls the `Metal` framework counterpart for `am_argument_encoder_set_sampler_state`.
     pub fn am_argument_encoder_set_sampler_state(
         handle: *mut c_void,
         sampler_handle: *mut c_void,
         index: usize,
     );
 
-/// Calls the `Metal` framework counterpart for `am_device_new_depth_stencil_state`.
+    /// Calls the `Metal` framework counterpart for `am_device_new_depth_stencil_state`.
     pub fn am_device_new_depth_stencil_state(
         device_handle: *mut c_void,
         depth_compare_function: usize,
@@ -38,7 +38,7 @@ extern "C" {
         label: *const core::ffi::c_char,
     ) -> *mut c_void;
 
-/// Calls the `Metal` framework counterpart for `am_device_new_sampler_state`.
+    /// Calls the `Metal` framework counterpart for `am_device_new_sampler_state`.
     pub fn am_device_new_sampler_state(
         device_handle: *mut c_void,
         min_filter: usize,
@@ -60,19 +60,19 @@ extern "C" {
         label: *const core::ffi::c_char,
     ) -> *mut c_void;
 
-/// Calls the `Metal` framework counterpart for `am_compute_command_encoder_set_sampler_state`.
+    /// Calls the `Metal` framework counterpart for `am_compute_command_encoder_set_sampler_state`.
     pub fn am_compute_command_encoder_set_sampler_state(
         handle: *mut c_void,
         sampler_handle: *mut c_void,
         index: usize,
     );
-/// Calls the `Metal` framework counterpart for `am_render_command_encoder_set_fragment_sampler_state`.
+    /// Calls the `Metal` framework counterpart for `am_render_command_encoder_set_fragment_sampler_state`.
     pub fn am_render_command_encoder_set_fragment_sampler_state(
         handle: *mut c_void,
         sampler_handle: *mut c_void,
         index: usize,
     );
-/// Calls the `Metal` framework counterpart for `am_render_command_encoder_set_depth_stencil_state`.
+    /// Calls the `Metal` framework counterpart for `am_render_command_encoder_set_depth_stencil_state`.
     pub fn am_render_command_encoder_set_depth_stencil_state(
         handle: *mut c_void,
         depth_stencil_state_handle: *mut c_void,
