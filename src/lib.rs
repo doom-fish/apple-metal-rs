@@ -435,11 +435,13 @@ pub struct CommandBuffer {
     ptr: *mut c_void,
 }
 
-// SAFETY: `id<MTLCommandBuffer>` is safe to move across threads.  Its `&self`
-// methods are read-only status queries; mutable encoding operations require
-// `&mut CommandEncoder` (a separate type), so Sync is sound.
+// SAFETY: `id<MTLCommandBuffer>` may be created on one thread and handed to
+// another, so `Send` is sound.  We deliberately do NOT implement `Sync`:
+// `MTLCommandBuffer` is not thread-safe, and this wrapper exposes encoding
+// operations (`commit`, `blit_copy_buffer`, `dispatch_compute_1d`, ...) that
+// mutate the underlying buffer through `&self`.  Sharing `&CommandBuffer`
+// across threads would therefore allow concurrent mutation — a data race.
 unsafe impl Send for CommandBuffer {}
-unsafe impl Sync for CommandBuffer {}
 
 impl Drop for CommandBuffer {
     fn drop(&mut self) {
