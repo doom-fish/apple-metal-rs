@@ -625,8 +625,12 @@ pub struct MetalBuffer {
 
 // SAFETY: `id<MTLBuffer>` is a GPU resource handle.  Reference-count manipulation
 // is atomic (ObjC ARC); concurrent reads of immutable state (length, GPU address)
-// are safe.  CPU-side writes via `contents()` are the caller's responsibility to
-// synchronize — the same rule that applies to any `*mut` slice.
+// are safe.  CPU-side writes via `contents()`/`write_bytes()` are the caller's
+// responsibility to synchronize: because both take `&self`, the `Sync` impl
+// permits concurrent calls from multiple threads, and writing the CPU-visible
+// bytes from more than one thread at once (or while the GPU reads them) is a data
+// race / UB. Treat the returned pointer like any shared `*mut` and synchronize
+// externally.
 unsafe impl Send for MetalBuffer {}
 unsafe impl Sync for MetalBuffer {}
 
@@ -755,8 +759,9 @@ impl MetalTexture {
         self.ptr
     }
 
-    /// Wrap a raw `id<MTLTexture>` pointer. Pointer is taken without
-    /// retain.
+    /// Wrap a raw, **+1-retained** `id<MTLTexture>` pointer. Ownership is
+    /// transferred to the returned wrapper and released once on drop (no extra
+    /// retain is taken here).
     ///
     /// # Safety
     ///
