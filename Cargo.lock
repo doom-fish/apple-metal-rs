@@ -11,7 +11,7 @@ dependencies = [
 
 [[package]]
 name = "apple-metal"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "apple-cf",
  "doom-fish-utils",
@@ -35,7 +35,7 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "doom-fish-utils"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "crossbeam-queue",
  "futures-util",
