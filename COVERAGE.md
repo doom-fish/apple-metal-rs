@@ -13,16 +13,16 @@ Current audit status:
 
 ## Coverage summary
 
-`apple-metal` `0.6.3` keeps the smoke-tested, fully exercised core runtime
-workflows from `0.6.0` through `0.6.2` — device discovery, buffers, textures,
+`apple-metal` `0.9.0` keeps the smoke-tested, fully exercised core runtime
+workflows established from `0.6.0` through `0.6.3` — device discovery, buffers, textures,
 command queues/buffers, explicit blit/compute/render encoders, public
 pipeline descriptors, depth/stencil state, sampler state, argument encoders,
 heaps, events, dynamic libraries, binary archives, indirect command buffers,
 acceleration-structure handles, capture scopes, residency sets, and the
 spatial / temporal scaler path.
 
-On top of that, `0.6.3` adds focused integration coverage for the split bridge
-areas while retaining the completed *top-level symbol* audit from `0.6.2`,
+The current package retains the focused integration coverage for the split
+bridge areas and the completed *top-level symbol* audit from `0.6.2`,
 including the descriptor, reflection, render-pass, resource-state,
 rasterization-rate, function-stitching, tensor, IO, MetalFX base / denoised /
 frame-interpolator, and `MTL4*` / `MTL4FX*` families as safe public Rust

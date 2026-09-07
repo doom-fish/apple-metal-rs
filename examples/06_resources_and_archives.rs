@@ -14,16 +14,18 @@ fn main() {
     let queue = device
         .new_command_queue_with_max_command_buffer_count(4)
         .expect("bounded command queue");
-    let scratch = queue
-        .new_command_buffer_with_unretained_references()
-        .expect("bounded scratch command buffer");
+    let scratch = unsafe {
+        queue
+            .new_command_buffer_with_unretained_references()
+            .expect("bounded scratch command buffer")
+    };
     println!("bounded queue scratch status={}", scratch.status());
 
     let library = device
         .new_library_with_source(common::COMPUTE_SRC)
         .expect("compile compute library");
     let args = library.new_function("use_args").expect("use_args function");
-    let argument_encoder = args.new_argument_encoder(0).expect("argument encoder");
+    let mut argument_encoder = args.new_argument_encoder(0).expect("argument encoder");
     let argument_buffer = device
         .new_buffer(
             argument_encoder.encoded_length(),
@@ -36,9 +38,17 @@ fn main() {
     let texture = device
         .new_texture(TextureDescriptor::new_2d(4, 4, pixel_format::BGRA8UNORM))
         .expect("argument texture");
-    argument_encoder.set_argument_buffer(&argument_buffer, 0);
-    argument_encoder.set_buffer(&payload, 0, 0);
-    argument_encoder.set_texture(&texture, 1);
+    unsafe {
+        let mut binding = argument_encoder
+            .bind_argument_buffer(&argument_buffer, 0)
+            .expect("bind argument buffer");
+        binding
+            .set_buffer_unchecked(&payload, 0, 0)
+            .expect("bind payload");
+        binding
+            .set_texture_unchecked(&texture, 1)
+            .expect("bind texture");
+    }
     println!(
         "argument encoder length={} alignment={}",
         argument_encoder.encoded_length(),

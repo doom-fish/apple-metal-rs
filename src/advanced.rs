@@ -1,8 +1,8 @@
 use crate::{
     ffi,
     util::{c_string, take_optional_string, take_string},
-    CommandQueue, ComputePipelineState, MetalBuffer, MetalDevice, MetalFunction, MetalTexture,
-    TextureDescriptor,
+    ArgumentEncoder, CommandQueue, ComputePipelineState, MetalBuffer, MetalBufferAccessError,
+    MetalDevice, MetalFunction, MetalTexture, TextureDescriptor,
 };
 use core::ffi::c_void;
 use core::ops::Range;
@@ -145,10 +145,6 @@ opaque_handle!(
 opaque_handle!(
     /// Apple's `id<MTLBinaryArchive>` — persistent pipeline cache.
     pub struct BinaryArchive;
-);
-opaque_handle!(
-    /// Apple's `id<MTLArgumentEncoder>` — writes argument-buffer bindings.
-    pub struct ArgumentEncoder;
 );
 opaque_handle!(
     /// Apple's `id<MTLIndirectCommandBuffer>` — stores GPU-executable commands.
@@ -482,14 +478,24 @@ impl CommandQueue {
 
 impl MetalBuffer {
     /// Notify Metal that CPU writes modified the given managed-memory byte range.
-    pub fn did_modify_range(&self, range: Range<usize>) {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for non-managed storage or an invalid byte range.
+    pub fn did_modify_range(&self, range: Range<usize>) -> Result<(), MetalBufferAccessError> {
+        if range.start > range.end {
+            return Err(MetalBufferAccessError::InvalidRange);
+        }
+        let storage_mode = self.storage_mode();
+        if storage_mode != crate::storage_mode::MANAGED {
+            return Err(MetalBufferAccessError::ManagedStorageRequired { storage_mode });
+        }
+        let length = range.end - range.start;
+        self.checked_range_end(range.start, length)?;
         unsafe {
-            ffi::am_buffer_did_modify_range(
-                self.as_ptr(),
-                range.start,
-                range.end.saturating_sub(range.start),
-            );
+            ffi::am_buffer_did_modify_range(self.as_ptr(), range.start, length);
         };
+        Ok(())
     }
 
     /// Create a 2D texture view that shares this buffer's storage.
@@ -520,6 +526,165 @@ impl MetalBuffer {
     }
 }
 
+/// Errors returned by CPU texture uploads and readback.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TextureTransferError {
+    /// The texture format does not have a supported CPU byte layout.
+    UnsupportedPixelFormat { pixel_format: usize },
+    /// The texture storage mode cannot be accessed through CPU transfer APIs.
+    CpuInaccessibleStorage { storage_mode: usize },
+    /// The requested mipmap level does not exist.
+    InvalidMipmapLevel {
+        mipmap_level: usize,
+        mipmap_level_count: usize,
+    },
+    /// The requested array slice does not exist.
+    InvalidSlice { slice: usize, array_length: usize },
+    /// A zero-sized transfer region was requested.
+    EmptyRegion,
+    /// A two-dimensional transfer was requested for a depth texture.
+    UnsupportedDepth { depth: usize },
+    /// The texture kind is not compatible with a two-dimensional CPU transfer.
+    UnsupportedTextureType { texture_type: usize },
+    /// The region exceeds the selected mip level.
+    RegionOutOfBounds {
+        origin: (usize, usize),
+        size: (usize, usize),
+        mip_size: (usize, usize),
+    },
+    /// A compressed-format coordinate is not block aligned.
+    BlockMisaligned {
+        field: &'static str,
+        value: usize,
+        block_size: usize,
+    },
+    /// The row stride is shorter than the format requires.
+    BytesPerRowTooSmall {
+        bytes_per_row: usize,
+        minimum: usize,
+    },
+    /// The row stride is not aligned to a complete format block.
+    BytesPerRowMisaligned {
+        bytes_per_row: usize,
+        bytes_per_block: usize,
+    },
+    /// Checked layout arithmetic overflowed.
+    LayoutOverflow,
+    /// A value cannot be represented by the native API.
+    IntegerOutOfRange { field: &'static str, value: usize },
+    /// The source or destination byte slice is too short.
+    BufferTooShort { actual: usize, required: usize },
+    /// The native bridge rejected a validated transfer.
+    NativeRejected,
+}
+
+impl core::fmt::Display for TextureTransferError {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::UnsupportedPixelFormat { pixel_format } => {
+                write!(
+                    formatter,
+                    "pixel format {pixel_format} has no supported CPU layout"
+                )
+            }
+            Self::CpuInaccessibleStorage { storage_mode } => {
+                write!(
+                    formatter,
+                    "storage mode {storage_mode} is not CPU-accessible"
+                )
+            }
+            Self::InvalidMipmapLevel {
+                mipmap_level,
+                mipmap_level_count,
+            } => write!(
+                formatter,
+                "mipmap level {mipmap_level} is outside 0..{mipmap_level_count}"
+            ),
+            Self::InvalidSlice {
+                slice,
+                array_length,
+            } => write!(
+                formatter,
+                "texture slice {slice} is outside 0..{array_length}"
+            ),
+            Self::EmptyRegion => formatter.write_str("texture transfer region is empty"),
+            Self::UnsupportedDepth { depth } => {
+                write!(
+                    formatter,
+                    "2D texture transfer does not support depth {depth}"
+                )
+            }
+            Self::UnsupportedTextureType { texture_type } => {
+                write!(
+                    formatter,
+                    "texture type {texture_type} is not a supported 2D transfer"
+                )
+            }
+            Self::RegionOutOfBounds {
+                origin,
+                size,
+                mip_size,
+            } => write!(
+                formatter,
+                "region {origin:?} + {size:?} exceeds mip dimensions {mip_size:?}"
+            ),
+            Self::BlockMisaligned {
+                field,
+                value,
+                block_size,
+            } => write!(
+                formatter,
+                "{field} value {value} is not aligned to block size {block_size}"
+            ),
+            Self::BytesPerRowTooSmall {
+                bytes_per_row,
+                minimum,
+            } => write!(
+                formatter,
+                "bytes_per_row {bytes_per_row} is smaller than required {minimum}"
+            ),
+            Self::BytesPerRowMisaligned {
+                bytes_per_row,
+                bytes_per_block,
+            } => write!(
+                formatter,
+                "bytes_per_row {bytes_per_row} is not aligned to {bytes_per_block}-byte blocks"
+            ),
+            Self::LayoutOverflow => formatter.write_str("texture byte layout overflowed"),
+            Self::IntegerOutOfRange { field, value } => {
+                write!(formatter, "{field} value {value} exceeds native Int")
+            }
+            Self::BufferTooShort { actual, required } => write!(
+                formatter,
+                "byte slice length {actual} is shorter than required {required}"
+            ),
+            Self::NativeRejected => formatter.write_str("Metal rejected the texture transfer"),
+        }
+    }
+}
+
+impl std::error::Error for TextureTransferError {}
+
+#[derive(Clone, Copy)]
+struct TextureTransferMetadata {
+    width: usize,
+    height: usize,
+    depth: usize,
+    mipmap_level_count: usize,
+    array_length: usize,
+    pixel_format: usize,
+    texture_type: usize,
+    storage_mode: usize,
+}
+
+#[derive(Clone, Copy)]
+struct PixelFormatLayout {
+    block_width: usize,
+    block_height: usize,
+    bytes_per_block: usize,
+}
+
+#[allow(clippy::missing_errors_doc)]
 impl MetalTexture {
     /// Texture depth in pixels.
     #[must_use]
@@ -551,21 +716,50 @@ impl MetalTexture {
         unsafe { ffi::am_texture_storage_mode(self.as_ptr()) }
     }
 
-    /// Upload bytes into a 2D region of the texture.
-    #[must_use]
-    pub fn replace_region_2d(
+    /// Upload bytes into slice zero of a 2D texture region.
+    ///
+    /// # Safety
+    ///
+    /// No GPU access or CPU/native alias access may overlap this transfer. For
+    /// buffer-backed textures, this includes mappings of the backing buffer.
+    pub unsafe fn replace_region_2d(
         &self,
         bytes: &[u8],
         bytes_per_row: usize,
         origin: (usize, usize),
         size: (usize, usize),
         mipmap_level: usize,
-    ) -> bool {
-        let required = bytes_per_row.saturating_mul(size.1);
-        if bytes.len() < required {
-            return false;
-        }
+    ) -> Result<(), TextureTransferError> {
         unsafe {
+            self.replace_region_2d_at_slice(bytes, bytes_per_row, origin, size, mipmap_level, 0)
+        }
+    }
+
+    /// Upload bytes into a selected array slice of a 2D texture region.
+    ///
+    /// # Safety
+    ///
+    /// No GPU access or CPU/native alias access may overlap this transfer. For
+    /// buffer-backed textures, this includes mappings of the backing buffer.
+    pub unsafe fn replace_region_2d_at_slice(
+        &self,
+        bytes: &[u8],
+        bytes_per_row: usize,
+        origin: (usize, usize),
+        size: (usize, usize),
+        mipmap_level: usize,
+        slice: usize,
+    ) -> Result<(), TextureTransferError> {
+        validate_texture_transfer(
+            self.transfer_metadata(),
+            bytes.len(),
+            bytes_per_row,
+            origin,
+            size,
+            mipmap_level,
+            slice,
+        )?;
+        let accepted = unsafe {
             ffi::am_texture_replace_region_2d(
                 self.as_ptr(),
                 origin.0,
@@ -573,23 +767,61 @@ impl MetalTexture {
                 size.0,
                 size.1,
                 mipmap_level,
+                slice,
                 bytes.as_ptr(),
+                bytes.len(),
                 bytes_per_row,
             )
+        };
+        if accepted {
+            Ok(())
+        } else {
+            Err(TextureTransferError::NativeRejected)
         }
     }
 
-    /// Read bytes from a 2D region of the texture into `out`.
-    #[must_use]
-    pub fn read_bytes_2d(
+    /// Read slice zero of a 2D texture region into `out`.
+    ///
+    /// # Safety
+    ///
+    /// No GPU write or CPU/native alias mutation may overlap this transfer.
+    /// Managed GPU writes require a completed resource synchronization first.
+    pub unsafe fn read_bytes_2d(
         &self,
         out: &mut [u8],
         bytes_per_row: usize,
         origin: (usize, usize),
         size: (usize, usize),
         mipmap_level: usize,
-    ) -> bool {
-        unsafe {
+    ) -> Result<(), TextureTransferError> {
+        unsafe { self.read_bytes_2d_at_slice(out, bytes_per_row, origin, size, mipmap_level, 0) }
+    }
+
+    /// Read a selected array slice of a 2D texture region into `out`.
+    ///
+    /// # Safety
+    ///
+    /// No GPU write or CPU/native alias mutation may overlap this transfer.
+    /// Managed GPU writes require a completed resource synchronization first.
+    pub unsafe fn read_bytes_2d_at_slice(
+        &self,
+        out: &mut [u8],
+        bytes_per_row: usize,
+        origin: (usize, usize),
+        size: (usize, usize),
+        mipmap_level: usize,
+        slice: usize,
+    ) -> Result<(), TextureTransferError> {
+        validate_texture_transfer(
+            self.transfer_metadata(),
+            out.len(),
+            bytes_per_row,
+            origin,
+            size,
+            mipmap_level,
+            slice,
+        )?;
+        let accepted = unsafe {
             ffi::am_texture_get_bytes_2d(
                 self.as_ptr(),
                 out.as_mut_ptr(),
@@ -600,7 +832,13 @@ impl MetalTexture {
                 size.0,
                 size.1,
                 mipmap_level,
+                slice,
             )
+        };
+        if accepted {
+            Ok(())
+        } else {
+            Err(TextureTransferError::NativeRejected)
         }
     }
 
@@ -613,6 +851,240 @@ impl MetalTexture {
         } else {
             Some(unsafe { Self::from_raw(ptr) })
         }
+    }
+
+    fn transfer_metadata(&self) -> TextureTransferMetadata {
+        TextureTransferMetadata {
+            width: self.width(),
+            height: self.height(),
+            depth: self.depth(),
+            mipmap_level_count: self.mipmap_level_count(),
+            array_length: self.array_length(),
+            pixel_format: self.pixel_format(),
+            texture_type: self.texture_type(),
+            storage_mode: self.storage_mode(),
+        }
+    }
+}
+
+#[allow(clippy::too_many_lines)]
+fn validate_texture_transfer(
+    metadata: TextureTransferMetadata,
+    byte_length: usize,
+    bytes_per_row: usize,
+    origin: (usize, usize),
+    size: (usize, usize),
+    mipmap_level: usize,
+    slice: usize,
+) -> Result<(), TextureTransferError> {
+    if !matches!(
+        metadata.storage_mode,
+        crate::storage_mode::SHARED | crate::storage_mode::MANAGED
+    ) {
+        return Err(TextureTransferError::CpuInaccessibleStorage {
+            storage_mode: metadata.storage_mode,
+        });
+    }
+    if metadata.depth != 1 {
+        return Err(TextureTransferError::UnsupportedDepth {
+            depth: metadata.depth,
+        });
+    }
+    if mipmap_level >= metadata.mipmap_level_count {
+        return Err(TextureTransferError::InvalidMipmapLevel {
+            mipmap_level,
+            mipmap_level_count: metadata.mipmap_level_count,
+        });
+    }
+    let array_length = texture_slice_count(metadata)?;
+    if slice >= array_length {
+        return Err(TextureTransferError::InvalidSlice {
+            slice,
+            array_length,
+        });
+    }
+    if size.0 == 0 || size.1 == 0 {
+        return Err(TextureTransferError::EmptyRegion);
+    }
+    for (field, value) in [
+        ("bytes_per_row", bytes_per_row),
+        ("origin.x", origin.0),
+        ("origin.y", origin.1),
+        ("size.width", size.0),
+        ("size.height", size.1),
+        ("mipmap_level", mipmap_level),
+        ("slice", slice),
+        ("byte_length", byte_length),
+    ] {
+        ensure_texture_native_int(value, field)?;
+    }
+
+    let mip_size = (
+        mip_dimension(metadata.width, mipmap_level),
+        mip_dimension(metadata.height, mipmap_level),
+    );
+    let end_x = origin
+        .0
+        .checked_add(size.0)
+        .ok_or(TextureTransferError::RegionOutOfBounds {
+            origin,
+            size,
+            mip_size,
+        })?;
+    let end_y = origin
+        .1
+        .checked_add(size.1)
+        .ok_or(TextureTransferError::RegionOutOfBounds {
+            origin,
+            size,
+            mip_size,
+        })?;
+    if end_x > mip_size.0 || end_y > mip_size.1 {
+        return Err(TextureTransferError::RegionOutOfBounds {
+            origin,
+            size,
+            mip_size,
+        });
+    }
+
+    let layout = pixel_format_layout(metadata.pixel_format).ok_or(
+        TextureTransferError::UnsupportedPixelFormat {
+            pixel_format: metadata.pixel_format,
+        },
+    )?;
+    validate_block_alignment("origin.x", origin.0, layout.block_width)?;
+    validate_block_alignment("origin.y", origin.1, layout.block_height)?;
+    if end_x != mip_size.0 {
+        validate_block_alignment("size.width", size.0, layout.block_width)?;
+    }
+    if end_y != mip_size.1 {
+        validate_block_alignment("size.height", size.1, layout.block_height)?;
+    }
+
+    let blocks_per_row = checked_div_ceil(size.0, layout.block_width)?;
+    let block_rows = checked_div_ceil(size.1, layout.block_height)?;
+    let minimum_row_bytes = blocks_per_row
+        .checked_mul(layout.bytes_per_block)
+        .ok_or(TextureTransferError::LayoutOverflow)?;
+    if bytes_per_row < minimum_row_bytes {
+        return Err(TextureTransferError::BytesPerRowTooSmall {
+            bytes_per_row,
+            minimum: minimum_row_bytes,
+        });
+    }
+    if bytes_per_row % layout.bytes_per_block != 0 {
+        return Err(TextureTransferError::BytesPerRowMisaligned {
+            bytes_per_row,
+            bytes_per_block: layout.bytes_per_block,
+        });
+    }
+    let preceding_rows = bytes_per_row
+        .checked_mul(block_rows - 1)
+        .ok_or(TextureTransferError::LayoutOverflow)?;
+    let required = preceding_rows
+        .checked_add(minimum_row_bytes)
+        .ok_or(TextureTransferError::LayoutOverflow)?;
+    ensure_texture_native_int(required, "required byte length")?;
+    if byte_length < required {
+        return Err(TextureTransferError::BufferTooShort {
+            actual: byte_length,
+            required,
+        });
+    }
+    Ok(())
+}
+
+fn pixel_format_layout(pixel_format: usize) -> Option<PixelFormatLayout> {
+    use crate::pixel_format;
+
+    let bytes_per_block = match pixel_format {
+        pixel_format::A8UNORM
+        | pixel_format::R8UNORM
+        | pixel_format::R8SNORM
+        | pixel_format::R8UINT
+        | pixel_format::R8SINT => 1,
+        pixel_format::R16UNORM
+        | pixel_format::R16SNORM
+        | pixel_format::R16UINT
+        | pixel_format::R16SINT
+        | pixel_format::R16FLOAT
+        | pixel_format::RG8UNORM
+        | pixel_format::RG8SNORM
+        | pixel_format::RG8UINT
+        | pixel_format::RG8SINT => 2,
+        pixel_format::R32FLOAT
+        | pixel_format::RG16FLOAT
+        | pixel_format::RGBA8UNORM
+        | pixel_format::RGBA8UNORM_SRGB
+        | pixel_format::RGBA8SNORM
+        | pixel_format::RGBA8UINT
+        | pixel_format::RGBA8SINT
+        | pixel_format::BGRA8UNORM
+        | pixel_format::BGRA8UNORM_SRGB
+        | pixel_format::BGRA10_XR
+        | pixel_format::BGR10_XR => 4,
+        pixel_format::RGBA16FLOAT => 8,
+        pixel_format::RGBA32FLOAT => 16,
+        _ => return None,
+    };
+    Some(PixelFormatLayout {
+        block_width: 1,
+        block_height: 1,
+        bytes_per_block,
+    })
+}
+
+fn texture_slice_count(metadata: TextureTransferMetadata) -> Result<usize, TextureTransferError> {
+    match metadata.texture_type {
+        crate::texture_type::TYPE_2D => Ok(1),
+        crate::texture_type::TYPE_2D_ARRAY => Ok(metadata.array_length.max(1)),
+        crate::texture_type::CUBE => Ok(6),
+        crate::texture_type::CUBE_ARRAY => metadata
+            .array_length
+            .max(1)
+            .checked_mul(6)
+            .ok_or(TextureTransferError::LayoutOverflow),
+        texture_type => Err(TextureTransferError::UnsupportedTextureType { texture_type }),
+    }
+}
+
+fn mip_dimension(base: usize, mipmap_level: usize) -> usize {
+    base.checked_shr(u32::try_from(mipmap_level).unwrap_or(u32::MAX))
+        .unwrap_or(0)
+        .max(1)
+}
+
+fn checked_div_ceil(value: usize, divisor: usize) -> Result<usize, TextureTransferError> {
+    value
+        .checked_add(divisor - 1)
+        .map(|adjusted| adjusted / divisor)
+        .ok_or(TextureTransferError::LayoutOverflow)
+}
+
+fn validate_block_alignment(
+    field: &'static str,
+    value: usize,
+    block_size: usize,
+) -> Result<(), TextureTransferError> {
+    if value % block_size == 0 {
+        Ok(())
+    } else {
+        Err(TextureTransferError::BlockMisaligned {
+            field,
+            value,
+            block_size,
+        })
+    }
+}
+
+fn ensure_texture_native_int(
+    value: usize,
+    field: &'static str,
+) -> Result<(), TextureTransferError> {
+    if isize::try_from(value).is_ok() {
+        Ok(())
+    } else {
+        Err(TextureTransferError::IntegerOutOfRange { field, value })
     }
 }
 
@@ -659,9 +1131,12 @@ impl MetalFunction {
     /// Create an argument encoder for the argument buffer bound at `buffer_index`.
     #[must_use]
     pub fn new_argument_encoder(&self, buffer_index: usize) -> Option<ArgumentEncoder> {
-        ArgumentEncoder::wrap(unsafe {
-            ffi::am_function_new_argument_encoder(self.as_ptr(), buffer_index)
-        })
+        let ptr = unsafe { ffi::am_function_new_argument_encoder(self.as_ptr(), buffer_index) };
+        if ptr.is_null() {
+            None
+        } else {
+            Some(unsafe { ArgumentEncoder::from_function_ptr(ptr) })
+        }
     }
 }
 
@@ -866,39 +1341,6 @@ impl BinaryArchive {
     }
 }
 
-impl ArgumentEncoder {
-    /// Number of bytes required to encode the argument layout.
-    #[must_use]
-    pub fn encoded_length(&self) -> usize {
-        unsafe { ffi::am_argument_encoder_encoded_length(self.as_ptr()) }
-    }
-
-    /// Required alignment for the encoded argument data.
-    #[must_use]
-    pub fn alignment(&self) -> usize {
-        unsafe { ffi::am_argument_encoder_alignment(self.as_ptr()) }
-    }
-
-    /// Set the destination argument buffer.
-    pub fn set_argument_buffer(&self, buffer: &MetalBuffer, offset: usize) {
-        unsafe {
-            ffi::am_argument_encoder_set_argument_buffer(self.as_ptr(), buffer.as_ptr(), offset);
-        };
-    }
-
-    /// Encode a buffer binding at `index`.
-    pub fn set_buffer(&self, buffer: &MetalBuffer, offset: usize, index: usize) {
-        unsafe {
-            ffi::am_argument_encoder_set_buffer(self.as_ptr(), buffer.as_ptr(), offset, index);
-        };
-    }
-
-    /// Encode a texture binding at `index`.
-    pub fn set_texture(&self, texture: &MetalTexture, index: usize) {
-        unsafe { ffi::am_argument_encoder_set_texture(self.as_ptr(), texture.as_ptr(), index) };
-    }
-}
-
 impl IndirectCommandBuffer {
     /// Size of the indirect command buffer in bytes.
     #[must_use]
@@ -1092,8 +1534,62 @@ impl CaptureScope {
     }
 }
 
-impl ArgumentEncoder {
-    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
-        Self { ptr }
+#[cfg(test)]
+mod texture_transfer_tests {
+    use super::*;
+
+    fn rgba8_metadata() -> TextureTransferMetadata {
+        TextureTransferMetadata {
+            width: 4,
+            height: 4,
+            depth: 1,
+            mipmap_level_count: 1,
+            array_length: 1,
+            pixel_format: crate::pixel_format::RGBA8UNORM,
+            texture_type: crate::texture_type::TYPE_2D,
+            storage_mode: crate::storage_mode::SHARED,
+        }
+    }
+
+    #[test]
+    fn rejects_short_rgba_row() {
+        assert!(matches!(
+            validate_texture_transfer(rgba8_metadata(), 64, 15, (0, 0), (4, 4), 0, 0),
+            Err(TextureTransferError::BytesPerRowTooSmall { minimum: 16, .. })
+        ));
+    }
+
+    #[test]
+    fn rejects_stride_larger_than_native_int() {
+        assert!(matches!(
+            validate_texture_transfer(
+                rgba8_metadata(),
+                usize::MAX,
+                usize::MAX,
+                (0, 0),
+                (4, 4),
+                0,
+                0,
+            ),
+            Err(TextureTransferError::IntegerOutOfRange {
+                field: "bytes_per_row",
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn rejects_unknown_pixel_format() {
+        let mut metadata = rgba8_metadata();
+        metadata.pixel_format = usize::MAX;
+        assert!(matches!(
+            validate_texture_transfer(metadata, 64, 16, (0, 0), (4, 4), 0, 0),
+            Err(TextureTransferError::UnsupportedPixelFormat { .. })
+        ));
+    }
+
+    #[test]
+    fn accepts_final_row_without_trailing_stride_padding() {
+        assert!(validate_texture_transfer(rgba8_metadata(), 80, 32, (0, 0), (4, 3), 0, 0).is_ok());
     }
 }

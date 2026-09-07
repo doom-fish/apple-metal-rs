@@ -40,30 +40,37 @@ fn main() {
         .new_buffer(byte_len, resource_options::STORAGE_MODE_SHARED)
         .expect("allocate buffer");
 
-    let slice: &mut [f32] = unsafe {
-        core::slice::from_raw_parts_mut(
-            buffer.contents().expect("buffer.contents").cast::<f32>(),
-            N,
-        )
-    };
-    for (i, x) in slice.iter_mut().enumerate() {
-        *x = i as f32;
+    {
+        let mut mapping = unsafe { buffer.map_write().expect("map compute input") };
+        for (i, bytes) in mapping.chunks_exact_mut(4).take(N).enumerate() {
+            bytes.copy_from_slice(&(i as f32).to_ne_bytes());
+        }
+        let input: Vec<f32> = mapping
+            .chunks_exact(4)
+            .take(N)
+            .map(|bytes| f32::from_ne_bytes(bytes.try_into().expect("four-byte float")))
+            .collect();
+        drop(mapping);
+        println!("Input : {input:?}");
     }
-    println!("Input : {slice:?}");
 
     let queue = device.new_command_queue().expect("MTLCommandQueue");
     let cb = queue.new_command_buffer().expect("MTLCommandBuffer");
-    let ok = cb.dispatch_compute_1d(&pso, &[&buffer], N, 1);
-    assert!(ok, "dispatch_compute_1d failed");
-    cb.commit();
-    cb.wait_until_completed();
+    cb.dispatch_compute_1d(&pso, &[&buffer], N, 1)
+        .expect("dispatch compute");
+    cb.commit().expect("commit compute");
+    cb.wait_until_completed().expect("complete compute");
 
-    let slice: &[f32] = unsafe {
-        core::slice::from_raw_parts(buffer.contents().expect("buffer.contents").cast::<f32>(), N)
-    };
-    println!("Output: {slice:?}");
+    let mapping = unsafe { buffer.map_read().expect("map compute output") };
+    let output: Vec<f32> = mapping
+        .chunks_exact(4)
+        .take(N)
+        .map(|bytes| f32::from_ne_bytes(bytes.try_into().expect("four-byte float")))
+        .collect();
+    drop(mapping);
+    println!("Output: {output:?}");
 
-    for (i, &v) in slice.iter().enumerate() {
+    for (i, &v) in output.iter().enumerate() {
         let expected = (i as f32) * 2.0;
         assert_eq!(v, expected, "element {i} expected {expected} got {v}");
     }

@@ -23,9 +23,17 @@ fn heap_can_allocate_buffers_and_textures() {
         .new_texture(TextureDescriptor::new_2d(4, 4, pixel_format::BGRA8UNORM))
         .expect("heap texture");
     let upload = vec![0x22_u8; 4 * 4 * 4];
-    assert!(texture.replace_region_2d(&upload, 16, (0, 0), (4, 4), 0));
+    unsafe {
+        texture
+            .replace_region_2d(&upload, 16, (0, 0), (4, 4), 0)
+            .expect("upload heap texture");
+    }
     let mut download = vec![0_u8; upload.len()];
-    assert!(texture.read_bytes_2d(&mut download, 16, (0, 0), (4, 4), 0));
+    unsafe {
+        texture
+            .read_bytes_2d(&mut download, 16, (0, 0), (4, 4), 0)
+            .expect("read heap texture");
+    }
     assert_eq!(download, upload);
     assert_eq!(texture.width(), 4);
     assert_eq!(texture.height(), 4);

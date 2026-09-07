@@ -16,15 +16,24 @@ public func am_device_new_texture_2d(
     _ usage: Int,
     _ storage_mode: Int
 ) -> UnsafeMutableRawPointer? {
-    guard let dev: MTLDevice = am_borrow(device_handle) else { return nil }
+    guard pixel_format >= 0,
+          width > 0,
+          height > 0,
+          usage >= 0,
+          storage_mode >= 0,
+          let pixelFormat = MTLPixelFormat(rawValue: UInt(pixel_format)),
+          pixelFormat != .invalid,
+          let storageMode = MTLStorageMode(rawValue: UInt(storage_mode)),
+          let dev: MTLDevice = am_borrow(device_handle)
+    else { return nil }
     let desc = MTLTextureDescriptor.texture2DDescriptor(
-        pixelFormat: MTLPixelFormat(rawValue: UInt(pixel_format)) ?? .invalid,
+        pixelFormat: pixelFormat,
         width: width,
         height: height,
         mipmapped: mipmapped
     )
     desc.usage = MTLTextureUsage(rawValue: UInt(usage))
-    desc.storageMode = MTLStorageMode(rawValue: UInt(storage_mode)) ?? .shared
+    desc.storageMode = storageMode
     guard let tex = dev.makeTexture(descriptor: desc) else { return nil }
     return am_retain(tex as AnyObject)
 }
@@ -50,6 +59,12 @@ public func am_texture_pixel_format(_ handle: UnsafeMutableRawPointer?) -> Int {
     return Int(t.pixelFormat.rawValue)
 }
 
+@_cdecl("am_texture_type")
+public func am_texture_type(_ handle: UnsafeMutableRawPointer?) -> Int {
+    guard let t: MTLTexture = am_borrow(handle) else { return 0 }
+    return Int(t.textureType.rawValue)
+}
+
 #if canImport(IOSurface)
 @_cdecl("am_device_new_texture_from_iosurface")
 public func am_device_new_texture_from_iosurface(
@@ -60,12 +75,18 @@ public func am_device_new_texture_from_iosurface(
     _ width: Int,
     _ height: Int
 ) -> UnsafeMutableRawPointer? {
-    guard let dev: MTLDevice = am_borrow(device_handle),
+    guard plane_index >= 0,
+          pixel_format >= 0,
+          width > 0,
+          height > 0,
+          let pixelFormat = MTLPixelFormat(rawValue: UInt(pixel_format)),
+          pixelFormat != .invalid,
+          let dev: MTLDevice = am_borrow(device_handle),
           let iosurface_ptr = iosurface_ptr
     else { return nil }
     let surface = Unmanaged<IOSurfaceRef>.fromOpaque(iosurface_ptr).takeUnretainedValue()
     let desc = MTLTextureDescriptor.texture2DDescriptor(
-        pixelFormat: MTLPixelFormat(rawValue: UInt(pixel_format)) ?? .invalid,
+        pixelFormat: pixelFormat,
         width: width,
         height: height,
         mipmapped: false

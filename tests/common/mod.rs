@@ -60,29 +60,21 @@ pub fn device() -> MetalDevice {
 }
 
 pub fn write_u32_words(buffer: &MetalBuffer, data: &[u32]) {
-    let words = unsafe {
-        core::slice::from_raw_parts_mut(
-            buffer
-                .contents()
-                .expect("shared buffer contents")
-                .cast::<u32>(),
-            data.len(),
-        )
-    };
-    words.copy_from_slice(data);
+    let mut mapping = unsafe { buffer.map_write().expect("shared buffer mapping") };
+    assert!(mapping.len() >= core::mem::size_of_val(data));
+    for (bytes, value) in mapping.chunks_exact_mut(4).zip(data) {
+        bytes.copy_from_slice(&value.to_ne_bytes());
+    }
+    drop(mapping);
 }
 
 pub fn read_u32_words(buffer: &MetalBuffer, len: usize) -> Vec<u32> {
-    unsafe {
-        core::slice::from_raw_parts(
-            buffer
-                .contents()
-                .expect("shared buffer contents")
-                .cast::<u32>(),
-            len,
-        )
-        .to_vec()
-    }
+    let mapping = unsafe { buffer.map_read().expect("shared buffer mapping") };
+    mapping
+        .chunks_exact(4)
+        .take(len)
+        .map(|bytes| u32::from_ne_bytes(bytes.try_into().expect("four-byte word")))
+        .collect()
 }
 
 pub const fn shared_render_target(width: usize, height: usize) -> TextureDescriptor {
@@ -144,36 +136,44 @@ pub fn committed_blit_copy(
     fence: Option<&Fence>,
 ) {
     let command_buffer = queue.new_command_buffer().expect("blit command buffer");
-    let encoder = command_buffer
+    let mut encoder = command_buffer
         .new_blit_command_encoder()
         .expect("first blit encoder");
-    assert!(encoder.fill_buffer(src, 0..64, b'A'));
+    encoder
+        .fill_buffer(src, 0..64, b'A')
+        .expect("fill source buffer");
     if let Some(fence) = fence {
-        encoder.update_fence(fence);
+        encoder.update_fence(fence).expect("update fence");
     }
-    encoder.end_encoding();
-    command_buffer.commit();
-    command_buffer.wait_until_completed();
+    encoder.end_encoding().expect("end first blit encoder");
+    command_buffer.commit().expect("commit first blit");
+    command_buffer
+        .wait_until_completed()
+        .expect("complete first blit");
 
     let command_buffer = queue
         .new_command_buffer()
         .expect("second blit command buffer");
-    let encoder = command_buffer
+    let mut encoder = command_buffer
         .new_blit_command_encoder()
         .expect("second blit encoder");
     if let Some(fence) = fence {
-        encoder.wait_for_fence(fence);
+        encoder.wait_for_fence(fence).expect("wait for fence");
     }
-    assert!(encoder.copy_buffer(src, 0, dst, 0, 64));
-    encoder.end_encoding();
-    command_buffer.commit();
-    command_buffer.wait_until_completed();
+    encoder
+        .copy_buffer(src, 0, dst, 0, 64)
+        .expect("copy buffers");
+    encoder.end_encoding().expect("end second blit encoder");
+    command_buffer.commit().expect("commit second blit");
+    command_buffer
+        .wait_until_completed()
+        .expect("complete second blit");
 }
 
 pub fn render_and_readback(
     device: &MetalDevice,
     pipeline: &RenderPipelineState,
-    configure: impl FnOnce(&apple_metal::RenderCommandEncoder),
+    configure: impl FnOnce(&mut apple_metal::RenderCommandEncoder),
 ) -> Vec<u8> {
     let queue = device.new_command_queue().expect("command queue");
     let render_target = device
@@ -183,7 +183,7 @@ pub fn render_and_readback(
         .new_buffer(16, resource_options::STORAGE_MODE_SHARED)
         .expect("vertex buffer");
     let command_buffer = queue.new_command_buffer().expect("render command buffer");
-    let encoder = command_buffer
+    let mut encoder = command_buffer
         .new_render_command_encoder(
             &render_target,
             apple_metal::load_action::CLEAR,
@@ -191,15 +191,27 @@ pub fn render_and_readback(
             [0.0, 0.0, 0.0, 1.0],
         )
         .expect("render encoder");
-    encoder.set_render_pipeline_state(pipeline);
-    configure(&encoder);
-    encoder.set_vertex_buffer(&vertex_buffer, 0, 0);
-    encoder.draw_primitives(apple_metal::primitive_type::TRIANGLE, 0, 3);
-    encoder.end_encoding();
-    command_buffer.commit();
-    command_buffer.wait_until_completed();
+    encoder
+        .set_render_pipeline_state(pipeline)
+        .expect("bind render pipeline");
+    configure(&mut encoder);
+    encoder
+        .set_vertex_buffer(&vertex_buffer, 0, 0)
+        .expect("bind vertex buffer");
+    encoder
+        .draw_primitives(apple_metal::primitive_type::TRIANGLE, 0, 3)
+        .expect("draw triangle");
+    encoder.end_encoding().expect("end render encoder");
+    command_buffer.commit().expect("commit render commands");
+    command_buffer
+        .wait_until_completed()
+        .expect("complete render commands");
 
     let mut rendered = vec![0_u8; 4 * 4 * 4];
-    assert!(render_target.read_bytes_2d(&mut rendered, 16, (0, 0), (4, 4), 0));
+    unsafe {
+        render_target
+            .read_bytes_2d(&mut rendered, 16, (0, 0), (4, 4), 0)
+            .expect("read render target");
+    }
     rendered
 }

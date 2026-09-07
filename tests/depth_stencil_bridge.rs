@@ -28,7 +28,9 @@ fn depth_stencil_state_can_be_created_and_bound_for_render() {
     assert_eq!(state.label().as_deref(), Some("depth-stencil-bridge"));
 
     let rendered = common::render_and_readback(&device, &pipeline, |encoder| {
-        encoder.set_depth_stencil_state(&state);
+        encoder
+            .set_depth_stencil_state(&state)
+            .expect("bind depth stencil state");
     });
     assert!(rendered.chunks_exact(4).any(|pixel| pixel[3] != 0));
 }

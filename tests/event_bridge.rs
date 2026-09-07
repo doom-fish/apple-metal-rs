@@ -14,13 +14,21 @@ fn shared_events_can_be_signaled_waited_and_encoded_on_command_buffers() {
     let queue = device.new_command_queue().expect("command queue");
 
     let signal_buffer = queue.new_command_buffer().expect("signal command buffer");
-    signal_buffer.encode_signal_event(&event, 2);
-    signal_buffer.commit();
-    signal_buffer.wait_until_completed();
+    signal_buffer
+        .encode_signal_event(&event, 2)
+        .expect("encode event signal");
+    signal_buffer.commit().expect("commit event signal");
+    signal_buffer
+        .wait_until_completed()
+        .expect("complete event signal");
     assert!(event.wait_until_signaled_value(2, 1_000));
 
     let wait_buffer = queue.new_command_buffer().expect("wait command buffer");
-    wait_buffer.encode_wait_for_event(&event, 2);
-    wait_buffer.commit();
-    wait_buffer.wait_until_completed();
+    wait_buffer
+        .encode_wait_for_event(&event, 2)
+        .expect("encode event wait");
+    wait_buffer.commit().expect("commit event wait");
+    wait_buffer
+        .wait_until_completed()
+        .expect("complete event wait");
 }

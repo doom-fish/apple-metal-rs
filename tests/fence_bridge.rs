@@ -19,11 +19,11 @@ fn fences_can_synchronize_blit_work_between_command_buffers() {
 
     common::committed_blit_copy(&queue, &src, &dst, Some(&fence));
 
-    let copied = unsafe {
-        core::slice::from_raw_parts(
-            dst.contents().expect("destination contents").cast::<u8>(),
-            64,
-        )
+    let copied = {
+        let mapping = unsafe { dst.map_read().expect("map destination buffer") };
+        let copied = mapping.iter().take(8).all(|byte| *byte == b'A');
+        drop(mapping);
+        copied
     };
-    assert!(copied.iter().take(8).all(|byte| *byte == b'A'));
+    assert!(copied);
 }

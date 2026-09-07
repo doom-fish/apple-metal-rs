@@ -20,9 +20,13 @@ fn main() {
         let signal = queue
             .new_command_buffer()
             .expect("event signal command buffer");
-        signal.encode_signal_event(&event, 2);
-        signal.commit();
-        signal.wait_until_completed();
+        signal
+            .encode_signal_event(&event, 2)
+            .expect("encode event signal");
+        signal.commit().expect("commit event signal");
+        signal
+            .wait_until_completed()
+            .expect("complete event signal");
         println!(
             "event reached value 2: {}",
             event.wait_until_signaled_value(2, 1_000),
@@ -31,9 +35,10 @@ fn main() {
         let wait = queue
             .new_command_buffer()
             .expect("event wait command buffer");
-        wait.encode_wait_for_event(&event, 2);
-        wait.commit();
-        wait.wait_until_completed();
+        wait.encode_wait_for_event(&event, 2)
+            .expect("encode event wait");
+        wait.commit().expect("commit event wait");
+        wait.wait_until_completed().expect("complete event wait");
     }
 
     let fence_a = device.new_fence();
@@ -55,31 +60,37 @@ fn main() {
         .new_buffer(64, resource_options::STORAGE_MODE_SHARED)
         .expect("destination buffer");
     let blit = queue.new_command_buffer().expect("blit command buffer");
-    let encoder = blit.new_blit_command_encoder().expect("blit encoder");
-    let _ = encoder.fill_buffer(&src, 0..64, b'Q');
+    let mut encoder = blit.new_blit_command_encoder().expect("blit encoder");
+    encoder
+        .fill_buffer(&src, 0..64, b'Q')
+        .expect("fill source buffer");
     if let Some(fence) = fence_a.as_ref() {
-        encoder.update_fence(fence);
+        encoder.update_fence(fence).expect("update fence");
     }
-    encoder.end_encoding();
-    blit.commit();
-    blit.wait_until_completed();
+    encoder.end_encoding().expect("end first blit encoder");
+    blit.commit().expect("commit first blit");
+    blit.wait_until_completed().expect("complete first blit");
 
     let blit = queue
         .new_command_buffer()
         .expect("second blit command buffer");
-    let encoder = blit
+    let mut encoder = blit
         .new_blit_command_encoder()
         .expect("second blit encoder");
     if let Some(fence) = fence_a.as_ref() {
-        encoder.wait_for_fence(fence);
+        encoder.wait_for_fence(fence).expect("wait for fence");
     }
     if let Some(sample_buffer) = sample_buffer.as_ref() {
-        let _ = encoder.sample_counters(sample_buffer, 0, false);
+        encoder
+            .sample_counters(sample_buffer, 0, false)
+            .expect("sample counters");
     }
-    let _ = encoder.copy_buffer(&src, 0, &dst, 0, 64);
-    encoder.end_encoding();
-    blit.commit();
-    blit.wait_until_completed();
+    encoder
+        .copy_buffer(&src, 0, &dst, 0, 64)
+        .expect("copy buffers");
+    encoder.end_encoding().expect("end second blit encoder");
+    blit.commit().expect("commit second blit");
+    blit.wait_until_completed().expect("complete second blit");
     if let Some(sample_buffer) = sample_buffer.as_ref() {
         println!(
             "resolved counter bytes={}",
@@ -125,31 +136,45 @@ fn main() {
         ))
         .expect("compute texture");
     let compute = queue.new_command_buffer().expect("compute command buffer");
-    let encoder = compute
+    let mut encoder = compute
         .new_compute_command_encoder()
         .expect("compute command encoder");
-    encoder.set_compute_pipeline_state(&pipeline);
-    encoder.set_buffer(&buffer, 0, 0);
-    encoder.set_texture(&texture, 1);
+    encoder
+        .set_compute_pipeline_state(&pipeline)
+        .expect("bind compute pipeline");
+    encoder
+        .set_buffer(&buffer, 0, 0)
+        .expect("bind compute buffer");
+    encoder
+        .set_texture(&texture, 1)
+        .expect("bind compute texture");
     if let Some(fence) = fence_a.as_ref() {
-        encoder.wait_for_fence(fence);
+        encoder.wait_for_fence(fence).expect("wait for fence");
     }
     if let Some(table) = visible_table.as_ref() {
-        encoder.set_visible_function_table(table, 2);
+        encoder
+            .set_visible_function_table(table, 2)
+            .expect("bind visible function table");
     }
     if let Some(table) = intersection_table.as_ref() {
-        encoder.set_intersection_function_table(table, 3);
+        encoder
+            .set_intersection_function_table(table, 3)
+            .expect("bind intersection function table");
     }
     if let Some(acceleration_structure) = acceleration_structure.as_ref() {
-        encoder.set_acceleration_structure(acceleration_structure, 4);
+        encoder
+            .set_acceleration_structure(acceleration_structure, 4)
+            .expect("bind acceleration structure");
     }
-    encoder.dispatch_threadgroups((1, 1, 1), (4, 1, 1));
+    encoder
+        .dispatch_threadgroups((1, 1, 1), (4, 1, 1))
+        .expect("dispatch compute");
     if let Some(fence) = fence_b.as_ref() {
-        encoder.update_fence(fence);
+        encoder.update_fence(fence).expect("update fence");
     }
-    encoder.end_encoding();
-    compute.commit();
-    compute.wait_until_completed();
+    encoder.end_encoding().expect("end compute encoder");
+    compute.commit().expect("commit compute");
+    compute.wait_until_completed().expect("complete compute");
     println!(
         "compute buffer after dispatch: {:?}",
         common::read_u32_words(&buffer, 4)

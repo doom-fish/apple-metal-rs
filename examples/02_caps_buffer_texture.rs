@@ -14,12 +14,15 @@ fn main() {
         .new_buffer(4096, resource_options::STORAGE_MODE_SHARED)
         .expect("buffer create failed");
     println!(
-        "buffer {} bytes, contents={:?}",
+        "buffer {} bytes, cpu_accessible={}",
         buf.length(),
-        buf.contents().is_some()
+        buf.is_cpu_accessible()
     );
-    let n = buf.write_bytes(b"hello metal");
-    println!("wrote {n} bytes");
+    unsafe {
+        buf.write_bytes(0, b"hello metal")
+            .expect("write shared buffer");
+    }
+    println!("wrote {} bytes", b"hello metal".len());
 
     let tx = d
         .new_texture(TextureDescriptor::new_2d(

@@ -140,7 +140,9 @@ extern "C" {
         width: usize,
         height: usize,
         mipmap_level: usize,
+        slice: usize,
         bytes: *const u8,
+        bytes_len: usize,
         bytes_per_row: usize,
     ) -> bool;
     /// Calls the `Metal` framework counterpart for `am_texture_get_bytes_2d`.
@@ -154,6 +156,7 @@ extern "C" {
         width: usize,
         height: usize,
         mipmap_level: usize,
+        slice: usize,
     ) -> bool;
     /// Calls the `Metal` framework counterpart for `am_texture_new_view`.
     pub fn am_texture_new_view(handle: *mut c_void, pixel_format: usize) -> *mut c_void;
@@ -260,20 +263,20 @@ extern "C" {
         handle: *mut c_void,
         buffer_handle: *mut c_void,
         offset: usize,
-    );
+    ) -> bool;
     /// Calls the `Metal` framework counterpart for `am_argument_encoder_set_buffer`.
     pub fn am_argument_encoder_set_buffer(
         handle: *mut c_void,
         buffer_handle: *mut c_void,
         offset: usize,
         index: usize,
-    );
+    ) -> bool;
     /// Calls the `Metal` framework counterpart for `am_argument_encoder_set_texture`.
     pub fn am_argument_encoder_set_texture(
         handle: *mut c_void,
         texture_handle: *mut c_void,
         index: usize,
-    );
+    ) -> bool;
 
     /// Calls the `Metal` framework counterpart for `am_indirect_command_buffer_size`.
     pub fn am_indirect_command_buffer_size(handle: *mut c_void) -> usize;

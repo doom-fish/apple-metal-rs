@@ -73,6 +73,11 @@ extern "C" {
     pub fn am_blit_command_encoder_update_fence(handle: *mut c_void, fence_handle: *mut c_void);
     /// Calls the `Metal` framework counterpart for `am_blit_command_encoder_wait_for_fence`.
     pub fn am_blit_command_encoder_wait_for_fence(handle: *mut c_void, fence_handle: *mut c_void);
+    /// Calls the `Metal` framework counterpart for `am_blit_command_encoder_synchronize_resource`.
+    pub fn am_blit_command_encoder_synchronize_resource(
+        handle: *mut c_void,
+        resource_handle: *mut c_void,
+    ) -> bool;
 
     /// Calls the `Metal` framework counterpart for `am_compute_command_encoder_set_pipeline_state`.
     pub fn am_compute_command_encoder_set_pipeline_state(

@@ -40,20 +40,32 @@ fn sampler_state_can_be_created_and_bound_to_compute_and_render_encoders() {
     common::write_u32_words(&buffer, &[0, 1, 2, 3]);
 
     let compute_command_buffer = queue.new_command_buffer().expect("compute command buffer");
-    let compute_encoder = compute_command_buffer
+    let mut compute_encoder = compute_command_buffer
         .new_compute_command_encoder()
         .expect("compute encoder");
-    compute_encoder.set_compute_pipeline_state(&compute_pipeline);
-    compute_encoder.set_buffer(&buffer, 0, 0);
-    compute_encoder.set_sampler_state(&sampler, 0);
-    compute_encoder.dispatch_threads((4, 1, 1), (1, 1, 1));
-    compute_encoder.end_encoding();
-    compute_command_buffer.commit();
-    compute_command_buffer.wait_until_completed();
+    compute_encoder
+        .set_compute_pipeline_state(&compute_pipeline)
+        .expect("bind compute pipeline");
+    compute_encoder
+        .set_buffer(&buffer, 0, 0)
+        .expect("bind compute buffer");
+    compute_encoder
+        .set_sampler_state(&sampler, 0)
+        .expect("bind sampler");
+    compute_encoder
+        .dispatch_threads((4, 1, 1), (1, 1, 1))
+        .expect("dispatch compute");
+    compute_encoder.end_encoding().expect("end compute encoder");
+    compute_command_buffer.commit().expect("commit compute");
+    compute_command_buffer
+        .wait_until_completed()
+        .expect("complete compute");
     assert_eq!(common::read_u32_words(&buffer, 4), vec![1, 2, 3, 4]);
 
     let rendered = common::render_and_readback(&device, &render_pipeline, |encoder| {
-        encoder.set_fragment_sampler_state(&sampler, 0);
+        encoder
+            .set_fragment_sampler_state(&sampler, 0)
+            .expect("bind fragment sampler");
     });
     assert!(rendered.chunks_exact(4).any(|pixel| pixel[3] != 0));
 }

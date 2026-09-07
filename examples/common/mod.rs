@@ -77,29 +77,21 @@ pub fn artifact_path(name: &str) -> PathBuf {
 }
 
 pub fn write_u32_words(buffer: &MetalBuffer, data: &[u32]) {
-    let words = unsafe {
-        core::slice::from_raw_parts_mut(
-            buffer
-                .contents()
-                .expect("shared buffer contents")
-                .cast::<u32>(),
-            data.len(),
-        )
-    };
-    words.copy_from_slice(data);
+    let mut mapping = unsafe { buffer.map_write().expect("shared buffer mapping") };
+    assert!(mapping.len() >= core::mem::size_of_val(data));
+    for (bytes, value) in mapping.chunks_exact_mut(4).zip(data) {
+        bytes.copy_from_slice(&value.to_ne_bytes());
+    }
+    drop(mapping);
 }
 
 pub fn read_u32_words(buffer: &MetalBuffer, len: usize) -> Vec<u32> {
-    unsafe {
-        core::slice::from_raw_parts(
-            buffer
-                .contents()
-                .expect("shared buffer contents")
-                .cast::<u32>(),
-            len,
-        )
-        .to_vec()
-    }
+    let mapping = unsafe { buffer.map_read().expect("shared buffer mapping") };
+    mapping
+        .chunks_exact(4)
+        .take(len)
+        .map(|bytes| u32::from_ne_bytes(bytes.try_into().expect("four-byte word")))
+        .collect()
 }
 
 pub const fn shared_render_target(width: usize, height: usize) -> TextureDescriptor {

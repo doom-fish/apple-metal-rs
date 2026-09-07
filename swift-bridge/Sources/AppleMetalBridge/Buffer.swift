@@ -9,7 +9,8 @@ public func am_device_new_buffer(
     _ length: Int,
     _ options: UInt
 ) -> UnsafeMutableRawPointer? {
-    guard let dev: MTLDevice = am_borrow(device_handle),
+    guard length >= 0,
+          let dev: MTLDevice = am_borrow(device_handle),
           let buf = dev.makeBuffer(length: length, options: MTLResourceOptions(rawValue: options))
     else { return nil }
     return am_retain(buf as AnyObject)
@@ -24,8 +25,26 @@ public func am_buffer_length(_ handle: UnsafeMutableRawPointer?) -> Int {
     return buf.length
 }
 
+@_cdecl("am_buffer_storage_mode")
+public func am_buffer_storage_mode(_ handle: UnsafeMutableRawPointer?) -> Int {
+    guard let buf: MTLBuffer = am_borrow(handle) else { return 0 }
+    return Int(buf.storageMode.rawValue)
+}
+
 @_cdecl("am_buffer_contents")
 public func am_buffer_contents(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
-    guard let buf: MTLBuffer = am_borrow(handle) else { return nil }
+    guard let buf: MTLBuffer = am_borrow(handle),
+          buf.storageMode == .shared || buf.storageMode == .managed
+    else { return nil }
     return buf.contents()
+}
+
+@_cdecl("am_buffer_new_staging_buffer")
+public func am_buffer_new_staging_buffer(
+    _ handle: UnsafeMutableRawPointer?
+) -> UnsafeMutableRawPointer? {
+    guard let buf: MTLBuffer = am_borrow(handle),
+          let staging = buf.device.makeBuffer(length: buf.length, options: .storageModeShared)
+    else { return nil }
+    return am_retain(staging as AnyObject)
 }

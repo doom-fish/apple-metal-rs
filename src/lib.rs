@@ -8,7 +8,9 @@
 #![allow(clippy::missing_const_for_fn)]
 
 use core::ffi::c_void;
+use core::ops::{Deref, DerefMut};
 use core::ptr;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 pub(crate) mod advanced;
 pub(crate) mod argument;
@@ -259,17 +261,32 @@ impl MetalDevice {
     /// [`resource_options`]).
     #[must_use]
     pub fn new_buffer(&self, length: usize, options: usize) -> Option<MetalBuffer> {
+        if length > isize::MAX as usize {
+            return None;
+        }
         let p = unsafe { ffi::am_device_new_buffer(self.ptr, length, options) };
         if p.is_null() {
             None
         } else {
-            Some(MetalBuffer { ptr: p })
+            Some(unsafe { MetalBuffer::from_retained_ptr(p) })
         }
     }
 
     /// Allocate a fresh `MTLTexture` matching `descriptor`.
     #[must_use]
     pub fn new_texture(&self, descriptor: TextureDescriptor) -> Option<MetalTexture> {
+        if [
+            descriptor.pixel_format,
+            descriptor.width,
+            descriptor.height,
+            descriptor.usage,
+            descriptor.storage_mode,
+        ]
+        .into_iter()
+        .any(|value| value > isize::MAX as usize)
+        {
+            return None;
+        }
         let p = unsafe {
             ffi::am_device_new_texture_2d(
                 self.ptr,
@@ -419,7 +436,7 @@ impl CommandQueue {
         if p.is_null() {
             None
         } else {
-            Some(CommandBuffer { ptr: p })
+            Some(unsafe { CommandBuffer::from_retained_ptr(p) })
         }
     }
 
@@ -431,19 +448,36 @@ impl CommandQueue {
 }
 
 /// Apple's `id<MTLCommandBuffer>` — a recorded batch of GPU commands.
+#[derive(Clone)]
 pub struct CommandBuffer {
-    ptr: *mut c_void,
+    pub(crate) inner: Arc<CommandBufferInner>,
 }
 
-// SAFETY: `id<MTLCommandBuffer>` may be created on one thread and handed to
-// another, so `Send` is sound.  We deliberately do NOT implement `Sync`:
-// `MTLCommandBuffer` is not thread-safe, and this wrapper exposes encoding
-// operations (`commit`, `blit_copy_buffer`, `dispatch_compute_1d`, ...) that
-// mutate the underlying buffer through `&self`.  Sharing `&CommandBuffer`
-// across threads would therefore allow concurrent mutation — a data race.
-unsafe impl Send for CommandBuffer {}
+pub(crate) struct CommandBufferInner {
+    pub(crate) ptr: *mut c_void,
+    pub(crate) state: Mutex<CommandBufferState>,
+}
 
-impl Drop for CommandBuffer {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum CommandBufferPhase {
+    Recording,
+    Enqueued,
+    Committed,
+    Completed,
+    Error,
+}
+
+pub(crate) struct CommandBufferState {
+    pub(crate) phase: CommandBufferPhase,
+    pub(crate) active_encoder: bool,
+}
+
+// SAFETY: all command-buffer state transitions and native mutations exposed by
+// this crate are serialized by `state`.
+unsafe impl Send for CommandBufferInner {}
+unsafe impl Sync for CommandBufferInner {}
+
+impl Drop for CommandBufferInner {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
             unsafe { ffi::am_command_buffer_release(self.ptr) };
@@ -453,67 +487,14 @@ impl Drop for CommandBuffer {
 }
 
 impl CommandBuffer {
-    /// Submit the recorded commands for execution.
-    pub fn commit(&self) {
-        unsafe { ffi::am_command_buffer_commit(self.ptr) };
-    }
-
-    /// Block the current thread until all submitted commands finish.
-    pub fn wait_until_completed(&self) {
-        unsafe { ffi::am_command_buffer_wait_until_completed(self.ptr) };
-    }
-
-    /// Record a blit copy from `src` into `dst` for `size` bytes.
-    /// Convenience for GPU↔GPU byte copies.
+    /// Borrowed raw `id<MTLCommandBuffer>` pointer.
+    ///
+    /// The pointer remains valid only while at least one clone of this wrapper
+    /// is alive. Calling lifecycle or encoding methods through the pointer can
+    /// bypass this crate's state validation.
     #[must_use]
-    pub fn blit_copy_buffer(
-        &self,
-        src: &MetalBuffer,
-        src_offset: usize,
-        dst: &MetalBuffer,
-        dst_offset: usize,
-        size: usize,
-    ) -> bool {
-        unsafe {
-            ffi::am_command_buffer_blit_copy_buffer(
-                self.ptr,
-                src.as_ptr(),
-                src_offset,
-                dst.as_ptr(),
-                dst_offset,
-                size,
-            )
-        }
-    }
-
-    /// Record a 1-D compute dispatch: binds `pso`, sets `buffers` at
-    /// argument slots `0..buffers.len()`, and dispatches `threadgroups`
-    /// of `threads_per_group` threads.
-    #[must_use]
-    pub fn dispatch_compute_1d(
-        &self,
-        pso: &ComputePipelineState,
-        buffers: &[&MetalBuffer],
-        threadgroups: usize,
-        threads_per_group: usize,
-    ) -> bool {
-        let raw: Vec<*mut c_void> = buffers.iter().map(|b| b.as_ptr()).collect();
-        unsafe {
-            ffi::am_command_buffer_dispatch_compute_1d(
-                self.ptr,
-                pso.ptr,
-                raw.as_ptr(),
-                raw.len(),
-                threadgroups,
-                threads_per_group,
-            )
-        }
-    }
-
-    /// Raw `id<MTLCommandBuffer>` pointer.
-    #[must_use]
-    pub const fn as_ptr(&self) -> *mut c_void {
-        self.ptr
+    pub fn as_ptr(&self) -> *mut c_void {
+        self.inner.ptr
     }
 }
 
@@ -618,23 +599,125 @@ impl ComputePipelineState {
 
 // ---- Buffer ----
 
-/// Apple's `id<MTLBuffer>` — a GPU-visible byte buffer.
-pub struct MetalBuffer {
-    ptr: *mut c_void,
+/// Errors returned by CPU access to a [`MetalBuffer`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MetalBufferAccessError {
+    /// The buffer's storage mode does not expose CPU-addressable bytes.
+    CpuInaccessibleStorage { storage_mode: usize },
+    /// Metal did not provide a CPU mapping for an otherwise accessible buffer.
+    MappingUnavailable,
+    /// Another mapping panicked while holding the allocation's mapping lock.
+    MappingLockPoisoned,
+    /// The requested byte range is outside the allocation.
+    RangeOutOfBounds {
+        offset: usize,
+        length: usize,
+        buffer_length: usize,
+    },
+    /// The supplied range has its end before its start.
+    InvalidRange,
+    /// The operation requires managed storage.
+    ManagedStorageRequired { storage_mode: usize },
 }
 
-// SAFETY: `id<MTLBuffer>` is a GPU resource handle.  Reference-count manipulation
-// is atomic (ObjC ARC); concurrent reads of immutable state (length, GPU address)
-// are safe.  CPU-side writes via `contents()`/`write_bytes()` are the caller's
-// responsibility to synchronize: because both take `&self`, the `Sync` impl
-// permits concurrent calls from multiple threads, and writing the CPU-visible
-// bytes from more than one thread at once (or while the GPU reads them) is a data
-// race / UB. Treat the returned pointer like any shared `*mut` and synchronize
-// externally.
-unsafe impl Send for MetalBuffer {}
-unsafe impl Sync for MetalBuffer {}
+impl core::fmt::Display for MetalBufferAccessError {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::CpuInaccessibleStorage { storage_mode } => {
+                write!(
+                    formatter,
+                    "storage mode {storage_mode} is not CPU-addressable"
+                )
+            }
+            Self::MappingUnavailable => formatter.write_str("Metal did not provide a CPU mapping"),
+            Self::MappingLockPoisoned => formatter.write_str("buffer mapping lock is poisoned"),
+            Self::RangeOutOfBounds {
+                offset,
+                length,
+                buffer_length,
+            } => write!(
+                formatter,
+                "byte range {offset}..{} exceeds buffer length {buffer_length}",
+                offset.saturating_add(*length)
+            ),
+            Self::InvalidRange => formatter.write_str("range end precedes range start"),
+            Self::ManagedStorageRequired { storage_mode } => {
+                write!(
+                    formatter,
+                    "managed storage required, got mode {storage_mode}"
+                )
+            }
+        }
+    }
+}
 
-impl Drop for MetalBuffer {
+impl std::error::Error for MetalBufferAccessError {}
+
+/// Scoped read-only CPU mapping of a [`MetalBuffer`].
+pub struct MetalBufferReadMapping<'a> {
+    pointer: core::ptr::NonNull<u8>,
+    length: usize,
+    _mapping_lock: MutexGuard<'a, ()>,
+}
+
+impl Deref for MetalBufferReadMapping<'_> {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { core::slice::from_raw_parts(self.pointer.as_ptr(), self.length) }
+    }
+}
+
+/// Scoped writable CPU mapping of a [`MetalBuffer`].
+pub struct MetalBufferWriteMapping<'a> {
+    buffer: &'a MetalBuffer,
+    pointer: core::ptr::NonNull<u8>,
+    length: usize,
+    storage_mode: usize,
+    _mapping_lock: MutexGuard<'a, ()>,
+}
+
+impl Deref for MetalBufferWriteMapping<'_> {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { core::slice::from_raw_parts(self.pointer.as_ptr(), self.length) }
+    }
+}
+
+impl DerefMut for MetalBufferWriteMapping<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { core::slice::from_raw_parts_mut(self.pointer.as_ptr(), self.length) }
+    }
+}
+
+impl Drop for MetalBufferWriteMapping<'_> {
+    fn drop(&mut self) {
+        if self.storage_mode == storage_mode::MANAGED {
+            unsafe {
+                ffi::am_buffer_did_modify_range(self.buffer.as_ptr(), 0, self.length);
+            }
+        }
+    }
+}
+
+/// Apple's `id<MTLBuffer>` — a GPU-visible byte buffer.
+#[derive(Clone)]
+pub struct MetalBuffer {
+    inner: Arc<MetalBufferInner>,
+}
+
+struct MetalBufferInner {
+    ptr: *mut c_void,
+    mapping_lock: Mutex<()>,
+}
+
+// SAFETY: immutable resource queries are thread-safe and scoped CPU mappings
+// are serialized across clones by `mapping_lock`.
+unsafe impl Send for MetalBufferInner {}
+unsafe impl Sync for MetalBufferInner {}
+
+impl Drop for MetalBufferInner {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
             unsafe { ffi::am_buffer_release(self.ptr) };
@@ -643,41 +726,177 @@ impl Drop for MetalBuffer {
     }
 }
 
+#[allow(clippy::missing_errors_doc)]
 impl MetalBuffer {
     /// Buffer length in bytes.
     #[must_use]
     pub fn length(&self) -> usize {
-        unsafe { ffi::am_buffer_length(self.ptr) }
+        unsafe { ffi::am_buffer_length(self.as_ptr()) }
     }
 
-    /// Raw `void *` to the buffer's CPU-visible bytes. `None` for
-    /// `MTLStorageMode::Private` (GPU-only) buffers.
+    /// `MTLStorageMode` enum value.
     #[must_use]
-    pub fn contents(&self) -> Option<*mut c_void> {
-        let p = unsafe { ffi::am_buffer_contents(self.ptr) };
-        if p.is_null() {
+    pub fn storage_mode(&self) -> usize {
+        unsafe { ffi::am_buffer_storage_mode(self.as_ptr()) }
+    }
+
+    /// Whether this buffer's storage mode permits CPU mapping.
+    #[must_use]
+    pub fn is_cpu_accessible(&self) -> bool {
+        matches!(
+            self.storage_mode(),
+            storage_mode::SHARED | storage_mode::MANAGED
+        )
+    }
+
+    /// Create shared staging storage with the same length as this buffer.
+    ///
+    /// Use a blit encoder to copy between the staging allocation and private
+    /// storage before mapping the staging buffer.
+    #[must_use]
+    pub fn new_staging_buffer(&self) -> Option<Self> {
+        let pointer = unsafe { ffi::am_buffer_new_staging_buffer(self.as_ptr()) };
+        if pointer.is_null() {
             None
         } else {
-            Some(p)
+            Some(unsafe { Self::from_retained_ptr(pointer) })
         }
     }
 
-    /// Copy `src` into this buffer at byte offset `0`. Returns the
-    /// number of bytes actually written.
-    #[must_use]
-    pub fn write_bytes(&self, src: &[u8]) -> usize {
-        let Some(dst) = self.contents() else {
-            return 0;
-        };
-        let n = core::cmp::min(src.len(), self.length());
-        unsafe { core::ptr::copy_nonoverlapping(src.as_ptr(), dst.cast::<u8>(), n) };
-        n
+    /// Map this buffer for scoped CPU reads.
+    ///
+    /// Clones of this Rust handle share a mapping lock. Independently-created
+    /// native aliases are outside that lock.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that no GPU write or CPU/native alias mutation
+    /// overlaps the mapping. This includes texture views backed by this buffer.
+    /// For managed storage, GPU writes must first be made visible with a
+    /// completed blit-encoder resource synchronization.
+    pub unsafe fn map_read(&self) -> Result<MetalBufferReadMapping<'_>, MetalBufferAccessError> {
+        let storage_mode = self.ensure_cpu_accessible()?;
+        let mapping_lock = self.lock_mapping()?;
+        let pointer = core::ptr::NonNull::new(ffi::am_buffer_contents(self.as_ptr()).cast::<u8>())
+            .ok_or(MetalBufferAccessError::MappingUnavailable)?;
+        let _ = storage_mode;
+        Ok(MetalBufferReadMapping {
+            pointer,
+            length: self.length(),
+            _mapping_lock: mapping_lock,
+        })
     }
 
-    /// Raw `id<MTLBuffer>` pointer.
+    /// Map this buffer for scoped CPU writes.
+    ///
+    /// Managed mappings notify Metal of the modified allocation when the guard
+    /// is dropped. Clones of this Rust handle share a mapping lock, but native
+    /// aliases created outside this wrapper do not.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that no GPU access or CPU/native alias access
+    /// overlaps the mapping and must not submit GPU work using the buffer until
+    /// the mapping guard is dropped. This includes texture views backed by this
+    /// buffer.
+    pub unsafe fn map_write(&self) -> Result<MetalBufferWriteMapping<'_>, MetalBufferAccessError> {
+        let storage_mode = self.ensure_cpu_accessible()?;
+        let mapping_lock = self.lock_mapping()?;
+        let pointer = core::ptr::NonNull::new(ffi::am_buffer_contents(self.as_ptr()).cast::<u8>())
+            .ok_or(MetalBufferAccessError::MappingUnavailable)?;
+        Ok(MetalBufferWriteMapping {
+            buffer: self,
+            pointer,
+            length: self.length(),
+            storage_mode,
+            _mapping_lock: mapping_lock,
+        })
+    }
+
+    /// Copy `src` into a CPU-visible byte range.
+    ///
+    /// # Safety
+    ///
+    /// The caller must uphold the same GPU exclusion requirements as
+    /// [`Self::map_write`].
+    pub unsafe fn write_bytes(
+        &self,
+        offset: usize,
+        src: &[u8],
+    ) -> Result<(), MetalBufferAccessError> {
+        let end = self.checked_range_end(offset, src.len())?;
+        let mut mapping = self.map_write()?;
+        mapping[offset..end].copy_from_slice(src);
+        drop(mapping);
+        Ok(())
+    }
+
+    /// Copy a CPU-visible byte range into `destination`.
+    ///
+    /// # Safety
+    ///
+    /// The caller must uphold the same GPU exclusion and managed-storage
+    /// synchronization requirements as [`Self::map_read`].
+    pub unsafe fn read_bytes(
+        &self,
+        offset: usize,
+        destination: &mut [u8],
+    ) -> Result<(), MetalBufferAccessError> {
+        let end = self.checked_range_end(offset, destination.len())?;
+        let mapping = self.map_read()?;
+        destination.copy_from_slice(&mapping[offset..end]);
+        drop(mapping);
+        Ok(())
+    }
+
+    /// Borrowed raw `id<MTLBuffer>` pointer.
+    ///
+    /// The pointer remains valid only while at least one clone of this wrapper
+    /// is alive. CPU access through the raw object bypasses the mapping lock.
     #[must_use]
-    pub const fn as_ptr(&self) -> *mut c_void {
-        self.ptr
+    pub fn as_ptr(&self) -> *mut c_void {
+        self.inner.ptr
+    }
+
+    fn ensure_cpu_accessible(&self) -> Result<usize, MetalBufferAccessError> {
+        let storage_mode = self.storage_mode();
+        if matches!(storage_mode, storage_mode::SHARED | storage_mode::MANAGED) {
+            Ok(storage_mode)
+        } else {
+            Err(MetalBufferAccessError::CpuInaccessibleStorage { storage_mode })
+        }
+    }
+
+    pub(crate) fn checked_range_end(
+        &self,
+        offset: usize,
+        length: usize,
+    ) -> Result<usize, MetalBufferAccessError> {
+        let end =
+            offset
+                .checked_add(length)
+                .ok_or_else(|| MetalBufferAccessError::RangeOutOfBounds {
+                    offset,
+                    length,
+                    buffer_length: self.length(),
+                })?;
+        let buffer_length = self.length();
+        if end > buffer_length {
+            Err(MetalBufferAccessError::RangeOutOfBounds {
+                offset,
+                length,
+                buffer_length,
+            })
+        } else {
+            Ok(end)
+        }
+    }
+
+    pub(crate) fn lock_mapping(&self) -> Result<MutexGuard<'_, ()>, MetalBufferAccessError> {
+        self.inner
+            .mapping_lock
+            .lock()
+            .map_err(|_| MetalBufferAccessError::MappingLockPoisoned)
     }
 }
 
@@ -753,6 +972,12 @@ impl MetalTexture {
         unsafe { ffi::am_texture_pixel_format(self.ptr) }
     }
 
+    /// Underlying `MTLTextureType` enum value — see [`texture_type`].
+    #[must_use]
+    pub fn texture_type(&self) -> usize {
+        unsafe { ffi::am_texture_type(self.ptr) }
+    }
+
     /// Raw `id<MTLTexture>` pointer.
     #[must_use]
     pub const fn as_ptr(&self) -> *mut c_void {
@@ -789,14 +1014,27 @@ impl CommandQueue {
 }
 
 impl CommandBuffer {
-    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
-        Self { ptr }
+    pub(crate) unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
+        Self {
+            inner: Arc::new(CommandBufferInner {
+                ptr,
+                state: Mutex::new(CommandBufferState {
+                    phase: CommandBufferPhase::Recording,
+                    active_encoder: false,
+                }),
+            }),
+        }
     }
 }
 
 impl MetalBuffer {
-    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
-        Self { ptr }
+    pub(crate) unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
+        Self {
+            inner: Arc::new(MetalBufferInner {
+                ptr,
+                mapping_lock: Mutex::new(()),
+            }),
+        }
     }
 }
 
@@ -809,15 +1047,104 @@ mod iosurface_ext {
     use apple_cf::iosurface::IOSurface;
     use core::ffi::c_void;
 
+    /// Errors returned while creating an `IOSurface`-backed texture.
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum IOSurfaceMetalError {
+        /// The requested plane does not exist for this surface.
+        InvalidPlane {
+            plane_index: usize,
+            plane_count: usize,
+        },
+        /// The surface format and plane do not map to a supported Metal format.
+        UnsupportedPixelFormat { fourcc: u32, plane_index: usize },
+        /// The selected plane has zero dimensions or row stride.
+        EmptyPlane {
+            plane_index: usize,
+            width: usize,
+            height: usize,
+            bytes_per_row: usize,
+        },
+        /// The plane row stride cannot contain its selected Metal format.
+        IncompatiblePlaneLayout {
+            plane_index: usize,
+            bytes_per_row: usize,
+            minimum_bytes_per_row: usize,
+        },
+        /// Plane metadata cannot be represented by the native bridge.
+        IntegerOutOfRange { field: &'static str, value: usize },
+        /// Metal rejected the validated `IOSurface` texture descriptor.
+        NativeCreationFailed,
+    }
+
+    impl core::fmt::Display for IOSurfaceMetalError {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            match self {
+                Self::InvalidPlane {
+                    plane_index,
+                    plane_count,
+                } => write!(
+                    formatter,
+                    "IOSurface plane {plane_index} is outside the available count {plane_count}"
+                ),
+                Self::UnsupportedPixelFormat {
+                    fourcc,
+                    plane_index,
+                } => write!(
+                    formatter,
+                    "IOSurface format {fourcc:#010x} plane {plane_index} is unsupported"
+                ),
+                Self::EmptyPlane {
+                    plane_index,
+                    width,
+                    height,
+                    bytes_per_row,
+                } => write!(
+                    formatter,
+                    "IOSurface plane {plane_index} has invalid layout {width}x{height}, row {bytes_per_row}"
+                ),
+                Self::IncompatiblePlaneLayout {
+                    plane_index,
+                    bytes_per_row,
+                    minimum_bytes_per_row,
+                } => write!(
+                    formatter,
+                    "IOSurface plane {plane_index} row {bytes_per_row} is shorter than {minimum_bytes_per_row}"
+                ),
+                Self::IntegerOutOfRange { field, value } => {
+                    write!(formatter, "{field} value {value} exceeds native Int")
+                }
+                Self::NativeCreationFailed => {
+                    formatter.write_str("Metal could not create the IOSurface-backed texture")
+                }
+            }
+        }
+    }
+
+    impl std::error::Error for IOSurfaceMetalError {}
+
+    #[derive(Clone, Copy)]
+    struct PlaneTextureFormat {
+        pixel_format: usize,
+        bytes_per_pixel: usize,
+    }
+
     /// Add Metal interop methods to [`IOSurface`].
     pub trait IOSurfaceMetalExt {
         /// Wrap the given plane of this `IOSurface` as a zero-copy
         /// [`MetalTexture`] on the given device.
+        ///
+        /// The native `IOSurfaceRef` pointer is borrowed only for the duration
+        /// of this call. The returned Metal texture retains its backing surface.
+        ///
+        /// # Errors
+        ///
+        /// Returns plane, format, row-layout, integer-conversion, or native
+        /// texture-creation failures.
         fn create_metal_texture(
             &self,
             device: &MetalDevice,
             plane_index: usize,
-        ) -> Option<MetalTexture>;
+        ) -> Result<MetalTexture, IOSurfaceMetalError>;
     }
 
     impl IOSurfaceMetalExt for IOSurface {
@@ -825,50 +1152,134 @@ mod iosurface_ext {
             &self,
             device: &MetalDevice,
             plane_index: usize,
-        ) -> Option<MetalTexture> {
-            let format = pixel_format_for_fourcc(self.pixel_format(), plane_index)?;
-            let (width, height) = if plane_index == 0 {
-                (self.width(), self.height())
+        ) -> Result<MetalTexture, IOSurfaceMetalError> {
+            let plane_count = self.plane_count();
+            let (width, height, bytes_per_row) = if plane_count == 0 {
+                if plane_index != 0 {
+                    return Err(IOSurfaceMetalError::InvalidPlane {
+                        plane_index,
+                        plane_count: 1,
+                    });
+                }
+                (self.width(), self.height(), self.bytes_per_row())
             } else {
-                (self.width() / 2, self.height() / 2)
+                if plane_index >= plane_count {
+                    return Err(IOSurfaceMetalError::InvalidPlane {
+                        plane_index,
+                        plane_count,
+                    });
+                }
+                (
+                    self.width_of_plane(plane_index),
+                    self.height_of_plane(plane_index),
+                    self.bytes_per_row_of_plane(plane_index),
+                )
             };
+            if width == 0 || height == 0 || bytes_per_row == 0 {
+                return Err(IOSurfaceMetalError::EmptyPlane {
+                    plane_index,
+                    width,
+                    height,
+                    bytes_per_row,
+                });
+            }
+            let format = pixel_format_for_fourcc(self.pixel_format(), plane_index)?;
+            let minimum_bytes_per_row = width.checked_mul(format.bytes_per_pixel).ok_or(
+                IOSurfaceMetalError::IntegerOutOfRange {
+                    field: "minimum plane row bytes",
+                    value: usize::MAX,
+                },
+            )?;
+            if bytes_per_row < minimum_bytes_per_row || bytes_per_row % format.bytes_per_pixel != 0
+            {
+                return Err(IOSurfaceMetalError::IncompatiblePlaneLayout {
+                    plane_index,
+                    bytes_per_row,
+                    minimum_bytes_per_row,
+                });
+            }
+            for (field, value) in [
+                ("plane index", plane_index),
+                ("plane width", width),
+                ("plane height", height),
+                ("pixel format", format.pixel_format),
+            ] {
+                if value > isize::MAX as usize {
+                    return Err(IOSurfaceMetalError::IntegerOutOfRange { field, value });
+                }
+            }
             let p = unsafe {
                 ffi::am_device_new_texture_from_iosurface(
                     device.as_ptr(),
                     self.as_ptr().cast::<c_void>(),
                     plane_index,
-                    format,
+                    format.pixel_format,
                     width,
                     height,
                 )
             };
             if p.is_null() {
-                None
+                Err(IOSurfaceMetalError::NativeCreationFailed)
             } else {
-                Some(unsafe { MetalTexture::from_raw(p) })
+                Ok(unsafe { MetalTexture::from_raw(p) })
             }
         }
     }
 
-    fn pixel_format_for_fourcc(fourcc: u32, plane_index: usize) -> Option<usize> {
+    fn pixel_format_for_fourcc(
+        fourcc: u32,
+        plane_index: usize,
+    ) -> Result<PlaneTextureFormat, IOSurfaceMetalError> {
         const BGRA: u32 = u32::from_be_bytes(*b"BGRA");
-        const L10R: u32 = u32::from_be_bytes(*b"l10r");
         const YUV420V: u32 = u32::from_be_bytes(*b"420v");
         const YUV420F: u32 = u32::from_be_bytes(*b"420f");
 
         match (fourcc, plane_index) {
-            (BGRA, 0) => Some(pixel_format::BGRA8UNORM),
-            (L10R, 0) => Some(pixel_format::BGRA10_XR),
-            (YUV420V | YUV420F, 0) => Some(pixel_format::R8UNORM),
-            (YUV420V | YUV420F, 1) => Some(pixel_format::RG8UNORM),
-            _ => None,
+            (BGRA, 0) => Ok(PlaneTextureFormat {
+                pixel_format: pixel_format::BGRA8UNORM,
+                bytes_per_pixel: 4,
+            }),
+            (YUV420V | YUV420F, 0) => Ok(PlaneTextureFormat {
+                pixel_format: pixel_format::R8UNORM,
+                bytes_per_pixel: 1,
+            }),
+            (YUV420V | YUV420F, 1) => Ok(PlaneTextureFormat {
+                pixel_format: pixel_format::RG8UNORM,
+                bytes_per_pixel: 2,
+            }),
+            _ => Err(IOSurfaceMetalError::UnsupportedPixelFormat {
+                fourcc,
+                plane_index,
+            }),
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn packed_ten_bit_surface_is_not_guessed() {
+            let fourcc = u32::from_be_bytes(*b"l10r");
+            assert!(matches!(
+                pixel_format_for_fourcc(fourcc, 0),
+                Err(IOSurfaceMetalError::UnsupportedPixelFormat { .. })
+            ));
+        }
+
+        #[test]
+        fn odd_chroma_plane_uses_two_bytes_per_actual_plane_pixel() {
+            let fourcc = u32::from_be_bytes(*b"420v");
+            let format = pixel_format_for_fourcc(fourcc, 1).expect("chroma format");
+            assert_eq!(format.pixel_format, pixel_format::RG8UNORM);
+            assert_eq!(3 * format.bytes_per_pixel, 6);
         }
     }
 }
 
 /// Re-exports the `Metal` framework surface for this item.
 #[cfg(feature = "iosurface")]
-pub use iosurface_ext::IOSurfaceMetalExt;
+pub use iosurface_ext::{IOSurfaceMetalError, IOSurfaceMetalExt};
 
 /// True if `fourcc` identifies a YCbCr biplanar (`Y` + `CbCr`) format.
 #[must_use]

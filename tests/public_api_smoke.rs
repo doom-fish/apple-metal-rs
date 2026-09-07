@@ -98,29 +98,21 @@ fn artifact_path(name: &str) -> PathBuf {
 }
 
 fn write_u32_words(buffer: &MetalBuffer, data: &[u32]) {
-    let words = unsafe {
-        core::slice::from_raw_parts_mut(
-            buffer
-                .contents()
-                .expect("shared buffer contents")
-                .cast::<u32>(),
-            data.len(),
-        )
-    };
-    words.copy_from_slice(data);
+    let mut mapping = unsafe { buffer.map_write().expect("shared buffer mapping") };
+    assert!(mapping.len() >= core::mem::size_of_val(data));
+    for (bytes, value) in mapping.chunks_exact_mut(4).zip(data) {
+        bytes.copy_from_slice(&value.to_ne_bytes());
+    }
+    drop(mapping);
 }
 
 fn read_u32_words(buffer: &MetalBuffer, len: usize) -> Vec<u32> {
-    unsafe {
-        core::slice::from_raw_parts(
-            buffer
-                .contents()
-                .expect("shared buffer contents")
-                .cast::<u32>(),
-            len,
-        )
-        .to_vec()
-    }
+    let mapping = unsafe { buffer.map_read().expect("shared buffer mapping") };
+    mapping
+        .chunks_exact(4)
+        .take(len)
+        .map(|bytes| u32::from_ne_bytes(bytes.try_into().expect("four-byte word")))
+        .collect()
 }
 
 const fn shared_render_target(width: usize, height: usize) -> TextureDescriptor {
@@ -183,33 +175,43 @@ fn committed_blit_copy(
     sample_buffer: Option<&apple_metal::CounterSampleBuffer>,
 ) {
     let command_buffer = queue.new_command_buffer().expect("blit command buffer");
-    let encoder = command_buffer
+    let mut encoder = command_buffer
         .new_blit_command_encoder()
         .expect("first blit encoder");
-    assert!(encoder.fill_buffer(src, 0..64, b'A'));
+    encoder
+        .fill_buffer(src, 0..64, b'A')
+        .expect("fill source buffer");
     if let Some(fence) = fence {
-        encoder.update_fence(fence);
+        encoder.update_fence(fence).expect("update fence");
     }
-    encoder.end_encoding();
-    command_buffer.commit();
-    command_buffer.wait_until_completed();
+    encoder.end_encoding().expect("end first blit encoder");
+    command_buffer.commit().expect("commit first blit");
+    command_buffer
+        .wait_until_completed()
+        .expect("complete first blit");
 
     let command_buffer = queue
         .new_command_buffer()
         .expect("second blit command buffer");
-    let encoder = command_buffer
+    let mut encoder = command_buffer
         .new_blit_command_encoder()
         .expect("second blit encoder");
     if let Some(fence) = fence {
-        encoder.wait_for_fence(fence);
+        encoder.wait_for_fence(fence).expect("wait for fence");
     }
     if let Some(sample_buffer) = sample_buffer {
-        let _ = encoder.sample_counters(sample_buffer, 0, false);
+        encoder
+            .sample_counters(sample_buffer, 0, false)
+            .expect("sample counters");
     }
-    assert!(encoder.copy_buffer(src, 0, dst, 0, 64));
-    encoder.end_encoding();
-    command_buffer.commit();
-    command_buffer.wait_until_completed();
+    encoder
+        .copy_buffer(src, 0, dst, 0, 64)
+        .expect("copy buffers");
+    encoder.end_encoding().expect("end second blit encoder");
+    command_buffer.commit().expect("commit second blit");
+    command_buffer
+        .wait_until_completed()
+        .expect("complete second blit");
 }
 
 fn scratch_compute_bindings(
@@ -225,26 +227,40 @@ fn scratch_compute_bindings(
     let command_buffer = queue
         .new_command_buffer()
         .expect("scratch compute command buffer");
-    let encoder = command_buffer
+    let mut encoder = command_buffer
         .new_compute_command_encoder()
         .expect("scratch compute encoder");
-    encoder.set_compute_pipeline_state(pipeline);
-    encoder.set_buffer(buffer, 0, 0);
-    encoder.set_texture(texture, 1);
+    encoder
+        .set_compute_pipeline_state(pipeline)
+        .expect("bind compute pipeline");
+    encoder
+        .set_buffer(buffer, 0, 0)
+        .expect("bind compute buffer");
+    encoder
+        .set_texture(texture, 1)
+        .expect("bind compute texture");
     if let Some(fence) = fence {
-        encoder.wait_for_fence(fence);
+        encoder.wait_for_fence(fence).expect("wait for fence");
     }
     if let Some(table) = visible_table {
-        encoder.set_visible_function_table(table, 2);
+        encoder
+            .set_visible_function_table(table, 2)
+            .expect("bind visible function table");
     }
     if let Some(table) = intersection_table {
-        encoder.set_intersection_function_table(table, 3);
+        encoder
+            .set_intersection_function_table(table, 3)
+            .expect("bind intersection function table");
     }
     if let Some(acceleration_structure) = acceleration_structure {
-        encoder.set_acceleration_structure(acceleration_structure, 4);
+        encoder
+            .set_acceleration_structure(acceleration_structure, 4)
+            .expect("bind acceleration structure");
     }
-    encoder.dispatch_threadgroups((1, 1, 1), (1, 1, 1));
-    encoder.end_encoding();
+    encoder
+        .dispatch_threadgroups((1, 1, 1), (1, 1, 1))
+        .expect("dispatch scratch compute");
+    encoder.end_encoding().expect("end scratch compute encoder");
 }
 
 #[test]
@@ -355,15 +371,21 @@ fn public_api_smoke() {
         drop(logged_queue);
     }
 
-    let status_buffer = bounded_queue
-        .new_command_buffer_with_unretained_references()
-        .expect("unretained command buffer");
+    let status_buffer = unsafe {
+        bounded_queue
+            .new_command_buffer_with_unretained_references()
+            .expect("unretained command buffer")
+    };
     assert_eq!(status_buffer.status(), command_buffer_status::NOT_ENQUEUED);
-    status_buffer.enqueue();
+    status_buffer.enqueue().expect("enqueue status buffer");
     assert!(status_buffer.status() >= command_buffer_status::ENQUEUED);
-    status_buffer.commit();
-    status_buffer.wait_until_scheduled();
-    status_buffer.wait_until_completed();
+    status_buffer.commit().expect("commit status buffer");
+    status_buffer
+        .wait_until_scheduled()
+        .expect("schedule status buffer");
+    status_buffer
+        .wait_until_completed()
+        .expect("complete status buffer");
     assert_eq!(status_buffer.status(), command_buffer_status::COMPLETED);
     assert!(status_buffer.error().is_none());
 
@@ -377,10 +399,13 @@ fn public_api_smoke() {
     write_u32_words(&shared_buffer, &[1, 2, 3, 4]);
 
     if let Some(managed_buffer) = device.new_buffer(64, resource_options::STORAGE_MODE_MANAGED) {
-        managed_buffer.did_modify_range(0..4);
+        managed_buffer
+            .did_modify_range(0..4)
+            .expect("mark managed range modified");
     }
 
-    let arg_encoder: ArgumentEncoder = args_fn.new_argument_encoder(0).expect("argument encoder");
+    let mut arg_encoder: ArgumentEncoder =
+        args_fn.new_argument_encoder(0).expect("argument encoder");
     assert!(arg_encoder.encoded_length() > 0);
     assert!(arg_encoder.alignment() > 0);
     let argument_buffer = device
@@ -389,16 +414,30 @@ fn public_api_smoke() {
             resource_options::STORAGE_MODE_SHARED,
         )
         .expect("argument buffer");
-    arg_encoder.set_argument_buffer(&argument_buffer, 0);
-    arg_encoder.set_buffer(&shared_buffer, 0, 0);
+    unsafe {
+        let mut binding = arg_encoder
+            .bind_argument_buffer(&argument_buffer, 0)
+            .expect("bind function argument buffer");
+        binding
+            .set_buffer_unchecked(&shared_buffer, 0, 0)
+            .expect("bind function buffer");
+    }
 
     let texture = device
         .new_texture(TextureDescriptor::new_2d(4, 4, pixel_format::BGRA8UNORM))
         .expect("shared texture");
     let upload = vec![0x11_u8; 4 * 4 * 4];
-    assert!(texture.replace_region_2d(&upload, 16, (0, 0), (4, 4), 0));
+    unsafe {
+        texture
+            .replace_region_2d(&upload, 16, (0, 0), (4, 4), 0)
+            .expect("upload texture");
+    }
     let mut download = vec![0_u8; upload.len()];
-    assert!(texture.read_bytes_2d(&mut download, 16, (0, 0), (4, 4), 0));
+    unsafe {
+        texture
+            .read_bytes_2d(&mut download, 16, (0, 0), (4, 4), 0)
+            .expect("read texture");
+    }
     assert_eq!(download, upload);
     assert_eq!(texture.width(), 4);
     assert_eq!(texture.height(), 4);
@@ -414,9 +453,16 @@ fn public_api_smoke() {
     let texture_view = texture
         .new_view(pixel_format::BGRA8UNORM)
         .expect("texture view");
-    arg_encoder.set_texture(&texture_view, 1);
+    unsafe {
+        let mut binding = arg_encoder
+            .bind_argument_buffer(&argument_buffer, 0)
+            .expect("rebind function argument buffer");
+        binding
+            .set_texture_unchecked(&texture_view, 1)
+            .expect("bind function texture");
+    }
 
-    let descriptor_argument_encoder = device
+    let mut descriptor_argument_encoder = device
         .new_argument_encoder_with_descriptors(&[
             ArgumentDescriptor::buffer(0, binding_access::READ_WRITE),
             ArgumentDescriptor::texture(1, texture_type::TYPE_2D, binding_access::READ_ONLY),
@@ -430,10 +476,20 @@ fn public_api_smoke() {
             resource_options::STORAGE_MODE_SHARED,
         )
         .expect("descriptor argument buffer");
-    descriptor_argument_encoder.set_argument_buffer(&descriptor_argument_buffer, 0);
-    descriptor_argument_encoder.set_buffer(&shared_buffer, 0, 0);
-    descriptor_argument_encoder.set_texture(&texture_view, 1);
-    descriptor_argument_encoder.set_sampler_state(&sampler_state, 2);
+    unsafe {
+        let mut binding = descriptor_argument_encoder
+            .bind_argument_buffer(&descriptor_argument_buffer, 0)
+            .expect("bind descriptor argument buffer");
+        binding
+            .set_buffer(&shared_buffer, 0, 0)
+            .expect("bind descriptor buffer");
+        binding
+            .set_texture(&texture_view, 1)
+            .expect("bind descriptor texture");
+        binding
+            .set_sampler_state(&sampler_state, 2)
+            .expect("bind descriptor sampler");
+    }
 
     let texture_backing = device
         .new_buffer(256, resource_options::STORAGE_MODE_SHARED)
@@ -450,15 +506,23 @@ fn public_api_smoke() {
         assert!(event.wait_until_signaled_value(1, 1_000));
 
         let command_buffer = queue.new_command_buffer().expect("event signal buffer");
-        command_buffer.encode_signal_event(event, 2);
-        command_buffer.commit();
-        command_buffer.wait_until_completed();
+        command_buffer
+            .encode_signal_event(event, 2)
+            .expect("encode event signal");
+        command_buffer.commit().expect("commit event signal");
+        command_buffer
+            .wait_until_completed()
+            .expect("complete event signal");
         assert!(event.wait_until_signaled_value(2, 1_000));
 
         let command_buffer = queue.new_command_buffer().expect("event wait buffer");
-        command_buffer.encode_wait_for_event(event, 2);
-        command_buffer.commit();
-        command_buffer.wait_until_completed();
+        command_buffer
+            .encode_wait_for_event(event, 2)
+            .expect("encode event wait");
+        command_buffer.commit().expect("commit event wait");
+        command_buffer
+            .wait_until_completed()
+            .expect("complete event wait");
     }
 
     let fence_a: Option<Fence> = device.new_fence();
@@ -488,13 +552,13 @@ fn public_api_smoke() {
         fence_a.as_ref(),
         sample_buffer.as_ref(),
     );
-    let copied = unsafe {
-        core::slice::from_raw_parts(
-            blit_dst.contents().expect("blit dst contents").cast::<u8>(),
-            64,
-        )
+    let copied = {
+        let mapping = unsafe { blit_dst.map_read().expect("map blit destination") };
+        let copied = mapping.iter().take(8).all(|byte| *byte == b'A');
+        drop(mapping);
+        copied
     };
-    assert!(copied.iter().take(8).all(|byte| *byte == b'A'));
+    assert!(copied);
 
     if let Some(sample_buffer) = sample_buffer.as_ref() {
         assert_eq!(sample_buffer.sample_count(), 2);
@@ -513,22 +577,36 @@ fn public_api_smoke() {
     write_u32_words(&explicit_buffer, &[0, 1, 2, 3]);
     let compute_command_buffer: CommandBuffer =
         queue.new_command_buffer().expect("compute command buffer");
-    let compute_encoder: ComputeCommandEncoder = compute_command_buffer
+    let mut compute_encoder: ComputeCommandEncoder = compute_command_buffer
         .new_compute_command_encoder()
         .expect("compute encoder");
-    compute_encoder.set_compute_pipeline_state(&descriptor_compute_pipeline);
-    compute_encoder.set_buffer(&explicit_buffer, 0, 0);
-    compute_encoder.set_sampler_state(&sampler_state, 2);
+    compute_encoder
+        .set_compute_pipeline_state(&descriptor_compute_pipeline)
+        .expect("bind descriptor compute pipeline");
+    compute_encoder
+        .set_buffer(&explicit_buffer, 0, 0)
+        .expect("bind explicit buffer");
+    compute_encoder
+        .set_sampler_state(&sampler_state, 2)
+        .expect("bind compute sampler");
     if let Some(fence) = fence_a.as_ref() {
-        compute_encoder.wait_for_fence(fence);
+        compute_encoder
+            .wait_for_fence(fence)
+            .expect("wait for compute fence");
     }
-    compute_encoder.dispatch_threads((4, 1, 1), (1, 1, 1));
+    compute_encoder
+        .dispatch_threads((4, 1, 1), (1, 1, 1))
+        .expect("dispatch compute");
     if let Some(fence) = fence_b.as_ref() {
-        compute_encoder.update_fence(fence);
+        compute_encoder
+            .update_fence(fence)
+            .expect("update compute fence");
     }
-    compute_encoder.end_encoding();
-    compute_command_buffer.commit();
-    compute_command_buffer.wait_until_completed();
+    compute_encoder.end_encoding().expect("end compute encoder");
+    compute_command_buffer.commit().expect("commit compute");
+    compute_command_buffer
+        .wait_until_completed()
+        .expect("complete compute");
     assert_eq!(read_u32_words(&explicit_buffer, 4), vec![1, 2, 3, 4]);
 
     let visible_table = pipeline.new_visible_function_table(1);
@@ -580,7 +658,7 @@ fn public_api_smoke() {
         .new_buffer(16, resource_options::STORAGE_MODE_SHARED)
         .expect("vertex buffer");
     let render_command_buffer = queue.new_command_buffer().expect("render command buffer");
-    let render_encoder: RenderCommandEncoder = render_command_buffer
+    let mut render_encoder: RenderCommandEncoder = render_command_buffer
         .new_render_command_encoder(
             &render_target,
             load_action::CLEAR,
@@ -589,30 +667,54 @@ fn public_api_smoke() {
         )
         .expect("render encoder");
     if let Some(fence) = fence_b.as_ref() {
-        render_encoder.wait_for_fence(fence);
+        render_encoder
+            .wait_for_fence(fence)
+            .expect("wait for render fence");
     }
-    render_encoder.set_render_pipeline_state(&descriptor_render_pipeline);
-    render_encoder.set_depth_stencil_state(&depth_stencil_state);
-    render_encoder.set_fragment_sampler_state(&sampler_state, 0);
-    render_encoder.set_vertex_buffer(&vertex_buffer, 0, 0);
-    render_encoder.draw_primitives(primitive_type::TRIANGLE, 0, 3);
+    render_encoder
+        .set_render_pipeline_state(&descriptor_render_pipeline)
+        .expect("bind render pipeline");
+    render_encoder
+        .set_depth_stencil_state(&depth_stencil_state)
+        .expect("bind depth stencil state");
+    render_encoder
+        .set_fragment_sampler_state(&sampler_state, 0)
+        .expect("bind render sampler");
+    render_encoder
+        .set_vertex_buffer(&vertex_buffer, 0, 0)
+        .expect("bind vertex buffer");
+    render_encoder
+        .draw_primitives(primitive_type::TRIANGLE, 0, 3)
+        .expect("draw triangle");
     if let Some(fence) = fence_c.as_ref() {
-        render_encoder.update_fence(fence);
+        render_encoder
+            .update_fence(fence)
+            .expect("update render fence");
     }
-    render_encoder.end_encoding();
-    render_command_buffer.commit();
-    render_command_buffer.wait_until_completed();
+    render_encoder.end_encoding().expect("end render encoder");
+    render_command_buffer.commit().expect("commit render");
+    render_command_buffer
+        .wait_until_completed()
+        .expect("complete render");
     let mut rendered = vec![0_u8; 4 * 4 * 4];
-    assert!(render_target.read_bytes_2d(&mut rendered, 16, (0, 0), (4, 4), 0));
+    unsafe {
+        render_target
+            .read_bytes_2d(&mut rendered, 16, (0, 0), (4, 4), 0)
+            .expect("read render target");
+    }
     assert!(rendered.chunks_exact(4).any(|pixel| pixel[3] != 0));
 
     if let Some(fence) = fence_c.as_ref() {
         let command_buffer = queue.new_command_buffer().expect("post-render blit buffer");
-        let encoder: BlitCommandEncoder = command_buffer
+        let mut encoder: BlitCommandEncoder = command_buffer
             .new_blit_command_encoder()
             .expect("post-render blit encoder");
-        encoder.wait_for_fence(fence);
-        encoder.end_encoding();
+        encoder
+            .wait_for_fence(fence)
+            .expect("wait for post-render fence");
+        encoder
+            .end_encoding()
+            .expect("end post-render blit encoder");
     }
 
     let mut spatial_scaler_descriptor = SpatialScalerDescriptor::new(

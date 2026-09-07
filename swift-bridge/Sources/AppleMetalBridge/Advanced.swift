@@ -429,6 +429,91 @@ public func am_texture_storage_mode(_ handle: UnsafeMutableRawPointer?) -> Int {
     return Int(texture.storageMode.rawValue)
 }
 
+private func amTextureBytesPerPixel(_ pixelFormat: MTLPixelFormat) -> Int? {
+    switch pixelFormat.rawValue {
+    case 1, 10, 12, 13, 14:
+        return 1
+    case 20, 22, 23, 24, 25, 30, 32, 33, 34:
+        return 2
+    case 55, 65, 70, 71, 72, 73, 74, 80, 81, 552, 554:
+        return 4
+    case 115:
+        return 8
+    case 125:
+        return 16
+    default:
+        return nil
+    }
+}
+
+private func amTextureTransferLengths(
+    _ texture: MTLTexture,
+    x: Int,
+    y: Int,
+    width: Int,
+    height: Int,
+    mipmapLevel: Int,
+    slice: Int,
+    bytesPerRow: Int
+) -> (Int, Int)? {
+    let sliceCount: Int
+    switch texture.textureType.rawValue {
+    case 2:
+        sliceCount = 1
+    case 3:
+        sliceCount = max(1, texture.arrayLength)
+    case 5:
+        sliceCount = 6
+    case 6:
+        let (count, overflow) = max(1, texture.arrayLength).multipliedReportingOverflow(by: 6)
+        guard !overflow else { return nil }
+        sliceCount = count
+    default:
+        return nil
+    }
+    guard x >= 0,
+          y >= 0,
+          width > 0,
+          height > 0,
+          mipmapLevel >= 0,
+          mipmapLevel < texture.mipmapLevelCount,
+          slice >= 0,
+          slice < sliceCount,
+          bytesPerRow >= 0,
+          texture.depth == 1,
+          texture.storageMode == .shared || texture.storageMode == .managed,
+          let bytesPerPixel = amTextureBytesPerPixel(texture.pixelFormat)
+    else { return nil }
+
+    let mipWidth = max(1, texture.width >> mipmapLevel)
+    let mipHeight = max(1, texture.height >> mipmapLevel)
+    let (endX, overflowX) = x.addingReportingOverflow(width)
+    let (endY, overflowY) = y.addingReportingOverflow(height)
+    let (minimumRowBytes, overflowRow) = width.multipliedReportingOverflow(by: bytesPerPixel)
+    guard !overflowX,
+          !overflowY,
+          !overflowRow,
+          endX <= mipWidth,
+          endY <= mipHeight,
+          bytesPerRow >= minimumRowBytes,
+          bytesPerRow.isMultiple(of: bytesPerPixel)
+    else { return nil }
+    let (precedingRows, overflowPrecedingRows) = bytesPerRow.multipliedReportingOverflow(
+        by: height - 1
+    )
+    let (requiredSpan, overflowRequiredSpan) = precedingRows.addingReportingOverflow(
+        minimumRowBytes
+    )
+    let (bytesPerImage, overflowBytesPerImage) = bytesPerRow.multipliedReportingOverflow(
+        by: height
+    )
+    guard !overflowPrecedingRows,
+          !overflowRequiredSpan,
+          !overflowBytesPerImage
+    else { return nil }
+    return (requiredSpan, bytesPerImage)
+}
+
 @_cdecl("am_texture_replace_region_2d")
 public func am_texture_replace_region_2d(
     _ handle: UnsafeMutableRawPointer?,
@@ -437,14 +522,35 @@ public func am_texture_replace_region_2d(
     _ width: Int,
     _ height: Int,
     _ mipmapLevel: Int,
+    _ slice: Int,
     _ bytes: UnsafePointer<UInt8>?,
+    _ bytesLen: Int,
     _ bytesPerRow: Int
 ) -> Bool {
     guard let texture: MTLTexture = am_borrow(handle),
-          let bytes
+          let bytes,
+          bytesLen >= 0,
+          let lengths = amTextureTransferLengths(
+              texture,
+              x: x,
+              y: y,
+              width: width,
+              height: height,
+              mipmapLevel: mipmapLevel,
+              slice: slice,
+              bytesPerRow: bytesPerRow
+          ),
+          bytesLen >= lengths.0
     else { return false }
     let region = MTLRegionMake2D(x, y, width, height)
-    texture.replace(region: region, mipmapLevel: mipmapLevel, withBytes: bytes, bytesPerRow: bytesPerRow)
+    texture.replace(
+        region: region,
+        mipmapLevel: mipmapLevel,
+        slice: slice,
+        withBytes: bytes,
+        bytesPerRow: bytesPerRow,
+        bytesPerImage: lengths.1
+    )
     return true
 }
 
@@ -458,15 +564,33 @@ public func am_texture_get_bytes_2d(
     _ y: Int,
     _ width: Int,
     _ height: Int,
-    _ mipmapLevel: Int
+    _ mipmapLevel: Int,
+    _ slice: Int
 ) -> Bool {
     guard let texture: MTLTexture = am_borrow(handle),
-          let outBytes
+          let outBytes,
+          outLen >= 0,
+          let lengths = amTextureTransferLengths(
+              texture,
+              x: x,
+              y: y,
+              width: width,
+              height: height,
+              mipmapLevel: mipmapLevel,
+              slice: slice,
+              bytesPerRow: bytesPerRow
+          ),
+          outLen >= lengths.0
     else { return false }
-    let required = bytesPerRow * height
-    guard outLen >= required else { return false }
     let region = MTLRegionMake2D(x, y, width, height)
-    texture.getBytes(outBytes, bytesPerRow: bytesPerRow, from: region, mipmapLevel: mipmapLevel)
+    texture.getBytes(
+        outBytes,
+        bytesPerRow: bytesPerRow,
+        bytesPerImage: lengths.1,
+        from: region,
+        mipmapLevel: mipmapLevel,
+        slice: slice
+    )
     return true
 }
 
@@ -528,8 +652,11 @@ public func am_function_new_argument_encoder(
     _ handle: UnsafeMutableRawPointer?,
     _ bufferIndex: Int
 ) -> UnsafeMutableRawPointer? {
-    guard let function: MTLFunction = am_borrow(handle) else { return nil }
+    guard bufferIndex >= 0,
+          let function: MTLFunction = am_borrow(handle)
+    else { return nil }
     let encoder = function.makeArgumentEncoder(bufferIndex: bufferIndex)
+    amRegisterArgumentEncoder(encoder, layout: nil)
     return am_retain(encoder as AnyObject)
 }
 
@@ -730,55 +857,6 @@ public func am_binary_archive_serialize_to_url(
         am_store_error(outErrorMessage, error)
         return false
     }
-}
-
-@_cdecl("am_argument_encoder_encoded_length")
-public func am_argument_encoder_encoded_length(_ handle: UnsafeMutableRawPointer?) -> Int {
-    guard let encoder: MTLArgumentEncoder = am_borrow(handle) else { return 0 }
-    return encoder.encodedLength
-}
-
-@_cdecl("am_argument_encoder_alignment")
-public func am_argument_encoder_alignment(_ handle: UnsafeMutableRawPointer?) -> Int {
-    guard let encoder: MTLArgumentEncoder = am_borrow(handle) else { return 0 }
-    return encoder.alignment
-}
-
-@_cdecl("am_argument_encoder_set_argument_buffer")
-public func am_argument_encoder_set_argument_buffer(
-    _ handle: UnsafeMutableRawPointer?,
-    _ bufferHandle: UnsafeMutableRawPointer?,
-    _ offset: Int
-) {
-    guard let encoder: MTLArgumentEncoder = am_borrow(handle),
-          let buffer: MTLBuffer = am_borrow(bufferHandle)
-    else { return }
-    encoder.setArgumentBuffer(buffer, offset: offset)
-}
-
-@_cdecl("am_argument_encoder_set_buffer")
-public func am_argument_encoder_set_buffer(
-    _ handle: UnsafeMutableRawPointer?,
-    _ bufferHandle: UnsafeMutableRawPointer?,
-    _ offset: Int,
-    _ index: Int
-) {
-    guard let encoder: MTLArgumentEncoder = am_borrow(handle),
-          let buffer: MTLBuffer = am_borrow(bufferHandle)
-    else { return }
-    encoder.setBuffer(buffer, offset: offset, index: index)
-}
-
-@_cdecl("am_argument_encoder_set_texture")
-public func am_argument_encoder_set_texture(
-    _ handle: UnsafeMutableRawPointer?,
-    _ textureHandle: UnsafeMutableRawPointer?,
-    _ index: Int
-) {
-    guard let encoder: MTLArgumentEncoder = am_borrow(handle),
-          let texture: MTLTexture = am_borrow(textureHandle)
-    else { return }
-    encoder.setTexture(texture, index: index)
 }
 
 @_cdecl("am_indirect_command_buffer_size")

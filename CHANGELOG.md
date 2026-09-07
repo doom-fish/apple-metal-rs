@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.9.0] - 2026-09-07
+
+### Changed (breaking)
+
+- Replaced raw `MetalBuffer::contents` access with unsafe scoped read/write
+  mappings shared across buffer clones. `write_bytes` and `read_bytes` now
+  return typed errors, private buffers reject CPU access, managed writes are
+  reported on guard drop, and private allocations can create shared staging
+  buffers for blit transfers.
+- Made unretained-reference command-buffer creation unsafe. Regular command
+  buffers now share lifecycle state across clones, reject repeated commit,
+  active-encoder commit, and post-completion encoding, while encoder drop ends
+  encoding exactly once. Illegal wait-after-update fence ordering is rejected.
+  Command and encoder mutations now return `CommandBufferError`.
+- Argument encoders now validate active destination binding, alignment,
+  checked encoded range, storage mode, resource offsets, and descriptor
+  index/type. Destination binding is an unsafe scoped guard that holds the
+  buffer's CPU mapping lock; function-derived layouts require explicit unsafe
+  setters. Empty or unsupported descriptor configurations are rejected before
+  the native call, and binding indexes are limited only by native integer
+  representation.
+  Resources bound indirectly through argument buffers are retained by the
+  native argument buffer for each encoded offset and binding and automatically
+  declared to command encoders before dispatch or draw, with render-stage
+  hazard tracking. Self-referential and nested buffer/texture retention cycles
+  are rejected.
+- Texture upload/readback are now unsafe, return `TextureTransferError`, and
+  validate native integer conversion, mip/slice/region bounds, supported pixel
+  layout, row stride, byte length, and CPU-compatible storage before entering Metal.
+  Their contract excludes overlapping GPU and CPU/native aliases, including
+  mappings of buffer-backed texture storage.
+- `IOSurfaceMetalExt::create_metal_texture` now returns
+  `Result<_, IOSurfaceMetalError>`, uses selected-plane dimensions and row
+  layout, handles odd bi-planar geometry, validates format compatibility, and
+  rejects packed `l10r` surfaces instead of guessing a storage mapping.
+- Raised in-family requirements to `apple-cf >=0.10, <0.11` and
+  `doom-fish-utils >=0.4, <0.5`.
+
 ## [0.8.7] - 2026-05-20
 
 - Migrated local `take_string` body to call `doom_fish_utils::ffi_string::take_owned_cstring_c`. Centralises the duplicated FFI take-string pattern fleet-wide. No public API change.

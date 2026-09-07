@@ -14,7 +14,7 @@ extern "C" {
         handle: *mut c_void,
         sampler_handle: *mut c_void,
         index: usize,
-    );
+    ) -> bool;
 
     /// Calls the `Metal` framework counterpart for `am_device_new_depth_stencil_state`.
     pub fn am_device_new_depth_stencil_state(

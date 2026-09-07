@@ -4,7 +4,7 @@ Safe Rust bindings for Apple's [Metal](https://developer.apple.com/metal/)
 framework on macOS, backed by a Swift bridge in the
 `screencapturekit-rs` style.
 
-`apple-metal` 0.6.3 now covers:
+`apple-metal` covers:
 
 - device discovery and capability queries
 - buffers, textures, texture views, buffer-backed textures, and `IOSurface`
@@ -42,7 +42,42 @@ let buffer = device
     .new_buffer(4096, resource_options::STORAGE_MODE_SHARED)
     .expect("shared buffer");
 println!("allocated {} bytes", buffer.length());
+
+unsafe {
+    buffer
+        .write_bytes(0, b"CPU data")
+        .expect("exclusive CPU write");
+}
 ```
+
+## Resource safety contracts
+
+`MetalBuffer::map_read` and `map_write` return scoped guards and serialize CPU
+mappings across clones of the same Rust handle. They are `unsafe` because the
+caller must still exclude overlapping GPU access; managed readback also
+requires a completed blit `synchronize_resource`. Private buffers reject CPU
+mapping and can create a shared staging buffer for explicit blit transfers.
+
+Command buffers share lifecycle state across clones. Encoding and submission
+methods return `Result`, commit is rejected while an encoder is active, encoder
+drop ends encoding exactly once, and repeated submission or post-completion
+encoding is rejected. Encoders also reject waiting on a fence after updating
+that same fence. The unretained-reference constructor is `unsafe`; regular
+command buffers remain the default. Resources written into argument buffers are
+retained by the native argument buffer, keyed by encoded offset and binding,
+until that argument buffer is released, and are automatically declared with
+`useResource` before dispatch or draw, including vertex-stage hazard tracking
+for render encoders. Argument setters are available only through an unsafe
+scoped destination binding that holds the buffer's CPU mapping lock.
+Self-referential and nested retention cycles are rejected.
+Descriptor layouts reject empty or unsupported native configurations before
+calling Metal and do not impose an artificial binding-index ceiling.
+
+Unsafe texture upload and readback return `TextureTransferError` after checked
+format-layout, stride, byte-length, mip, slice, region, storage-mode, and native
+integer validation. The caller must exclude overlapping GPU and CPU/native
+aliases, including buffer mappings behind buffer-backed textures. Private
+textures require a GPU staging path rather than CPU transfer methods.
 
 ### Zero-copy from `IOSurface`
 
@@ -61,6 +96,12 @@ println!("{}x{} MTLTexture", texture.width(), texture.height());
 # Ok(()) }
 # #[cfg(not(feature = "iosurface"))] fn main() {}
 ```
+
+`create_metal_texture` uses the selected plane's actual width, height, and row
+stride, including odd bi-planar dimensions, and returns `IOSurfaceMetalError`
+for unsupported formats or incompatible layouts. Packed `l10r` surfaces are
+reported as unsupported rather than mapped to a Metal format with an uncertain
+storage representation.
 
 ## Examples
 

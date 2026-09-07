@@ -1,4 +1,4 @@
-use crate::{ffi, CommandBuffer, Fence, MetalDevice, MetalTexture};
+use crate::{ffi, CommandBuffer, CommandBufferError, Fence, MetalDevice, MetalTexture};
 use core::ffi::c_void;
 
 macro_rules! opaque_metalfx_handle {
@@ -303,6 +303,7 @@ impl MetalDevice {
     }
 }
 
+#[allow(clippy::missing_errors_doc)]
 impl SpatialScaler {
     /// Required texture usage bits for the input color texture.
     #[must_use]
@@ -338,11 +339,17 @@ impl SpatialScaler {
     }
 
     /// Encode this scaler's work into a command buffer.
-    pub fn encode_to_command_buffer(&self, command_buffer: &CommandBuffer) {
-        unsafe { ffi::am_spatial_scaler_encode(self.as_ptr(), command_buffer.as_ptr()) };
+    pub fn encode_to_command_buffer(
+        &self,
+        command_buffer: &CommandBuffer,
+    ) -> Result<(), CommandBufferError> {
+        command_buffer.encode_without_encoder("encode spatial scaler", || unsafe {
+            ffi::am_spatial_scaler_encode(self.as_ptr(), command_buffer.as_ptr());
+        })
     }
 }
 
+#[allow(clippy::missing_errors_doc)]
 impl TemporalScaler {
     fn texture_usage(&self, kind: usize) -> usize {
         unsafe { ffi::am_temporal_scaler_texture_usage(self.as_ptr(), kind) }
@@ -417,7 +424,12 @@ impl TemporalScaler {
     }
 
     /// Encode this scaler's work into a command buffer.
-    pub fn encode_to_command_buffer(&self, command_buffer: &CommandBuffer) {
-        unsafe { ffi::am_temporal_scaler_encode(self.as_ptr(), command_buffer.as_ptr()) };
+    pub fn encode_to_command_buffer(
+        &self,
+        command_buffer: &CommandBuffer,
+    ) -> Result<(), CommandBufferError> {
+        command_buffer.encode_without_encoder("encode temporal scaler", || unsafe {
+            ffi::am_temporal_scaler_encode(self.as_ptr(), command_buffer.as_ptr());
+        })
     }
 }

@@ -9,16 +9,24 @@ fn main() {
     let dst = dev
         .new_buffer(64, resource_options::STORAGE_MODE_SHARED)
         .expect("dst");
-    let _ = src.write_bytes(b"hello GPU blit from apple-metal-rs!!!!!");
+    unsafe {
+        src.write_bytes(0, b"hello GPU blit from apple-metal-rs!!!!!")
+            .expect("write source buffer");
+    }
 
     let cb = queue.new_command_buffer().expect("cb");
-    assert!(cb.blit_copy_buffer(&src, 0, &dst, 0, 64));
-    cb.commit();
-    cb.wait_until_completed();
+    cb.blit_copy_buffer(&src, 0, &dst, 0, 64)
+        .expect("encode blit copy");
+    cb.commit().expect("commit blit");
+    cb.wait_until_completed().expect("complete blit");
 
-    let p = dst.contents().unwrap().cast::<u8>();
-    let bytes = unsafe { core::slice::from_raw_parts(p, 40) };
-    let s = String::from_utf8_lossy(bytes);
+    let bytes = {
+        let mapping = unsafe { dst.map_read().expect("map destination") };
+        let bytes = mapping[..40].to_vec();
+        drop(mapping);
+        bytes
+    };
+    let s = String::from_utf8_lossy(&bytes);
     println!("GPU blit result: {s:?}");
     assert!(s.starts_with("hello GPU blit"));
 }

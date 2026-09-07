@@ -17,9 +17,11 @@ fn main() {
     );
 
     let queue = device.new_command_queue().expect("command queue");
-    let status_buffer = queue
-        .new_command_buffer_with_unretained_references()
-        .expect("scratch command buffer");
+    let status_buffer = unsafe {
+        queue
+            .new_command_buffer_with_unretained_references()
+            .expect("scratch command buffer")
+    };
     println!("scratch command buffer status={}", status_buffer.status());
 
     let src = device
@@ -29,16 +31,20 @@ fn main() {
         .new_buffer(64, resource_options::STORAGE_MODE_SHARED)
         .expect("destination buffer");
     let blit_cb = queue.new_command_buffer().expect("blit command buffer");
-    let blit = blit_cb
+    let mut blit = blit_cb
         .new_blit_command_encoder()
         .expect("blit command encoder");
-    assert!(blit.fill_buffer(&src, 0..64, b'Z'));
-    assert!(blit.copy_buffer(&src, 0, &dst, 0, 64));
-    blit.end_encoding();
-    blit_cb.commit();
-    blit_cb.wait_until_completed();
-    let copied = unsafe {
-        core::slice::from_raw_parts(dst.contents().expect("dst contents").cast::<u8>(), 8)
+    blit.fill_buffer(&src, 0..64, b'Z').expect("fill source");
+    blit.copy_buffer(&src, 0, &dst, 0, 64)
+        .expect("copy buffers");
+    blit.end_encoding().expect("end blit encoder");
+    blit_cb.commit().expect("commit blit");
+    blit_cb.wait_until_completed().expect("complete blit");
+    let copied = {
+        let mapping = unsafe { dst.map_read().expect("map destination") };
+        let copied = mapping[..8].to_vec();
+        drop(mapping);
+        copied
     };
     println!("blit copied bytes: {copied:?}");
 
@@ -57,15 +63,21 @@ fn main() {
         .expect("compute buffer");
     common::write_u32_words(&buffer, &[10, 20, 30, 40]);
     let compute_cb = queue.new_command_buffer().expect("compute command buffer");
-    let compute = compute_cb
+    let mut compute = compute_cb
         .new_compute_command_encoder()
         .expect("compute command encoder");
-    compute.set_compute_pipeline_state(&pipeline);
-    compute.set_buffer(&buffer, 0, 0);
-    compute.dispatch_threads((4, 1, 1), (1, 1, 1));
-    compute.end_encoding();
-    compute_cb.commit();
-    compute_cb.wait_until_completed();
+    compute
+        .set_compute_pipeline_state(&pipeline)
+        .expect("bind compute pipeline");
+    compute
+        .set_buffer(&buffer, 0, 0)
+        .expect("bind compute buffer");
+    compute
+        .dispatch_threads((4, 1, 1), (1, 1, 1))
+        .expect("dispatch compute");
+    compute.end_encoding().expect("end compute encoder");
+    compute_cb.commit().expect("commit compute");
+    compute_cb.wait_until_completed().expect("complete compute");
     println!("compute output: {:?}", common::read_u32_words(&buffer, 4));
 
     let render_library = device
@@ -89,7 +101,7 @@ fn main() {
         .new_buffer(16, resource_options::STORAGE_MODE_SHARED)
         .expect("vertex buffer");
     let render_cb = queue.new_command_buffer().expect("render command buffer");
-    let render = render_cb
+    let mut render = render_cb
         .new_render_command_encoder(
             &render_target,
             load_action::CLEAR,
@@ -97,24 +109,42 @@ fn main() {
             [0.0, 0.0, 0.0, 1.0],
         )
         .expect("render command encoder");
-    render.set_render_pipeline_state(&render_pipeline);
-    render.set_vertex_buffer(&vertex_buffer, 0, 0);
-    render.draw_primitives(primitive_type::TRIANGLE, 0, 3);
-    render.end_encoding();
-    render_cb.commit();
-    render_cb.wait_until_completed();
+    render
+        .set_render_pipeline_state(&render_pipeline)
+        .expect("bind render pipeline");
+    render
+        .set_vertex_buffer(&vertex_buffer, 0, 0)
+        .expect("bind vertex buffer");
+    render
+        .draw_primitives(primitive_type::TRIANGLE, 0, 3)
+        .expect("draw triangle");
+    render.end_encoding().expect("end render encoder");
+    render_cb.commit().expect("commit render");
+    render_cb.wait_until_completed().expect("complete render");
 
     let mut rendered = vec![0_u8; 4 * 4 * 4];
-    assert!(render_target.read_bytes_2d(&mut rendered, 16, (0, 0), (4, 4), 0));
+    unsafe {
+        render_target
+            .read_bytes_2d(&mut rendered, 16, (0, 0), (4, 4), 0)
+            .expect("read render target");
+    }
     println!("first rendered pixel: {:?}", &rendered[..4]);
 
     let shared_texture = device
         .new_texture(TextureDescriptor::new_2d(4, 4, pixel_format::BGRA8UNORM))
         .expect("shared texture");
     let upload = vec![0x22_u8; 4 * 4 * 4];
-    assert!(shared_texture.replace_region_2d(&upload, 16, (0, 0), (4, 4), 0));
+    unsafe {
+        shared_texture
+            .replace_region_2d(&upload, 16, (0, 0), (4, 4), 0)
+            .expect("upload texture");
+    }
     let mut download = vec![0_u8; upload.len()];
-    assert!(shared_texture.read_bytes_2d(&mut download, 16, (0, 0), (4, 4), 0));
+    unsafe {
+        shared_texture
+            .read_bytes_2d(&mut download, 16, (0, 0), (4, 4), 0)
+            .expect("read texture");
+    }
     let view = shared_texture
         .new_view(pixel_format::BGRA8UNORM)
         .expect("texture view");

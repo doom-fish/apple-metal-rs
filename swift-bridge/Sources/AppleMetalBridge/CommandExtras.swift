@@ -182,6 +182,19 @@ public func am_blit_command_encoder_wait_for_fence(
     encoder.waitForFence(fence)
 }
 
+@_cdecl("am_blit_command_encoder_synchronize_resource")
+public func am_blit_command_encoder_synchronize_resource(
+    _ handle: UnsafeMutableRawPointer?,
+    _ resourceHandle: UnsafeMutableRawPointer?
+) -> Bool {
+    guard let encoder: MTLBlitCommandEncoder = am_borrow(handle),
+          let resource: MTLResource = am_borrow(resourceHandle),
+          resource.storageMode == .managed
+    else { return false }
+    encoder.synchronize(resource: resource)
+    return true
+}
+
 @_cdecl("am_compute_command_encoder_set_pipeline_state")
 public func am_compute_command_encoder_set_pipeline_state(
     _ handle: UnsafeMutableRawPointer?,
@@ -204,6 +217,7 @@ public func am_compute_command_encoder_set_buffer(
           let buffer: MTLBuffer = am_borrow(bufferHandle)
     else { return }
     encoder.setBuffer(buffer, offset: offset, index: index)
+    amTrackArgumentBuffer(encoder, buffer: buffer)
 }
 
 @_cdecl("am_compute_command_encoder_set_texture")
@@ -268,6 +282,7 @@ public func am_compute_command_encoder_dispatch_threadgroups(
     _ threadsD: Int
 ) {
     guard let encoder: MTLComputeCommandEncoder = am_borrow(handle) else { return }
+    amDeclareArgumentBufferResources(encoder)
     encoder.dispatchThreadgroups(
         MTLSize(width: tgW, height: tgH, depth: tgD),
         threadsPerThreadgroup: MTLSize(width: threadsW, height: threadsH, depth: threadsD)
@@ -285,6 +300,7 @@ public func am_compute_command_encoder_dispatch_threads(
     _ threadsD: Int
 ) {
     guard let encoder: MTLComputeCommandEncoder = am_borrow(handle) else { return }
+    amDeclareArgumentBufferResources(encoder)
     encoder.dispatchThreads(
         MTLSize(width: gridW, height: gridH, depth: gridD),
         threadsPerThreadgroup: MTLSize(width: threadsW, height: threadsH, depth: threadsD)
@@ -335,6 +351,7 @@ public func am_render_command_encoder_set_vertex_buffer(
           let buffer: MTLBuffer = am_borrow(bufferHandle)
     else { return }
     encoder.setVertexBuffer(buffer, offset: offset, index: index)
+    amTrackArgumentBuffer(encoder, buffer: buffer)
 }
 
 @_cdecl("am_render_command_encoder_draw_primitives")
@@ -345,6 +362,7 @@ public func am_render_command_encoder_draw_primitives(
     _ vertexCount: Int
 ) {
     guard let encoder: MTLRenderCommandEncoder = am_borrow(handle) else { return }
+    amDeclareArgumentBufferResources(encoder)
     encoder.drawPrimitives(
         type: MTLPrimitiveType(rawValue: UInt(primitiveType)) ?? .point,
         vertexStart: vertexStart,

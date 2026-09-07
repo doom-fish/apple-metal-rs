@@ -26,8 +26,12 @@ extern "C" {
     pub fn am_buffer_release(handle: *mut c_void);
     /// Calls the `Metal` framework counterpart for `am_buffer_length`.
     pub fn am_buffer_length(handle: *mut c_void) -> usize;
+    /// Calls the `Metal` framework counterpart for `am_buffer_storage_mode`.
+    pub fn am_buffer_storage_mode(handle: *mut c_void) -> usize;
     /// Calls the `Metal` framework counterpart for `am_buffer_contents`.
     pub fn am_buffer_contents(handle: *mut c_void) -> *mut c_void;
+    /// Calls the `Metal` framework counterpart for `am_buffer_new_staging_buffer`.
+    pub fn am_buffer_new_staging_buffer(handle: *mut c_void) -> *mut c_void;
 
     /// Calls the `Metal` framework counterpart for `am_device_new_texture_2d`.
     pub fn am_device_new_texture_2d(
@@ -47,6 +51,8 @@ extern "C" {
     pub fn am_texture_height(handle: *mut c_void) -> usize;
     /// Calls the `Metal` framework counterpart for `am_texture_pixel_format`.
     pub fn am_texture_pixel_format(handle: *mut c_void) -> usize;
+    /// Calls the `Metal` framework counterpart for `am_texture_type`.
+    pub fn am_texture_type(handle: *mut c_void) -> usize;
 
     /// Calls the `Metal` framework counterpart for `am_device_new_texture_from_iosurface`.
     pub fn am_device_new_texture_from_iosurface(
