@@ -327,7 +327,7 @@ impl MetalDevice {
         let csrc = std::ffi::CString::new(source).map_err(|e| e.to_string())?;
         let mut err_msg: *mut core::ffi::c_char = core::ptr::null_mut();
         let p = unsafe {
-            ffi::am_device_new_library_with_source(self.ptr, csrc.as_ptr(), &mut err_msg)
+            ffi::am_device_new_library_with_source(self.ptr, csrc.as_ptr(), &raw mut err_msg)
         };
         if p.is_null() {
             let msg = if err_msg.is_null() {
@@ -358,7 +358,7 @@ impl MetalDevice {
     ) -> Result<ComputePipelineState, String> {
         let mut err_msg: *mut core::ffi::c_char = core::ptr::null_mut();
         let p = unsafe {
-            ffi::am_device_new_compute_pipeline_state(self.ptr, function.ptr, &mut err_msg)
+            ffi::am_device_new_compute_pipeline_state(self.ptr, function.ptr, &raw mut err_msg)
         };
         if p.is_null() {
             let msg = if err_msg.is_null() {

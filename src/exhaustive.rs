@@ -521,7 +521,7 @@ impl MetalDeviceObserver {
 #[must_use]
 pub fn copy_all_devices() -> Vec<MetalDevice> {
     let mut count = 0;
-    let ptr = unsafe { ffi::am_copy_all_devices(&mut count) };
+    let ptr = unsafe { ffi::am_copy_all_devices(&raw mut count) };
     unsafe { take_device_array(ptr, count) }
 }
 
@@ -540,8 +540,12 @@ pub unsafe fn copy_all_devices_with_observer(
 ) -> (Vec<MetalDevice>, Option<MetalDeviceObserver>) {
     let mut count = 0;
     let mut observer = ptr::null_mut();
-    let ptr =
-        ffi::am_copy_all_devices_with_observer(&mut count, &mut observer, callback, user_data);
+    let ptr = ffi::am_copy_all_devices_with_observer(
+        &raw mut count,
+        &raw mut observer,
+        callback,
+        user_data,
+    );
     (
         take_device_array(ptr, count),
         MetalDeviceObserver::wrap(observer),

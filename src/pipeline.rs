@@ -336,7 +336,7 @@ impl MetalDevice {
                 descriptor.thread_group_size_is_multiple_of_thread_execution_width,
                 descriptor.max_total_threads_per_threadgroup,
                 descriptor.support_indirect_command_buffers,
-                &mut err,
+                &raw mut err,
             )
         };
         if ptr.is_null() {
@@ -384,7 +384,7 @@ impl MetalDevice {
                 descriptor.stencil_attachment_pixel_format,
                 color_attachments.as_ptr(),
                 descriptor.color_attachments.len(),
-                &mut err,
+                &raw mut err,
             )
         };
         if ptr.is_null() {
@@ -425,7 +425,7 @@ impl MetalDevice {
                 descriptor.max_total_threads_per_threadgroup,
                 color_attachments.as_ptr(),
                 descriptor.color_attachments.len(),
-                &mut err,
+                &raw mut err,
             )
         };
         if ptr.is_null() {

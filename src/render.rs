@@ -105,7 +105,7 @@ impl MetalDevice {
                 fragment.as_ptr(),
                 color_pixel_format,
                 sample_count,
-                &mut err,
+                &raw mut err,
             )
         };
         RenderPipelineState::wrap(ptr).ok_or_else(|| unsafe {

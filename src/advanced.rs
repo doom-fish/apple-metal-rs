@@ -307,7 +307,7 @@ impl MetalDevice {
                 self.as_ptr(),
                 source.as_ptr(),
                 install_name.as_ptr(),
-                &mut err,
+                &raw mut err,
             )
         };
         DynamicLibrary::wrap(ptr).ok_or_else(|| unsafe {
@@ -325,7 +325,7 @@ impl MetalDevice {
         let path = c_string(path.to_string_lossy().as_ref())?;
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr = unsafe {
-            ffi::am_device_new_dynamic_library_with_url(self.as_ptr(), path.as_ptr(), &mut err)
+            ffi::am_device_new_dynamic_library_with_url(self.as_ptr(), path.as_ptr(), &raw mut err)
         };
         DynamicLibrary::wrap(ptr).ok_or_else(|| unsafe {
             take_optional_string(err)
@@ -346,7 +346,8 @@ impl MetalDevice {
             .as_ref()
             .map_or(core::ptr::null(), |path| path.as_c_str().as_ptr());
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
-        let ptr = unsafe { ffi::am_device_new_binary_archive(self.as_ptr(), raw_path, &mut err) };
+        let ptr =
+            unsafe { ffi::am_device_new_binary_archive(self.as_ptr(), raw_path, &raw mut err) };
         BinaryArchive::wrap(ptr).ok_or_else(|| unsafe {
             take_optional_string(err)
                 .unwrap_or_else(|| "MTLDevice.makeBinaryArchive returned nil".to_string())
@@ -413,7 +414,7 @@ impl MetalDevice {
                 sample_count,
                 storage_mode,
                 raw_label,
-                &mut err,
+                &raw mut err,
             )
         };
         CounterSampleBuffer::wrap(ptr).ok_or_else(|| unsafe {
@@ -429,8 +430,9 @@ impl MetalDevice {
     /// Returns Metal's localized log-state creation error on failure.
     pub fn new_log_state(&self, level: usize, buffer_size: isize) -> Result<LogState, String> {
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
-        let ptr =
-            unsafe { ffi::am_device_new_log_state(self.as_ptr(), level, buffer_size, &mut err) };
+        let ptr = unsafe {
+            ffi::am_device_new_log_state(self.as_ptr(), level, buffer_size, &raw mut err)
+        };
         LogState::wrap(ptr).ok_or_else(|| unsafe {
             take_optional_string(err)
                 .unwrap_or_else(|| "MTLDevice.makeLogState returned nil".to_string())
@@ -453,7 +455,12 @@ impl MetalDevice {
             .map_or(core::ptr::null(), |label| label.as_c_str().as_ptr());
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr = unsafe {
-            ffi::am_device_new_residency_set(self.as_ptr(), raw_label, initial_capacity, &mut err)
+            ffi::am_device_new_residency_set(
+                self.as_ptr(),
+                raw_label,
+                initial_capacity,
+                &raw mut err,
+            )
         };
         ResidencySet::wrap(ptr).ok_or_else(|| unsafe {
             take_optional_string(err)
@@ -1250,7 +1257,7 @@ impl DynamicLibrary {
         let path = c_string(path.to_string_lossy().as_ref())?;
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ok = unsafe {
-            ffi::am_dynamic_library_serialize_to_url(self.as_ptr(), path.as_ptr(), &mut err)
+            ffi::am_dynamic_library_serialize_to_url(self.as_ptr(), path.as_ptr(), &raw mut err)
         };
         if ok {
             Ok(())
@@ -1272,7 +1279,11 @@ impl BinaryArchive {
     pub fn add_compute_function(&self, function: &MetalFunction) -> Result<(), String> {
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ok = unsafe {
-            ffi::am_binary_archive_add_compute_function(self.as_ptr(), function.as_ptr(), &mut err)
+            ffi::am_binary_archive_add_compute_function(
+                self.as_ptr(),
+                function.as_ptr(),
+                &raw mut err,
+            )
         };
         if ok {
             Ok(())
@@ -1305,7 +1316,7 @@ impl BinaryArchive {
                 fragment.as_ptr(),
                 color_pixel_format,
                 sample_count,
-                &mut err,
+                &raw mut err,
             )
         };
         if ok {
@@ -1328,7 +1339,7 @@ impl BinaryArchive {
         let path = c_string(path.to_string_lossy().as_ref())?;
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ok = unsafe {
-            ffi::am_binary_archive_serialize_to_url(self.as_ptr(), path.as_ptr(), &mut err)
+            ffi::am_binary_archive_serialize_to_url(self.as_ptr(), path.as_ptr(), &raw mut err)
         };
         if ok {
             Ok(())
@@ -1397,7 +1408,7 @@ impl CounterSampleBuffer {
                 self.as_ptr(),
                 range.start,
                 range.end.saturating_sub(range.start),
-                &mut out_len,
+                &raw mut out_len,
             )
         };
         if ptr.is_null() {
