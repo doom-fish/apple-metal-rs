@@ -9,7 +9,7 @@ description = "Safe Rust bindings for Apple's Metal framework — devices, resou
 authors = ["Per Johansson <per@doom.fish>"]
 keywords = ["metal", "gpu", "iosurface", "macos", "apple"]
 categories = ["api-bindings", "os::macos-apis", "graphics"]
-rust-version = "1.76"
+rust-version = "1.82"
 readme = "README.md"
 build = "build.rs"
 include = [
@@ -45,8 +45,8 @@ iosurface = ["dep:apple-cf"]
 
 [dependencies]
 libc = "0.2"
-doom-fish-utils = { path = "../doom-fish-utils", version = ">=0.4, <0.5" }
-apple-cf = { path = "../apple-cf-rs", version = ">=0.10, <0.11", default-features = false, features = ["iosurface"], optional = true }
+doom-fish-utils = { path = "../doom-fish-utils", version = ">=0.4.1, <0.5" }
+apple-cf = { path = "../apple-cf-rs", version = ">=0.11, <0.12", default-features = false, features = ["iosurface"], optional = true }
 
 [dev-dependencies]
 
