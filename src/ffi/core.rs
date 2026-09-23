@@ -22,6 +22,12 @@ extern "C" {
         length: usize,
         options: usize,
     ) -> *mut c_void;
+    pub fn ametal_device_new_buffer_with_bytes(
+        device_handle: *mut c_void,
+        bytes: *const c_void,
+        length: usize,
+        options: usize,
+    ) -> *mut c_void;
     /// Calls the `Metal` framework counterpart for `ametal_buffer_release`.
     pub fn ametal_buffer_release(handle: *mut c_void);
     /// Calls the `Metal` framework counterpart for `ametal_buffer_length`.
@@ -33,13 +39,16 @@ extern "C" {
     /// Calls the `Metal` framework counterpart for `ametal_buffer_new_staging_buffer`.
     pub fn ametal_buffer_new_staging_buffer(handle: *mut c_void) -> *mut c_void;
 
-    /// Calls the `Metal` framework counterpart for `ametal_device_new_texture_2d`.
-    pub fn ametal_device_new_texture_2d(
+    pub fn ametal_device_new_texture(
         device_handle: *mut c_void,
+        texture_type: usize,
         pixel_format: usize,
         width: usize,
         height: usize,
+        depth: usize,
         mipmapped: bool,
+        array_length: usize,
+        sample_count: usize,
         usage: usize,
         storage_mode: usize,
     ) -> *mut c_void;

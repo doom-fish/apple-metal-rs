@@ -723,26 +723,38 @@ public func ametal_heap_new_buffer(
     return am_retain(buffer as AnyObject)
 }
 
-@_cdecl("ametal_heap_new_texture_2d")
-public func ametal_heap_new_texture_2d(
+@_cdecl("ametal_heap_new_texture")
+public func ametal_heap_new_texture(
     _ handle: UnsafeMutableRawPointer?,
+    _ textureType: Int,
     _ pixelFormat: Int,
     _ width: Int,
     _ height: Int,
+    _ depth: Int,
     _ mipmapped: Bool,
+    _ arrayLength: Int,
+    _ sampleCount: Int,
     _ usage: Int,
     _ storageMode: Int
 ) -> UnsafeMutableRawPointer? {
-    guard let heap: MTLHeap = am_borrow(handle) else { return nil }
-    let descriptor = am_make_texture_descriptor(
-        pixelFormat: pixelFormat,
-        width: width,
-        height: height,
-        mipmapped: mipmapped,
-        usage: usage,
-        storageMode: storageMode
-    )
-    guard let texture = heap.makeTexture(descriptor: descriptor) else { return nil }
+    guard let heap: MTLHeap = am_borrow(handle),
+          let descriptor = amTextureDescriptor(
+              textureType: textureType,
+              pixelFormat: pixelFormat,
+              width: width,
+              height: height,
+              depth: depth,
+              mipmapped: mipmapped,
+              arrayLength: arrayLength,
+              sampleCount: sampleCount,
+              usage: usage,
+              storageMode: storageMode
+          ),
+          descriptor.storageMode == heap.storageMode || descriptor.storageMode == .memoryless,
+          descriptor.cpuCacheMode == heap.cpuCacheMode,
+          amDeviceSupportsTexture(heap.device, descriptor),
+          let texture = heap.makeTexture(descriptor: descriptor)
+    else { return nil }
     return am_retain(texture as AnyObject)
 }
 
@@ -786,6 +798,26 @@ public func ametal_event_wait_until_signaled_value(
           let event: MTLSharedEvent = am_borrow(handle)
     else { return false }
     return event.wait(untilSignaledValue: value, timeoutMS: timeoutMs)
+}
+
+@_cdecl("ametal_shared_event_notify_listener")
+public func ametal_shared_event_notify_listener(
+    _ handle: UnsafeMutableRawPointer?,
+    _ listenerHandle: UnsafeMutableRawPointer?,
+    _ value: UInt64,
+    _ context: UnsafeMutableRawPointer?,
+    _ callback: (@convention(c) (UnsafeMutableRawPointer?, UInt64) -> Void)?,
+    _ release: (@convention(c) (UnsafeMutableRawPointer?) -> Void)?
+) -> Bool {
+    guard let owner = AMCallbackContextOwner(context, release) else { return false }
+    guard let callback,
+          let event: MTLSharedEvent = am_borrow(handle),
+          let listener: MTLSharedEventListener = am_borrow(listenerHandle)
+    else { return false }
+    event.notify(listener, atValue: value) { _, signaledValue in
+        callback(owner.context, signaledValue)
+    }
+    return true
 }
 
 @_cdecl("ametal_dynamic_library_install_name")

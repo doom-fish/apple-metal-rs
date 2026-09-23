@@ -178,4 +178,11 @@ extern "C" {
         handle: *mut c_void,
         fence_handle: *mut c_void,
     );
+    pub fn ametal_command_buffer_add_handler(
+        handle: *mut c_void,
+        completed: bool,
+        context: *mut c_void,
+        callback: Option<unsafe extern "C" fn(*mut c_void, usize, *const core::ffi::c_char)>,
+        release: Option<unsafe extern "C" fn(*mut c_void)>,
+    ) -> bool;
 }

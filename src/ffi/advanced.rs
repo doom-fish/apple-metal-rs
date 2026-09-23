@@ -211,13 +211,16 @@ extern "C" {
         length: usize,
         options: usize,
     ) -> *mut c_void;
-    /// Calls the `Metal` framework counterpart for `ametal_heap_new_texture_2d`.
-    pub fn ametal_heap_new_texture_2d(
+    pub fn ametal_heap_new_texture(
         handle: *mut c_void,
+        texture_type: usize,
         pixel_format: usize,
         width: usize,
         height: usize,
+        depth: usize,
         mipmapped: bool,
+        array_length: usize,
+        sample_count: usize,
         usage: usize,
         storage_mode: usize,
     ) -> *mut c_void;
@@ -238,6 +241,14 @@ extern "C" {
         handle: *mut c_void,
         value: u64,
         timeout_ms: u64,
+    ) -> bool;
+    pub fn ametal_shared_event_notify_listener(
+        handle: *mut c_void,
+        listener_handle: *mut c_void,
+        value: u64,
+        context: *mut c_void,
+        callback: Option<unsafe extern "C" fn(*mut c_void, u64)>,
+        release: Option<unsafe extern "C" fn(*mut c_void)>,
     ) -> bool;
 
     /// Calls the `Metal` framework counterpart for `ametal_dynamic_library_install_name`.

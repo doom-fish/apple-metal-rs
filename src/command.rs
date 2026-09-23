@@ -5,9 +5,14 @@ use crate::{
     ComputePipelineState, CounterSampleBuffer, DepthStencilState, Event, Fence, MetalBuffer,
     MetalTexture, RenderPipelineState, SamplerState,
 };
-use core::ffi::c_void;
+use core::ffi::{c_char, c_void, CStr};
+use core::mem::ManuallyDrop;
 use core::ops::Range;
+use doom_fish_utils::callback_context::CallbackContext;
 use std::collections::HashSet;
+use std::sync::{Mutex, PoisonError};
+
+type CommandBufferHandler = Mutex<Option<Box<dyn FnOnce(Result<(), CommandBufferError>) + Send>>>;
 
 const MAX_BUFFER_BINDINGS: usize = 31;
 const MAX_TEXTURE_BINDINGS: usize = 128;
@@ -44,7 +49,9 @@ pub enum CommandBufferError {
     /// The encoder has already ended.
     EncoderEnded,
     /// The native command encoder could not be created.
-    EncoderCreationFailed { encoder: &'static str },
+    EncoderCreationFailed {
+        encoder: &'static str,
+    },
     /// A resource byte range is invalid.
     RangeOutOfBounds {
         resource: &'static str,
@@ -61,17 +68,29 @@ pub enum CommandBufferError {
         limit: usize,
     },
     /// A dimension or offset cannot be represented by the native API.
-    IntegerOutOfRange { field: &'static str, value: usize },
+    IntegerOutOfRange {
+        field: &'static str,
+        value: usize,
+    },
     /// A dispatch dimension must be non-zero.
-    EmptyDispatch { field: &'static str },
+    EmptyDispatch {
+        field: &'static str,
+    },
     /// A synchronization operation requires managed storage.
-    ManagedStorageRequired { storage_mode: usize },
+    ManagedStorageRequired {
+        storage_mode: usize,
+    },
     /// Waiting after updating the same fence in one encoder is illegal.
     FenceWaitAfterUpdate,
     /// The native bridge rejected a validated operation.
-    NativeRejected { operation: &'static str },
+    NativeRejected {
+        operation: &'static str,
+    },
     /// GPU execution completed with an error.
     ExecutionFailed(String),
+    NotExecuted {
+        status: usize,
+    },
 }
 
 impl core::fmt::Display for CommandBufferError {
@@ -130,6 +149,10 @@ impl core::fmt::Display for CommandBufferError {
                 write!(formatter, "Metal rejected {operation}")
             }
             Self::ExecutionFailed(message) => write!(formatter, "GPU execution failed: {message}"),
+            Self::NotExecuted { status } => write!(
+                formatter,
+                "the command buffer was released without running (status {status})"
+            ),
         }
     }
 }
@@ -410,6 +433,52 @@ impl CommandBuffer {
             _ => {}
         }
         status
+    }
+
+    pub fn add_scheduled_handler<F>(&self, handler: F) -> Result<(), CommandBufferError>
+    where
+        F: FnOnce(Result<(), CommandBufferError>) + Send + 'static,
+    {
+        self.add_handler("add_scheduled_handler", false, Box::new(handler))
+    }
+
+    pub fn add_completed_handler<F>(&self, handler: F) -> Result<(), CommandBufferError>
+    where
+        F: FnOnce(Result<(), CommandBufferError>) + Send + 'static,
+    {
+        self.add_handler("add_completed_handler", true, Box::new(handler))
+    }
+
+    fn add_handler(
+        &self,
+        operation: &'static str,
+        completed: bool,
+        handler: Box<dyn FnOnce(Result<(), CommandBufferError>) + Send>,
+    ) -> Result<(), CommandBufferError> {
+        let state = self
+            .inner
+            .state
+            .lock()
+            .map_err(|_| CommandBufferError::StateLockPoisoned)?;
+        ensure_recording(state.phase, operation)?;
+        let context = ManuallyDrop::new(CallbackContext::<CommandBufferHandler>::new(Mutex::new(
+            Some(handler),
+        )));
+        let accepted = unsafe {
+            ffi::ametal_command_buffer_add_handler(
+                self.as_ptr(),
+                completed,
+                context.as_ptr(),
+                Some(command_buffer_handler_trampoline),
+                Some(CallbackContext::<CommandBufferHandler>::RELEASE),
+            )
+        };
+        drop(state);
+        if accepted {
+            Ok(())
+        } else {
+            Err(CommandBufferError::NativeRejected { operation })
+        }
     }
 
     /// Localized Metal error string for a failed command buffer.
@@ -963,6 +1032,39 @@ impl RenderCommandEncoder {
             ffi::ametal_render_command_encoder_wait_for_fence(encoder, fence.as_ptr());
         })
     }
+}
+
+unsafe extern "C" fn command_buffer_handler_trampoline(
+    context: *mut c_void,
+    status: usize,
+    error_message: *const c_char,
+) {
+    let result = match status {
+        command_buffer_status::SCHEDULED | command_buffer_status::COMPLETED => Ok(()),
+        command_buffer_status::ERROR => {
+            let message = if error_message.is_null() {
+                "Metal reported an unspecified command-buffer error".to_string()
+            } else {
+                unsafe { CStr::from_ptr(error_message) }
+                    .to_string_lossy()
+                    .into_owned()
+            };
+            Err(CommandBufferError::ExecutionFailed(message))
+        }
+        status => Err(CommandBufferError::NotExecuted { status }),
+    };
+    let _ = unsafe {
+        CallbackContext::<CommandBufferHandler>::with(
+            context,
+            "CommandBuffer handler",
+            move |slot| {
+                let handler = slot.lock().unwrap_or_else(PoisonError::into_inner).take();
+                if let Some(handler) = handler {
+                    handler(result);
+                }
+            },
+        )
+    };
 }
 
 fn ensure_recording(

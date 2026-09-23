@@ -16,6 +16,23 @@ public func ametal_device_new_buffer(
     return am_retain(buf as AnyObject)
 }
 
+@_cdecl("ametal_device_new_buffer_with_bytes")
+public func ametal_device_new_buffer_with_bytes(
+    _ device_handle: UnsafeMutableRawPointer?,
+    _ bytes: UnsafeRawPointer?,
+    _ length: Int,
+    _ options: UInt
+) -> UnsafeMutableRawPointer? {
+    let storageMode = (options & 0xF0) >> 4
+    guard length > 0,
+          let bytes,
+          storageMode == MTLStorageMode.shared.rawValue || storageMode == MTLStorageMode.managed.rawValue,
+          let dev: MTLDevice = am_borrow(device_handle),
+          let buf = dev.makeBuffer(bytes: bytes, length: length, options: MTLResourceOptions(rawValue: options))
+    else { return nil }
+    return am_retain(buf as AnyObject)
+}
+
 @_cdecl("ametal_buffer_release")
 public func ametal_buffer_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
 

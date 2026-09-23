@@ -126,6 +126,10 @@ impl TextureDescriptor {
             mipmapped: false,
             usage: texture_usage::RENDER_TARGET | texture_usage::SHADER_READ,
             storage_mode: crate::storage_mode::PRIVATE,
+            texture_type: crate::texture_type::TYPE_2D,
+            depth: 1,
+            array_length: 1,
+            sample_count: 1,
         }
     }
 }

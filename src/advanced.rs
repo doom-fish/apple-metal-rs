@@ -2,11 +2,14 @@ use crate::{
     ffi,
     util::{c_string, take_optional_string, take_string},
     ArgumentEncoder, CommandQueue, ComputePipelineState, MetalBuffer, MetalBufferAccessError,
-    MetalDevice, MetalFunction, MetalTexture, TextureDescriptor,
+    MetalDevice, MetalFunction, MetalSharedEventListener, MetalTexture, TextureDescriptor,
 };
 use core::ffi::c_void;
+use core::mem::ManuallyDrop;
 use core::ops::Range;
+use doom_fish_utils::callback_context::CallbackContext;
 use std::path::Path;
+use std::sync::{Mutex, PoisonError};
 
 macro_rules! opaque_handle {
     ($(#[$meta:meta])* pub struct $name:ident;) => {
@@ -1324,13 +1327,20 @@ impl Heap {
     /// Allocate a texture from this heap.
     #[must_use]
     pub fn new_texture(&self, descriptor: TextureDescriptor) -> Option<MetalTexture> {
+        if !descriptor.is_creatable() {
+            return None;
+        }
         let ptr = unsafe {
-            ffi::ametal_heap_new_texture_2d(
+            ffi::ametal_heap_new_texture(
                 self.as_ptr(),
+                descriptor.texture_type,
                 descriptor.pixel_format,
                 descriptor.width,
                 descriptor.height,
+                descriptor.depth,
                 descriptor.mipmapped,
+                descriptor.array_length,
+                descriptor.sample_count,
                 descriptor.usage,
                 descriptor.storage_mode,
             )
@@ -1377,6 +1387,48 @@ impl Event {
     pub fn wait_until_signaled_value(&self, value: u64, timeout_ms: u64) -> bool {
         unsafe { ffi::ametal_event_wait_until_signaled_value(self.as_ptr(), value, timeout_ms) }
     }
+
+    #[must_use]
+    pub fn notify_listener<F>(
+        &self,
+        listener: &MetalSharedEventListener,
+        value: u64,
+        handler: F,
+    ) -> bool
+    where
+        F: FnOnce(u64) + Send + 'static,
+    {
+        let context = ManuallyDrop::new(CallbackContext::<SharedEventNotification>::new(
+            Mutex::new(Some(Box::new(handler))),
+        ));
+        unsafe {
+            ffi::ametal_shared_event_notify_listener(
+                self.as_ptr(),
+                listener.as_ptr(),
+                value,
+                context.as_ptr(),
+                Some(shared_event_notification_trampoline),
+                Some(CallbackContext::<SharedEventNotification>::RELEASE),
+            )
+        }
+    }
+}
+
+type SharedEventNotification = Mutex<Option<Box<dyn FnOnce(u64) + Send>>>;
+
+unsafe extern "C" fn shared_event_notification_trampoline(context: *mut c_void, value: u64) {
+    let _ = unsafe {
+        CallbackContext::<SharedEventNotification>::with(
+            context,
+            "Event::notify_listener",
+            |slot| {
+                let handler = slot.lock().unwrap_or_else(PoisonError::into_inner).take();
+                if let Some(handler) = handler {
+                    handler(value);
+                }
+            },
+        )
+    };
 }
 
 impl DynamicLibrary {

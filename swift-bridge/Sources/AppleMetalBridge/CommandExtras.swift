@@ -35,6 +35,32 @@ public func ametal_command_buffer_error_message(_ handle: UnsafeMutableRawPointe
     return am_copy_string(commandBuffer.error?.localizedDescription)
 }
 
+@_cdecl("ametal_command_buffer_add_handler")
+public func ametal_command_buffer_add_handler(
+    _ handle: UnsafeMutableRawPointer?,
+    _ completed: Bool,
+    _ context: UnsafeMutableRawPointer?,
+    _ callback: (@convention(c) (UnsafeMutableRawPointer?, Int, UnsafePointer<CChar>?) -> Void)?,
+    _ release: (@convention(c) (UnsafeMutableRawPointer?) -> Void)?
+) -> Bool {
+    guard let owner = AMCallbackContextOwner(context, release) else { return false }
+    guard let callback,
+          let commandBuffer: MTLCommandBuffer = am_borrow(handle),
+          commandBuffer.status == .notEnqueued || commandBuffer.status == .enqueued
+    else { return false }
+    let handler: MTLCommandBufferHandler = { buffer in
+        let message = buffer.error.flatMap { strdup($0.localizedDescription) }
+        callback(owner.context, Int(bitPattern: buffer.status.rawValue), message)
+        free(message)
+    }
+    if completed {
+        commandBuffer.addCompletedHandler(handler)
+    } else {
+        commandBuffer.addScheduledHandler(handler)
+    }
+    return true
+}
+
 @_cdecl("ametal_command_buffer_new_blit_command_encoder")
 public func ametal_command_buffer_new_blit_command_encoder(
     _ handle: UnsafeMutableRawPointer?

@@ -230,6 +230,93 @@ pub mod pixel_format {
             _ => None,
         }
     }
+
+    pub(crate) const fn is_texture_format(pixel_format: usize) -> bool {
+        bytes_per_pixel(pixel_format).is_some()
+            || matches!(
+                pixel_format,
+                BC1_RGBA
+                    | BC1_RGBA_SRGB
+                    | BC2_RGBA
+                    | BC2_RGBA_SRGB
+                    | BC3_RGBA
+                    | BC3_RGBA_SRGB
+                    | BC4_RUNORM
+                    | BC4_RSNORM
+                    | BC5_RGUNORM
+                    | BC5_RGSNORM
+                    | BC6H_RGBFLOAT
+                    | BC6H_RGBUFLOAT
+                    | BC7_RGBAUNORM
+                    | BC7_RGBAUNORM_SRGB
+                    | PVRTC_RGB_2BPP
+                    | PVRTC_RGB_2BPP_SRGB
+                    | PVRTC_RGB_4BPP
+                    | PVRTC_RGB_4BPP_SRGB
+                    | PVRTC_RGBA_2BPP
+                    | PVRTC_RGBA_2BPP_SRGB
+                    | PVRTC_RGBA_4BPP
+                    | PVRTC_RGBA_4BPP_SRGB
+                    | EAC_R11UNORM
+                    | EAC_R11SNORM
+                    | EAC_RG11UNORM
+                    | EAC_RG11SNORM
+                    | EAC_RGBA8
+                    | EAC_RGBA8_SRGB
+                    | ETC2_RGB8
+                    | ETC2_RGB8_SRGB
+                    | ETC2_RGB8A1
+                    | ETC2_RGB8A1_SRGB
+                    | ASTC_4X4_SRGB
+                    | ASTC_5X4_SRGB
+                    | ASTC_5X5_SRGB
+                    | ASTC_6X5_SRGB
+                    | ASTC_6X6_SRGB
+                    | ASTC_8X5_SRGB
+                    | ASTC_8X6_SRGB
+                    | ASTC_8X8_SRGB
+                    | ASTC_10X5_SRGB
+                    | ASTC_10X6_SRGB
+                    | ASTC_10X8_SRGB
+                    | ASTC_10X10_SRGB
+                    | ASTC_12X10_SRGB
+                    | ASTC_12X12_SRGB
+                    | ASTC_4X4_LDR
+                    | ASTC_5X4_LDR
+                    | ASTC_5X5_LDR
+                    | ASTC_6X5_LDR
+                    | ASTC_6X6_LDR
+                    | ASTC_8X5_LDR
+                    | ASTC_8X6_LDR
+                    | ASTC_8X8_LDR
+                    | ASTC_10X5_LDR
+                    | ASTC_10X6_LDR
+                    | ASTC_10X8_LDR
+                    | ASTC_10X10_LDR
+                    | ASTC_12X10_LDR
+                    | ASTC_12X12_LDR
+                    | ASTC_4X4_HDR
+                    | ASTC_5X4_HDR
+                    | ASTC_5X5_HDR
+                    | ASTC_6X5_HDR
+                    | ASTC_6X6_HDR
+                    | ASTC_8X5_HDR
+                    | ASTC_8X6_HDR
+                    | ASTC_8X8_HDR
+                    | ASTC_10X5_HDR
+                    | ASTC_10X6_HDR
+                    | ASTC_10X8_HDR
+                    | ASTC_10X10_HDR
+                    | ASTC_12X10_HDR
+                    | ASTC_12X12_HDR
+                    | GBGR422
+                    | BGRG422
+                    | DEPTH24UNORM_STENCIL8
+                    | DEPTH32FLOAT_STENCIL8
+                    | X32_STENCIL8
+                    | X24_STENCIL8
+            )
+    }
 }
 
 pub use pixel_format::bytes_per_pixel;
@@ -292,6 +379,7 @@ pub mod texture_usage {
     pub const SHADER_WRITE: usize = 0x02;
     /// Mirrors the `Metal` framework constant `RENDER_TARGET`.
     pub const RENDER_TARGET: usize = 0x04;
+    pub const PIXEL_FORMAT_VIEW: usize = 0x10;
 }
 
 /// `MTLGPUFamily` — feature-family identifiers.
@@ -403,28 +491,50 @@ impl MetalDevice {
         }
     }
 
-    /// Allocate a fresh `MTLTexture` matching `descriptor`.
     #[must_use]
-    pub fn new_texture(&self, descriptor: TextureDescriptor) -> Option<MetalTexture> {
-        if [
-            descriptor.pixel_format,
-            descriptor.width,
-            descriptor.height,
-            descriptor.usage,
-            descriptor.storage_mode,
-        ]
-        .into_iter()
-        .any(|value| value > isize::MAX as usize)
+    pub fn new_buffer_with_bytes(&self, bytes: &[u8], options: usize) -> Option<MetalBuffer> {
+        let storage = options & (0xF << 4);
+        if bytes.is_empty()
+            || isize::try_from(options).is_err()
+            || !matches!(
+                storage,
+                resource_options::STORAGE_MODE_SHARED | resource_options::STORAGE_MODE_MANAGED
+            )
         {
             return None;
         }
         let p = unsafe {
-            ffi::ametal_device_new_texture_2d(
+            ffi::ametal_device_new_buffer_with_bytes(
                 self.ptr,
+                bytes.as_ptr().cast(),
+                bytes.len(),
+                options,
+            )
+        };
+        if p.is_null() {
+            None
+        } else {
+            Some(unsafe { MetalBuffer::from_retained_ptr(p) })
+        }
+    }
+
+    /// Allocate a fresh `MTLTexture` matching `descriptor`.
+    #[must_use]
+    pub fn new_texture(&self, descriptor: TextureDescriptor) -> Option<MetalTexture> {
+        if !descriptor.is_creatable() {
+            return None;
+        }
+        let p = unsafe {
+            ffi::ametal_device_new_texture(
+                self.ptr,
+                descriptor.texture_type,
                 descriptor.pixel_format,
                 descriptor.width,
                 descriptor.height,
+                descriptor.depth,
                 descriptor.mipmapped,
+                descriptor.array_length,
+                descriptor.sample_count,
                 descriptor.usage,
                 descriptor.storage_mode,
             )
@@ -1036,7 +1146,7 @@ impl MetalBuffer {
 // ---- Texture descriptor + texture ----
 
 /// Configuration for `MetalDevice::new_texture`.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TextureDescriptor {
     /// Mirrors the `Metal` framework property for `pixel_format`.
     pub pixel_format: usize,
@@ -1050,6 +1160,10 @@ pub struct TextureDescriptor {
     pub usage: usize,
     /// Mirrors the `Metal` framework property for `storage_mode`.
     pub storage_mode: usize,
+    pub texture_type: usize,
+    pub depth: usize,
+    pub array_length: usize,
+    pub sample_count: usize,
 }
 
 impl TextureDescriptor {
@@ -1063,7 +1177,106 @@ impl TextureDescriptor {
             mipmapped: false,
             usage: texture_usage::SHADER_READ | texture_usage::SHADER_WRITE,
             storage_mode: storage_mode::SHARED,
+            texture_type: texture_type::TYPE_2D,
+            depth: 1,
+            array_length: 1,
+            sample_count: 1,
         }
+    }
+
+    #[must_use]
+    pub const fn with_texture_type(mut self, texture_type: usize) -> Self {
+        self.texture_type = texture_type;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_depth(mut self, depth: usize) -> Self {
+        self.depth = depth;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_array_length(mut self, array_length: usize) -> Self {
+        self.array_length = array_length;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_sample_count(mut self, sample_count: usize) -> Self {
+        self.sample_count = sample_count;
+        self
+    }
+
+    pub(crate) fn is_creatable(&self) -> bool {
+        use texture_type::{
+            CUBE, CUBE_ARRAY, TYPE_1D, TYPE_1D_ARRAY, TYPE_2D, TYPE_2D_ARRAY, TYPE_2D_MULTISAMPLE,
+            TYPE_2D_MULTISAMPLE_ARRAY, TYPE_3D,
+        };
+        const MAX_PLANAR_EXTENT: usize = 16_384;
+        const MAX_VOLUME_EXTENT: usize = 2_048;
+        const MAX_LAYERS: usize = 2_048;
+        const KNOWN_USAGE: usize = texture_usage::SHADER_READ
+            | texture_usage::SHADER_WRITE
+            | texture_usage::RENDER_TARGET
+            | texture_usage::PIXEL_FORMAT_VIEW;
+
+        let fields = [
+            self.texture_type,
+            self.pixel_format,
+            self.width,
+            self.height,
+            self.depth,
+            self.array_length,
+            self.sample_count,
+            self.usage,
+            self.storage_mode,
+        ];
+        if fields.iter().any(|value| isize::try_from(*value).is_err())
+            || !pixel_format::is_texture_format(self.pixel_format)
+            || self.usage & !KNOWN_USAGE != 0
+            || self.storage_mode > storage_mode::MEMORYLESS
+            || [
+                self.width,
+                self.height,
+                self.depth,
+                self.array_length,
+                self.sample_count,
+            ]
+            .contains(&0)
+        {
+            return false;
+        }
+        let planar = self.width <= MAX_PLANAR_EXTENT && self.height <= MAX_PLANAR_EXTENT;
+        let shape = match self.texture_type {
+            TYPE_1D | TYPE_1D_ARRAY => {
+                self.height == 1 && self.depth == 1 && !self.mipmapped && planar
+            }
+            TYPE_2D | TYPE_2D_ARRAY | TYPE_2D_MULTISAMPLE | TYPE_2D_MULTISAMPLE_ARRAY => {
+                self.depth == 1 && planar
+            }
+            CUBE | CUBE_ARRAY => self.width == self.height && self.depth == 1 && planar,
+            TYPE_3D => [self.width, self.height, self.depth]
+                .iter()
+                .all(|extent| *extent <= MAX_VOLUME_EXTENT),
+            _ => false,
+        };
+        let layers = match self.texture_type {
+            TYPE_1D_ARRAY | TYPE_2D_ARRAY | TYPE_2D_MULTISAMPLE_ARRAY => {
+                self.array_length <= MAX_LAYERS
+            }
+            CUBE_ARRAY => self.array_length <= MAX_LAYERS / 6,
+            _ => self.array_length == 1,
+        };
+        let samples = if matches!(
+            self.texture_type,
+            TYPE_2D_MULTISAMPLE | TYPE_2D_MULTISAMPLE_ARRAY
+        ) {
+            matches!(self.sample_count, 2 | 4 | 8) && !self.mipmapped
+        } else {
+            self.sample_count == 1
+        };
+        shape && layers && samples
     }
 }
 
@@ -1420,4 +1633,61 @@ pub const fn is_ycbcr_biplanar(fourcc: u32) -> bool {
     const YUV420V: u32 = u32::from_be_bytes(*b"420v");
     const YUV420F: u32 = u32::from_be_bytes(*b"420f");
     matches!(fourcc, YUV420V | YUV420F)
+}
+
+#[cfg(test)]
+mod pixel_format_tests {
+    use super::pixel_format;
+
+    fn sdk_formats() -> Option<Vec<(String, usize)>> {
+        let output = std::process::Command::new("xcrun")
+            .args(["--sdk", "macosx", "--show-sdk-path"])
+            .output()
+            .ok()?;
+        let sdk = String::from_utf8(output.stdout).ok()?;
+        let header = std::path::Path::new(sdk.trim())
+            .join("System/Library/Frameworks/Metal.framework/Headers/MTLPixelFormat.h");
+        let text = std::fs::read_to_string(header).ok()?;
+        Some(
+            text.lines()
+                .filter_map(|line| {
+                    let rest = line.trim().strip_prefix("MTLPixelFormat")?;
+                    let (_, value) = rest.rsplit_once('=')?;
+                    let name = rest
+                        .chars()
+                        .take_while(|character| {
+                            character.is_ascii_alphanumeric() || *character == '_'
+                        })
+                        .collect();
+                    Some((
+                        name,
+                        value.trim().trim_end_matches(',').trim().parse().ok()?,
+                    ))
+                })
+                .collect(),
+        )
+    }
+
+    #[test]
+    fn texture_formats_are_exactly_the_sdk_formats() {
+        let Some(formats) = sdk_formats() else {
+            eprintln!("skipping: no macOS SDK MTLPixelFormat.h available");
+            return;
+        };
+        assert!(formats.len() >= 140);
+        for (name, value) in &formats {
+            let expected = !matches!(name.as_str(), "Invalid" | "Unspecialized");
+            assert_eq!(
+                pixel_format::is_texture_format(*value),
+                expected,
+                "MTLPixelFormat{name} = {value}"
+            );
+        }
+        for value in 0..=4096 {
+            if !formats.iter().any(|(_, known)| *known == value) {
+                assert!(!pixel_format::is_texture_format(value), "{value}");
+            }
+        }
+        assert!(!pixel_format::is_texture_format(usize::MAX));
+    }
 }

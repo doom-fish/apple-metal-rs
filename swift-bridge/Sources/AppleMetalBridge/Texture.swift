@@ -6,35 +6,36 @@ import Metal
 import IOSurface
 #endif
 
-@_cdecl("ametal_device_new_texture_2d")
-public func ametal_device_new_texture_2d(
+@_cdecl("ametal_device_new_texture")
+public func ametal_device_new_texture(
     _ device_handle: UnsafeMutableRawPointer?,
+    _ texture_type: Int,
     _ pixel_format: Int,
     _ width: Int,
     _ height: Int,
+    _ depth: Int,
     _ mipmapped: Bool,
+    _ array_length: Int,
+    _ sample_count: Int,
     _ usage: Int,
     _ storage_mode: Int
 ) -> UnsafeMutableRawPointer? {
-    guard pixel_format >= 0,
-          width > 0,
-          height > 0,
-          usage >= 0,
-          storage_mode >= 0,
-          let pixelFormat = MTLPixelFormat(rawValue: UInt(pixel_format)),
-          pixelFormat != .invalid,
-          let storageMode = MTLStorageMode(rawValue: UInt(storage_mode)),
-          let dev: MTLDevice = am_borrow(device_handle)
+    guard let dev: MTLDevice = am_borrow(device_handle),
+          let desc = amTextureDescriptor(
+              textureType: texture_type,
+              pixelFormat: pixel_format,
+              width: width,
+              height: height,
+              depth: depth,
+              mipmapped: mipmapped,
+              arrayLength: array_length,
+              sampleCount: sample_count,
+              usage: usage,
+              storageMode: storage_mode
+          ),
+          amDeviceSupportsTexture(dev, desc),
+          let tex = dev.makeTexture(descriptor: desc)
     else { return nil }
-    let desc = MTLTextureDescriptor.texture2DDescriptor(
-        pixelFormat: pixelFormat,
-        width: width,
-        height: height,
-        mipmapped: mipmapped
-    )
-    desc.usage = MTLTextureUsage(rawValue: UInt(usage))
-    desc.storageMode = storageMode
-    guard let tex = dev.makeTexture(descriptor: desc) else { return nil }
     return am_retain(tex as AnyObject)
 }
 
