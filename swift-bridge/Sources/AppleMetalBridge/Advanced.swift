@@ -429,23 +429,6 @@ public func ametal_texture_storage_mode(_ handle: UnsafeMutableRawPointer?) -> I
     return Int(texture.storageMode.rawValue)
 }
 
-private func amTextureBytesPerPixel(_ pixelFormat: MTLPixelFormat) -> Int? {
-    switch pixelFormat.rawValue {
-    case 1, 10, 12, 13, 14:
-        return 1
-    case 20, 22, 23, 24, 25, 30, 32, 33, 34:
-        return 2
-    case 55, 65, 70, 71, 72, 73, 74, 80, 81, 552, 554:
-        return 4
-    case 115:
-        return 8
-    case 125:
-        return 16
-    default:
-        return nil
-    }
-}
-
 private func amTextureTransferLengths(
     _ texture: MTLTexture,
     x: Int,
@@ -454,7 +437,8 @@ private func amTextureTransferLengths(
     height: Int,
     mipmapLevel: Int,
     slice: Int,
-    bytesPerRow: Int
+    bytesPerRow: Int,
+    bytesPerPixel: Int
 ) -> (Int, Int)? {
     let sliceCount: Int
     switch texture.textureType.rawValue {
@@ -480,9 +464,9 @@ private func amTextureTransferLengths(
           slice >= 0,
           slice < sliceCount,
           bytesPerRow >= 0,
+          bytesPerPixel > 0,
           texture.depth == 1,
-          texture.storageMode == .shared || texture.storageMode == .managed,
-          let bytesPerPixel = amTextureBytesPerPixel(texture.pixelFormat)
+          texture.storageMode == .shared || texture.storageMode == .managed
     else { return nil }
 
     let mipWidth = max(1, texture.width >> mipmapLevel)
@@ -525,7 +509,8 @@ public func ametal_texture_replace_region_2d(
     _ slice: Int,
     _ bytes: UnsafePointer<UInt8>?,
     _ bytesLen: Int,
-    _ bytesPerRow: Int
+    _ bytesPerRow: Int,
+    _ bytesPerPixel: Int
 ) -> Bool {
     guard let texture: MTLTexture = am_borrow(handle),
           let bytes,
@@ -538,7 +523,8 @@ public func ametal_texture_replace_region_2d(
               height: height,
               mipmapLevel: mipmapLevel,
               slice: slice,
-              bytesPerRow: bytesPerRow
+              bytesPerRow: bytesPerRow,
+              bytesPerPixel: bytesPerPixel
           ),
           bytesLen >= lengths.0
     else { return false }
@@ -565,7 +551,8 @@ public func ametal_texture_get_bytes_2d(
     _ width: Int,
     _ height: Int,
     _ mipmapLevel: Int,
-    _ slice: Int
+    _ slice: Int,
+    _ bytesPerPixel: Int
 ) -> Bool {
     guard let texture: MTLTexture = am_borrow(handle),
           let outBytes,
@@ -578,7 +565,8 @@ public func ametal_texture_get_bytes_2d(
               height: height,
               mipmapLevel: mipmapLevel,
               slice: slice,
-              bytesPerRow: bytesPerRow
+              bytesPerRow: bytesPerRow,
+              bytesPerPixel: bytesPerPixel
           ),
           outLen >= lengths.0
     else { return false }

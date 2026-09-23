@@ -150,6 +150,7 @@ extern "C" {
         bytes: *const u8,
         bytes_len: usize,
         bytes_per_row: usize,
+        bytes_per_pixel: usize,
     ) -> bool;
     /// Calls the `Metal` framework counterpart for `ametal_texture_get_bytes_2d`.
     pub fn ametal_texture_get_bytes_2d(
@@ -163,6 +164,7 @@ extern "C" {
         height: usize,
         mipmap_level: usize,
         slice: usize,
+        bytes_per_pixel: usize,
     ) -> bool;
     /// Calls the `Metal` framework counterpart for `ametal_texture_new_view`.
     pub fn ametal_texture_new_view(handle: *mut c_void, pixel_format: usize) -> *mut c_void;

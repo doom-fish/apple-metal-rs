@@ -763,7 +763,7 @@ impl MetalTexture {
         mipmap_level: usize,
         slice: usize,
     ) -> Result<(), TextureTransferError> {
-        validate_texture_transfer(
+        let layout = validate_texture_transfer(
             self.transfer_metadata(),
             bytes.len(),
             bytes_per_row,
@@ -784,6 +784,7 @@ impl MetalTexture {
                 bytes.as_ptr(),
                 bytes.len(),
                 bytes_per_row,
+                layout.bytes_per_block,
             )
         };
         if accepted {
@@ -825,7 +826,7 @@ impl MetalTexture {
         mipmap_level: usize,
         slice: usize,
     ) -> Result<(), TextureTransferError> {
-        validate_texture_transfer(
+        let layout = validate_texture_transfer(
             self.transfer_metadata(),
             out.len(),
             bytes_per_row,
@@ -846,6 +847,7 @@ impl MetalTexture {
                 size.1,
                 mipmap_level,
                 slice,
+                layout.bytes_per_block,
             )
         };
         if accepted {
@@ -889,7 +891,7 @@ fn validate_texture_transfer(
     size: (usize, usize),
     mipmap_level: usize,
     slice: usize,
-) -> Result<(), TextureTransferError> {
+) -> Result<PixelFormatLayout, TextureTransferError> {
     if !matches!(
         metadata.storage_mode,
         crate::storage_mode::SHARED | crate::storage_mode::MANAGED
@@ -1004,43 +1006,23 @@ fn validate_texture_transfer(
             required,
         });
     }
-    Ok(())
+    Ok(layout)
+}
+
+fn color_bytes_per_pixel(pixel_format: usize) -> Option<usize> {
+    use crate::pixel_format;
+
+    if matches!(
+        pixel_format,
+        pixel_format::DEPTH16UNORM | pixel_format::DEPTH32FLOAT | pixel_format::STENCIL8
+    ) {
+        return None;
+    }
+    pixel_format::bytes_per_pixel(pixel_format)
 }
 
 fn pixel_format_layout(pixel_format: usize) -> Option<PixelFormatLayout> {
-    use crate::pixel_format;
-
-    let bytes_per_block = match pixel_format {
-        pixel_format::A8UNORM
-        | pixel_format::R8UNORM
-        | pixel_format::R8SNORM
-        | pixel_format::R8UINT
-        | pixel_format::R8SINT => 1,
-        pixel_format::R16UNORM
-        | pixel_format::R16SNORM
-        | pixel_format::R16UINT
-        | pixel_format::R16SINT
-        | pixel_format::R16FLOAT
-        | pixel_format::RG8UNORM
-        | pixel_format::RG8SNORM
-        | pixel_format::RG8UINT
-        | pixel_format::RG8SINT => 2,
-        pixel_format::R32FLOAT
-        | pixel_format::RG16FLOAT
-        | pixel_format::RGBA8UNORM
-        | pixel_format::RGBA8UNORM_SRGB
-        | pixel_format::RGBA8SNORM
-        | pixel_format::RGBA8UINT
-        | pixel_format::RGBA8SINT
-        | pixel_format::BGRA8UNORM
-        | pixel_format::BGRA8UNORM_SRGB
-        | pixel_format::BGRA10_XR
-        | pixel_format::BGR10_XR => 4,
-        pixel_format::RGBA16FLOAT => 8,
-        pixel_format::RGBA32FLOAT => 16,
-        _ => return None,
-    };
-    Some(PixelFormatLayout {
+    color_bytes_per_pixel(pixel_format).map(|bytes_per_block| PixelFormatLayout {
         block_width: 1,
         block_height: 1,
         bytes_per_block,
@@ -1613,5 +1595,43 @@ mod texture_transfer_tests {
     #[test]
     fn accepts_final_row_without_trailing_stride_padding() {
         assert!(validate_texture_transfer(rgba8_metadata(), 80, 32, (0, 0), (4, 3), 0, 0).is_ok());
+    }
+
+    #[test]
+    fn bgra10_xr_rows_need_eight_bytes_per_pixel() {
+        let mut metadata = rgba8_metadata();
+        metadata.pixel_format = crate::pixel_format::BGRA10_XR;
+        assert!(matches!(
+            validate_texture_transfer(metadata, 64, 16, (0, 0), (4, 4), 0, 0),
+            Err(TextureTransferError::BytesPerRowTooSmall { minimum: 32, .. })
+        ));
+        assert!(matches!(
+            validate_texture_transfer(metadata, 127, 32, (0, 0), (4, 4), 0, 0),
+            Err(TextureTransferError::BufferTooShort { required: 128, .. })
+        ));
+        assert_eq!(
+            validate_texture_transfer(metadata, 128, 32, (0, 0), (4, 4), 0, 0)
+                .map(|layout| layout.bytes_per_block),
+            Ok(8)
+        );
+    }
+
+    #[test]
+    fn depth_and_stencil_formats_are_not_cpu_transferable() {
+        let mut metadata = rgba8_metadata();
+        for pixel_format in [
+            crate::pixel_format::DEPTH16UNORM,
+            crate::pixel_format::DEPTH32FLOAT,
+            crate::pixel_format::STENCIL8,
+            crate::pixel_format::DEPTH32FLOAT_STENCIL8,
+            crate::pixel_format::BC1_RGBA,
+        ] {
+            metadata.pixel_format = pixel_format;
+            assert_eq!(
+                validate_texture_transfer(metadata, 256, 64, (0, 0), (4, 4), 0, 0)
+                    .map(|layout| layout.bytes_per_block),
+                Err(TextureTransferError::UnsupportedPixelFormat { pixel_format })
+            );
+        }
     }
 }

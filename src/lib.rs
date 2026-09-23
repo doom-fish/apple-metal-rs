@@ -101,7 +101,138 @@ pub mod pixel_format {
     pub const BGRA10_XR: usize = 552;
     /// Mirrors the `Metal` framework constant `BGR10_XR`.
     pub const BGR10_XR: usize = 554;
+    pub const INVALID: usize = 0;
+    pub const R8UNORM_SRGB: usize = 11;
+    pub const RG8UNORM_SRGB: usize = 31;
+    pub const B5G6R5UNORM: usize = 40;
+    pub const A1BGR5UNORM: usize = 41;
+    pub const ABGR4UNORM: usize = 42;
+    pub const BGR5A1UNORM: usize = 43;
+    pub const R32UINT: usize = 53;
+    pub const R32SINT: usize = 54;
+    pub const RG16UNORM: usize = 60;
+    pub const RG16SNORM: usize = 62;
+    pub const RG16UINT: usize = 63;
+    pub const RG16SINT: usize = 64;
+    pub const RGB10A2UNORM: usize = 90;
+    pub const RGB10A2UINT: usize = 91;
+    pub const RG11B10FLOAT: usize = 92;
+    pub const RGB9E5FLOAT: usize = 93;
+    pub const BGR10A2UNORM: usize = 94;
+    pub const BGR10_XR_SRGB: usize = 555;
+    pub const RG32UINT: usize = 103;
+    pub const RG32SINT: usize = 104;
+    pub const RG32FLOAT: usize = 105;
+    pub const RGBA16UNORM: usize = 110;
+    pub const RGBA16SNORM: usize = 112;
+    pub const RGBA16UINT: usize = 113;
+    pub const RGBA16SINT: usize = 114;
+    pub const BGRA10_XR_SRGB: usize = 553;
+    pub const RGBA32UINT: usize = 123;
+    pub const RGBA32SINT: usize = 124;
+    pub const BC1_RGBA: usize = 130;
+    pub const BC1_RGBA_SRGB: usize = 131;
+    pub const BC2_RGBA: usize = 132;
+    pub const BC2_RGBA_SRGB: usize = 133;
+    pub const BC3_RGBA: usize = 134;
+    pub const BC3_RGBA_SRGB: usize = 135;
+    pub const BC4_RUNORM: usize = 140;
+    pub const BC4_RSNORM: usize = 141;
+    pub const BC5_RGUNORM: usize = 142;
+    pub const BC5_RGSNORM: usize = 143;
+    pub const BC6H_RGBFLOAT: usize = 150;
+    pub const BC6H_RGBUFLOAT: usize = 151;
+    pub const BC7_RGBAUNORM: usize = 152;
+    pub const BC7_RGBAUNORM_SRGB: usize = 153;
+    pub const PVRTC_RGB_2BPP: usize = 160;
+    pub const PVRTC_RGB_2BPP_SRGB: usize = 161;
+    pub const PVRTC_RGB_4BPP: usize = 162;
+    pub const PVRTC_RGB_4BPP_SRGB: usize = 163;
+    pub const PVRTC_RGBA_2BPP: usize = 164;
+    pub const PVRTC_RGBA_2BPP_SRGB: usize = 165;
+    pub const PVRTC_RGBA_4BPP: usize = 166;
+    pub const PVRTC_RGBA_4BPP_SRGB: usize = 167;
+    pub const EAC_R11UNORM: usize = 170;
+    pub const EAC_R11SNORM: usize = 172;
+    pub const EAC_RG11UNORM: usize = 174;
+    pub const EAC_RG11SNORM: usize = 176;
+    pub const EAC_RGBA8: usize = 178;
+    pub const EAC_RGBA8_SRGB: usize = 179;
+    pub const ETC2_RGB8: usize = 180;
+    pub const ETC2_RGB8_SRGB: usize = 181;
+    pub const ETC2_RGB8A1: usize = 182;
+    pub const ETC2_RGB8A1_SRGB: usize = 183;
+    pub const ASTC_4X4_SRGB: usize = 186;
+    pub const ASTC_5X4_SRGB: usize = 187;
+    pub const ASTC_5X5_SRGB: usize = 188;
+    pub const ASTC_6X5_SRGB: usize = 189;
+    pub const ASTC_6X6_SRGB: usize = 190;
+    pub const ASTC_8X5_SRGB: usize = 192;
+    pub const ASTC_8X6_SRGB: usize = 193;
+    pub const ASTC_8X8_SRGB: usize = 194;
+    pub const ASTC_10X5_SRGB: usize = 195;
+    pub const ASTC_10X6_SRGB: usize = 196;
+    pub const ASTC_10X8_SRGB: usize = 197;
+    pub const ASTC_10X10_SRGB: usize = 198;
+    pub const ASTC_12X10_SRGB: usize = 199;
+    pub const ASTC_12X12_SRGB: usize = 200;
+    pub const ASTC_4X4_LDR: usize = 204;
+    pub const ASTC_5X4_LDR: usize = 205;
+    pub const ASTC_5X5_LDR: usize = 206;
+    pub const ASTC_6X5_LDR: usize = 207;
+    pub const ASTC_6X6_LDR: usize = 208;
+    pub const ASTC_8X5_LDR: usize = 210;
+    pub const ASTC_8X6_LDR: usize = 211;
+    pub const ASTC_8X8_LDR: usize = 212;
+    pub const ASTC_10X5_LDR: usize = 213;
+    pub const ASTC_10X6_LDR: usize = 214;
+    pub const ASTC_10X8_LDR: usize = 215;
+    pub const ASTC_10X10_LDR: usize = 216;
+    pub const ASTC_12X10_LDR: usize = 217;
+    pub const ASTC_12X12_LDR: usize = 218;
+    pub const ASTC_4X4_HDR: usize = 222;
+    pub const ASTC_5X4_HDR: usize = 223;
+    pub const ASTC_5X5_HDR: usize = 224;
+    pub const ASTC_6X5_HDR: usize = 225;
+    pub const ASTC_6X6_HDR: usize = 226;
+    pub const ASTC_8X5_HDR: usize = 228;
+    pub const ASTC_8X6_HDR: usize = 229;
+    pub const ASTC_8X8_HDR: usize = 230;
+    pub const ASTC_10X5_HDR: usize = 231;
+    pub const ASTC_10X6_HDR: usize = 232;
+    pub const ASTC_10X8_HDR: usize = 233;
+    pub const ASTC_10X10_HDR: usize = 234;
+    pub const ASTC_12X10_HDR: usize = 235;
+    pub const ASTC_12X12_HDR: usize = 236;
+    pub const GBGR422: usize = 240;
+    pub const BGRG422: usize = 241;
+    pub const DEPTH16UNORM: usize = 250;
+    pub const DEPTH24UNORM_STENCIL8: usize = 255;
+    pub const DEPTH32FLOAT_STENCIL8: usize = 260;
+    pub const X32_STENCIL8: usize = 261;
+    pub const X24_STENCIL8: usize = 262;
+    pub const UNSPECIALIZED: usize = 263;
+
+    #[must_use]
+    pub const fn bytes_per_pixel(pixel_format: usize) -> Option<usize> {
+        match pixel_format {
+            A8UNORM | R8UNORM | R8UNORM_SRGB | R8SNORM | R8UINT | R8SINT | STENCIL8 => Some(1),
+            R16UNORM | R16SNORM | R16UINT | R16SINT | R16FLOAT | RG8UNORM | RG8UNORM_SRGB
+            | RG8SNORM | RG8UINT | RG8SINT | B5G6R5UNORM | A1BGR5UNORM | ABGR4UNORM
+            | BGR5A1UNORM | DEPTH16UNORM => Some(2),
+            R32UINT | R32SINT | R32FLOAT | RG16UNORM | RG16SNORM | RG16UINT | RG16SINT
+            | RG16FLOAT | RGBA8UNORM | RGBA8UNORM_SRGB | RGBA8SNORM | RGBA8UINT | RGBA8SINT
+            | BGRA8UNORM | BGRA8UNORM_SRGB | RGB10A2UNORM | RGB10A2UINT | RG11B10FLOAT
+            | RGB9E5FLOAT | BGR10A2UNORM | BGR10_XR | BGR10_XR_SRGB | DEPTH32FLOAT => Some(4),
+            RG32UINT | RG32SINT | RG32FLOAT | RGBA16UNORM | RGBA16SNORM | RGBA16UINT
+            | RGBA16SINT | RGBA16FLOAT | BGRA10_XR | BGRA10_XR_SRGB => Some(8),
+            RGBA32UINT | RGBA32SINT | RGBA32FLOAT => Some(16),
+            _ => None,
+        }
+    }
 }
+
+pub use pixel_format::bytes_per_pixel;
 
 /// `MTLStorageMode` enum values — memory residency hints.
 pub mod storage_mode {
