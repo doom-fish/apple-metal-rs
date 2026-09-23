@@ -231,6 +231,52 @@ pub mod pixel_format {
         }
     }
 
+    const SRGB_PAIRS: [(usize, usize); 31] = [
+        (R8UNORM, R8UNORM_SRGB),
+        (RG8UNORM, RG8UNORM_SRGB),
+        (RGBA8UNORM, RGBA8UNORM_SRGB),
+        (BGRA8UNORM, BGRA8UNORM_SRGB),
+        (BGR10_XR, BGR10_XR_SRGB),
+        (BGRA10_XR, BGRA10_XR_SRGB),
+        (BC1_RGBA, BC1_RGBA_SRGB),
+        (BC2_RGBA, BC2_RGBA_SRGB),
+        (BC3_RGBA, BC3_RGBA_SRGB),
+        (BC7_RGBAUNORM, BC7_RGBAUNORM_SRGB),
+        (PVRTC_RGB_2BPP, PVRTC_RGB_2BPP_SRGB),
+        (PVRTC_RGB_4BPP, PVRTC_RGB_4BPP_SRGB),
+        (PVRTC_RGBA_2BPP, PVRTC_RGBA_2BPP_SRGB),
+        (PVRTC_RGBA_4BPP, PVRTC_RGBA_4BPP_SRGB),
+        (EAC_RGBA8, EAC_RGBA8_SRGB),
+        (ETC2_RGB8, ETC2_RGB8_SRGB),
+        (ETC2_RGB8A1, ETC2_RGB8A1_SRGB),
+        (ASTC_4X4_LDR, ASTC_4X4_SRGB),
+        (ASTC_5X4_LDR, ASTC_5X4_SRGB),
+        (ASTC_5X5_LDR, ASTC_5X5_SRGB),
+        (ASTC_6X5_LDR, ASTC_6X5_SRGB),
+        (ASTC_6X6_LDR, ASTC_6X6_SRGB),
+        (ASTC_8X5_LDR, ASTC_8X5_SRGB),
+        (ASTC_8X6_LDR, ASTC_8X6_SRGB),
+        (ASTC_8X8_LDR, ASTC_8X8_SRGB),
+        (ASTC_10X5_LDR, ASTC_10X5_SRGB),
+        (ASTC_10X6_LDR, ASTC_10X6_SRGB),
+        (ASTC_10X8_LDR, ASTC_10X8_SRGB),
+        (ASTC_10X10_LDR, ASTC_10X10_SRGB),
+        (ASTC_12X10_LDR, ASTC_12X10_SRGB),
+        (ASTC_12X12_LDR, ASTC_12X12_SRGB),
+    ];
+
+    pub(crate) fn srgb_twin(pixel_format: usize) -> Option<usize> {
+        SRGB_PAIRS.iter().find_map(|&(linear, srgb)| {
+            if pixel_format == linear {
+                Some(srgb)
+            } else if pixel_format == srgb {
+                Some(linear)
+            } else {
+                None
+            }
+        })
+    }
+
     pub(crate) const fn is_texture_format(pixel_format: usize) -> bool {
         bytes_per_pixel(pixel_format).is_some()
             || matches!(
@@ -1666,6 +1712,42 @@ mod pixel_format_tests {
                 })
                 .collect(),
         )
+    }
+
+    #[test]
+    fn srgb_twins_pair_every_sdk_srgb_format_with_its_linear_format() {
+        let Some(formats) = sdk_formats() else {
+            eprintln!("skipping: no macOS SDK MTLPixelFormat.h available");
+            return;
+        };
+        let value_of = |name: &str| {
+            formats
+                .iter()
+                .find(|(known, _)| known == name)
+                .map(|(_, value)| *value)
+        };
+        let mut pairs = 0;
+        for (name, value) in &formats {
+            let Some(base) = name.strip_suffix("_sRGB") else {
+                continue;
+            };
+            let linear_name = if base.starts_with("ASTC_") {
+                format!("{base}_LDR")
+            } else {
+                base.to_string()
+            };
+            let linear = value_of(&linear_name).expect("linear twin exists");
+            assert_eq!(pixel_format::srgb_twin(*value), Some(linear), "{name}");
+            assert_eq!(
+                pixel_format::srgb_twin(linear),
+                Some(*value),
+                "{linear_name}"
+            );
+            pairs += 1;
+        }
+        assert_eq!(pairs, 31);
+        assert_eq!(pixel_format::srgb_twin(pixel_format::RGBA16FLOAT), None);
+        assert_eq!(pixel_format::srgb_twin(pixel_format::ASTC_4X4_HDR), None);
     }
 
     #[test]

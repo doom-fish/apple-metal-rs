@@ -1021,7 +1021,11 @@ impl MetalTexture {
             (color_bytes_per_pixel(original), color_bytes_per_pixel(pixel_format)),
             (Some(original), Some(view)) if original == view
         );
-        if !(pixel_format == original || stencil_view || same_size) {
+        let reinterpreting = self.usage() & crate::texture_usage::PIXEL_FORMAT_VIEW != 0;
+        let allowed = pixel_format == original
+            || crate::pixel_format::srgb_twin(original) == Some(pixel_format)
+            || (reinterpreting && (stencil_view || same_size));
+        if !allowed {
             return None;
         }
         let ptr = unsafe { ffi::ametal_texture_new_view(self.as_ptr(), pixel_format) };

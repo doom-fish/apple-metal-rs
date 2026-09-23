@@ -1,6 +1,6 @@
 use apple_metal::{
-    indirect_command_type, pixel_format, resource_options, storage_mode, CommandBufferError,
-    MetalDevice, MetalRasterizationRateLayerDescriptor, TextureDescriptor,
+    indirect_command_type, pixel_format, resource_options, storage_mode, texture_usage,
+    CommandBufferError, MetalDevice, MetalRasterizationRateLayerDescriptor, TextureDescriptor,
 };
 
 fn device() -> Option<MetalDevice> {
@@ -113,20 +113,18 @@ fn heap_buffers_respect_native_int_and_heap_modes() {
 }
 
 #[test]
-fn texture_views_keep_the_pixel_size() {
+fn texture_views_follow_metals_reinterpretation_rules() {
     let Some(device) = device() else { return };
-    let texture = device
+    let plain = device
         .new_texture(TextureDescriptor::new_2d(4, 4, pixel_format::RGBA8UNORM))
         .expect("texture");
-    for format in [
-        pixel_format::RGBA8UNORM,
-        pixel_format::RGBA8UNORM_SRGB,
-        pixel_format::BGRA8UNORM,
-    ] {
-        let view = texture.new_view(format).expect("same-size view");
+    for format in [pixel_format::RGBA8UNORM, pixel_format::RGBA8UNORM_SRGB] {
+        let view = plain.new_view(format).expect("same format or sRGB twin");
         assert_eq!(view.pixel_format(), format);
     }
     for format in [
+        pixel_format::BGRA8UNORM,
+        pixel_format::R32FLOAT,
         pixel_format::RGBA16FLOAT,
         pixel_format::R8UNORM,
         pixel_format::BC1_RGBA,
@@ -135,7 +133,42 @@ fn texture_views_keep_the_pixel_size() {
         9_999,
         usize::MAX,
     ] {
-        assert!(texture.new_view(format).is_none(), "{format}");
+        assert!(plain.new_view(format).is_none(), "{format}");
+    }
+
+    let mut reinterpretable = TextureDescriptor::new_2d(4, 4, pixel_format::RGBA8UNORM);
+    reinterpretable.usage |= texture_usage::PIXEL_FORMAT_VIEW;
+    let reinterpretable = device
+        .new_texture(reinterpretable)
+        .expect("pixel-format-view texture");
+    for format in [
+        pixel_format::BGRA8UNORM,
+        pixel_format::R32FLOAT,
+        pixel_format::RGBA8UNORM_SRGB,
+    ] {
+        let view = reinterpretable.new_view(format).expect("same-size view");
+        assert_eq!(view.pixel_format(), format);
+    }
+    for format in [
+        pixel_format::RGBA16FLOAT,
+        pixel_format::BC1_RGBA,
+        pixel_format::DEPTH32FLOAT,
+    ] {
+        assert!(reinterpretable.new_view(format).is_none(), "{format}");
+    }
+
+    let mut depth_stencil = TextureDescriptor::new_2d(4, 4, pixel_format::DEPTH32FLOAT_STENCIL8);
+    depth_stencil.storage_mode = storage_mode::PRIVATE;
+    depth_stencil.usage = texture_usage::SHADER_READ | texture_usage::RENDER_TARGET;
+    if let Some(texture) = device.new_texture(depth_stencil) {
+        assert!(texture.new_view(pixel_format::X32_STENCIL8).is_none());
+    }
+    depth_stencil.usage |= texture_usage::PIXEL_FORMAT_VIEW;
+    if let Some(texture) = device.new_texture(depth_stencil) {
+        let stencil = texture
+            .new_view(pixel_format::X32_STENCIL8)
+            .expect("stencil view");
+        assert_eq!(stencil.pixel_format(), pixel_format::X32_STENCIL8);
     }
 }
 
