@@ -1,5 +1,11 @@
 # apple-metal-rs coverage audit (vs MacOSX26.2.sdk)
 
+> VERIFIED below means that a Rust item with the symbol's name exists, not that
+> its properties or methods are wrapped. Most classes only have `new()` and
+> `label()`, protocols are method-less handles and enums are raw integers; the
+> Metal 4 (`MTL4*`) and `MTLTensor` families have no methods at all. See
+> `COVERAGE.md` for what is functional.
+
 SDK_PUBLIC_SYMBOLS: 431
 VERIFIED: 431
 GAPS: 0
@@ -335,7 +341,7 @@ Scope: top-level public symbols from `Metal.framework` + `MetalFX.framework` hea
 | `MTLPrimitiveType` | enum | `MTLRenderCommandEncoder.h` | `primitive_type module; RenderCommandEncoder::draw_primitives` |
 | `MTLPurgeableState` | enum | `MTLResource.h` | `purgeable_state module; Heap::set_purgeable_state` |
 | `MTLRasterizationRateLayerArray` | interface | `MTLRasterizationRate.h` | `MetalRasterizationRateLayerArray::new` |
-| `MTLRasterizationRateLayerDescriptor` | interface | `MTLRasterizationRate.h` | `MetalRasterizationRateLayerDescriptor::new` |
+| `MTLRasterizationRateLayerDescriptor` | interface | `MTLRasterizationRate.h` | `MetalRasterizationRateLayerDescriptor::with_sample_count` |
 | `MTLRasterizationRateMap` | protocol | `MTLRasterizationRate.h` | `MetalRasterizationRateMap` |
 | `MTLRasterizationRateMapDescriptor` | interface | `MTLRasterizationRate.h` | `MetalRasterizationRateMapDescriptor::new` |
 | `MTLRasterizationRateSampleArray` | interface | `MTLRasterizationRate.h` | `MetalRasterizationRateSampleArray::new` |

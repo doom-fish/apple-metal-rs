@@ -1,5 +1,10 @@
 # apple-metal-rs coverage audit v2 (vs MacOSX26.2.sdk)
 
+> This audit counts the `opaque_symbol_handle!` and `opaque_symbol_class!`
+> stubs as VERIFIED. Those stubs have no methods (classes only have `new()` and
+> `label()`), and the Metal 4 (`MTL4*`) and `MTLTensor` families are not
+> functional. See `COVERAGE.md` for what the crate actually wraps.
+
 SDK_PUBLIC_SYMBOLS: 248
 VERIFIED: 246
 GAPS: 0
