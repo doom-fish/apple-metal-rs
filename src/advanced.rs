@@ -512,7 +512,7 @@ impl MetalBuffer {
     }
 
     /// Create a 2D texture view that shares this buffer's storage.
-    #[must_use]
+    #[allow(clippy::missing_errors_doc)]
     pub fn new_texture_view_2d(
         &self,
         pixel_format: usize,
@@ -520,7 +520,74 @@ impl MetalBuffer {
         height: usize,
         bytes_per_row: usize,
         offset: usize,
-    ) -> Option<MetalTexture> {
+    ) -> Result<MetalTexture, TextureViewError> {
+        let bytes_per_pixel = color_bytes_per_pixel(pixel_format)
+            .ok_or(TextureViewError::UnsupportedPixelFormat { pixel_format })?;
+        if width == 0 || height == 0 {
+            return Err(TextureViewError::EmptyRegion);
+        }
+        for (field, value) in [
+            ("pixel_format", pixel_format),
+            ("width", width),
+            ("height", height),
+            ("bytes_per_row", bytes_per_row),
+            ("offset", offset),
+        ] {
+            if isize::try_from(value).is_err() {
+                return Err(TextureViewError::IntegerOutOfRange { field, value });
+            }
+        }
+        let storage_mode = self.storage_mode();
+        if !matches!(
+            storage_mode,
+            crate::storage_mode::SHARED
+                | crate::storage_mode::MANAGED
+                | crate::storage_mode::PRIVATE
+        ) {
+            return Err(TextureViewError::UnsupportedStorageMode { storage_mode });
+        }
+        let minimum = width
+            .checked_mul(bytes_per_pixel)
+            .ok_or(TextureViewError::LayoutOverflow)?;
+        if bytes_per_row < minimum {
+            return Err(TextureViewError::BytesPerRowTooSmall {
+                bytes_per_row,
+                minimum,
+            });
+        }
+        if bytes_per_row % bytes_per_pixel != 0 {
+            return Err(TextureViewError::Misaligned {
+                field: "bytes_per_row",
+                value: bytes_per_row,
+                alignment: bytes_per_pixel,
+            });
+        }
+        let alignment = unsafe {
+            ffi::ametal_buffer_minimum_linear_texture_alignment(self.as_ptr(), pixel_format)
+        };
+        if alignment == 0 {
+            return Err(TextureViewError::UnsupportedPixelFormat { pixel_format });
+        }
+        for (field, value) in [("offset", offset), ("bytes_per_row", bytes_per_row)] {
+            if value % alignment != 0 {
+                return Err(TextureViewError::Misaligned {
+                    field,
+                    value,
+                    alignment,
+                });
+            }
+        }
+        let required = bytes_per_row
+            .checked_mul(height)
+            .and_then(|span| span.checked_add(offset))
+            .ok_or(TextureViewError::LayoutOverflow)?;
+        let buffer_length = self.length();
+        if required > buffer_length {
+            return Err(TextureViewError::OutOfBounds {
+                required,
+                buffer_length,
+            });
+        }
         let ptr = unsafe {
             ffi::ametal_buffer_new_texture_view_2d(
                 self.as_ptr(),
@@ -529,15 +596,93 @@ impl MetalBuffer {
                 height,
                 bytes_per_row,
                 offset,
+                bytes_per_pixel,
             )
         };
         if ptr.is_null() {
-            None
+            Err(TextureViewError::NativeRejected)
         } else {
-            Some(unsafe { MetalTexture::from_raw(ptr) })
+            Ok(unsafe { MetalTexture::from_raw(ptr) })
         }
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TextureViewError {
+    UnsupportedPixelFormat {
+        pixel_format: usize,
+    },
+    UnsupportedStorageMode {
+        storage_mode: usize,
+    },
+    EmptyRegion,
+    IntegerOutOfRange {
+        field: &'static str,
+        value: usize,
+    },
+    BytesPerRowTooSmall {
+        bytes_per_row: usize,
+        minimum: usize,
+    },
+    Misaligned {
+        field: &'static str,
+        value: usize,
+        alignment: usize,
+    },
+    LayoutOverflow,
+    OutOfBounds {
+        required: usize,
+        buffer_length: usize,
+    },
+    NativeRejected,
+}
+
+impl core::fmt::Display for TextureViewError {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::UnsupportedPixelFormat { pixel_format } => write!(
+                formatter,
+                "pixel format {pixel_format} cannot back a linear texture view"
+            ),
+            Self::UnsupportedStorageMode { storage_mode } => write!(
+                formatter,
+                "buffer storage mode {storage_mode} cannot back a texture view"
+            ),
+            Self::EmptyRegion => {
+                formatter.write_str("texture view width and height must be non-zero")
+            }
+            Self::IntegerOutOfRange { field, value } => {
+                write!(formatter, "{field} value {value} exceeds native Int")
+            }
+            Self::BytesPerRowTooSmall {
+                bytes_per_row,
+                minimum,
+            } => write!(
+                formatter,
+                "bytes_per_row {bytes_per_row} is smaller than required {minimum}"
+            ),
+            Self::Misaligned {
+                field,
+                value,
+                alignment,
+            } => write!(
+                formatter,
+                "{field} value {value} is not a multiple of {alignment}"
+            ),
+            Self::LayoutOverflow => formatter.write_str("texture view byte layout overflowed"),
+            Self::OutOfBounds {
+                required,
+                buffer_length,
+            } => write!(
+                formatter,
+                "texture view needs {required} bytes but the buffer has {buffer_length}"
+            ),
+            Self::NativeRejected => formatter.write_str("Metal rejected the texture view"),
+        }
+    }
+}
+
+impl std::error::Error for TextureViewError {}
 
 /// Errors returned by CPU texture uploads and readback.
 #[derive(Debug, Clone, PartialEq, Eq)]

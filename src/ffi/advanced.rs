@@ -126,7 +126,12 @@ extern "C" {
         height: usize,
         bytes_per_row: usize,
         offset: usize,
+        bytes_per_pixel: usize,
     ) -> *mut c_void;
+    pub fn ametal_buffer_minimum_linear_texture_alignment(
+        handle: *mut c_void,
+        pixel_format: usize,
+    ) -> usize;
 
     /// Calls the `Metal` framework counterpart for `ametal_texture_depth`.
     pub fn ametal_texture_depth(handle: *mut c_void) -> usize;

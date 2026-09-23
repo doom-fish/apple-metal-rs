@@ -375,6 +375,19 @@ public func ametal_buffer_did_modify_range(
     buffer.didModifyRange(location..<(location + length))
 }
 
+@_cdecl("ametal_buffer_minimum_linear_texture_alignment")
+public func ametal_buffer_minimum_linear_texture_alignment(
+    _ handle: UnsafeMutableRawPointer?,
+    _ pixelFormat: Int
+) -> Int {
+    guard let buffer: MTLBuffer = am_borrow(handle),
+          let rawFormat = UInt(exactly: pixelFormat),
+          let format = MTLPixelFormat(rawValue: rawFormat),
+          format != .invalid
+    else { return 0 }
+    return buffer.device.minimumLinearTextureAlignment(for: format)
+}
+
 @_cdecl("ametal_buffer_new_texture_view_2d")
 public func ametal_buffer_new_texture_view_2d(
     _ handle: UnsafeMutableRawPointer?,
@@ -382,17 +395,44 @@ public func ametal_buffer_new_texture_view_2d(
     _ width: Int,
     _ height: Int,
     _ bytesPerRow: Int,
-    _ offset: Int
+    _ offset: Int,
+    _ bytesPerPixel: Int
 ) -> UnsafeMutableRawPointer? {
-    guard let buffer: MTLBuffer = am_borrow(handle) else { return nil }
-    let descriptor = am_make_texture_descriptor(
-        pixelFormat: pixelFormat,
+    guard let buffer: MTLBuffer = am_borrow(handle),
+          width > 0,
+          height > 0,
+          offset >= 0,
+          bytesPerPixel > 0,
+          let rawFormat = UInt(exactly: pixelFormat),
+          let format = MTLPixelFormat(rawValue: rawFormat),
+          format != .invalid,
+          buffer.storageMode == .shared || buffer.storageMode == .managed
+              || buffer.storageMode == .private
+    else { return nil }
+    let alignment = buffer.device.minimumLinearTextureAlignment(for: format)
+    let (minimumRowBytes, rowOverflow) = width.multipliedReportingOverflow(by: bytesPerPixel)
+    let (span, spanOverflow) = bytesPerRow.multipliedReportingOverflow(by: height)
+    let (end, endOverflow) = offset.addingReportingOverflow(span)
+    guard alignment > 0,
+          !rowOverflow,
+          !spanOverflow,
+          !endOverflow,
+          bytesPerRow >= minimumRowBytes,
+          bytesPerRow.isMultiple(of: bytesPerPixel),
+          bytesPerRow.isMultiple(of: alignment),
+          offset.isMultiple(of: alignment),
+          end <= buffer.length
+    else { return nil }
+    let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+        pixelFormat: format,
         width: width,
         height: height,
-        mipmapped: false,
-        usage: Int(MTLTextureUsage.shaderRead.rawValue | MTLTextureUsage.shaderWrite.rawValue),
-        storageMode: Int(MTLStorageMode.shared.rawValue)
+        mipmapped: false
     )
+    descriptor.usage = [.shaderRead, .shaderWrite]
+    descriptor.storageMode = buffer.storageMode
+    descriptor.cpuCacheMode = buffer.cpuCacheMode
+    descriptor.hazardTrackingMode = buffer.hazardTrackingMode
     guard let texture = buffer.makeTexture(descriptor: descriptor, offset: offset, bytesPerRow: bytesPerRow) else {
         return nil
     }
