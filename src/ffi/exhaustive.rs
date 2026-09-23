@@ -33,4 +33,8 @@ extern "C" {
     );
     /// Calls the `Metal` framework counterpart for `ametal_io_flush_and_destroy_compression_context`.
     pub fn ametal_io_flush_and_destroy_compression_context(handle: *mut c_void) -> usize;
+    pub fn ametal_rasterization_rate_layer_descriptor_new(
+        horizontal: usize,
+        vertical: usize,
+    ) -> *mut c_void;
 }

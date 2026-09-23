@@ -117,8 +117,8 @@ public func ametal_device_new_render_pipeline_state_with_descriptor(
     descriptor.isAlphaToOneEnabled = alphaToOneEnabled
     descriptor.isRasterizationEnabled = rasterizationEnabled
     descriptor.supportIndirectCommandBuffers = supportIndirectCommandBuffers
-    descriptor.depthAttachmentPixelFormat = MTLPixelFormat(rawValue: UInt(depthAttachmentPixelFormat)) ?? .invalid
-    descriptor.stencilAttachmentPixelFormat = MTLPixelFormat(rawValue: UInt(stencilAttachmentPixelFormat)) ?? .invalid
+    descriptor.depthAttachmentPixelFormat = UInt(exactly: depthAttachmentPixelFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
+    descriptor.stencilAttachmentPixelFormat = UInt(exactly: stencilAttachmentPixelFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
     am_apply_render_color_attachments(colorAttachments, count: colorAttachmentCount, to: descriptor.colorAttachments)
 
     do {

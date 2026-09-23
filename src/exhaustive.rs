@@ -1429,7 +1429,22 @@ opaque_symbol_class!(pub struct MetalPipelineBufferDescriptorArray => "MTLPipeli
 opaque_symbol_class!(pub struct MetalPointerType => "MTLPointerType";);
 opaque_symbol_class!(pub struct MetalPrimitiveAccelerationStructureDescriptor => "MTLPrimitiveAccelerationStructureDescriptor";);
 opaque_symbol_class!(pub struct MetalRasterizationRateLayerArray => "MTLRasterizationRateLayerArray";);
-opaque_symbol_class!(pub struct MetalRasterizationRateLayerDescriptor => "MTLRasterizationRateLayerDescriptor";);
+opaque_symbol_handle!(
+    pub struct MetalRasterizationRateLayerDescriptor;
+);
+
+impl MetalRasterizationRateLayerDescriptor {
+    #[must_use]
+    pub fn with_sample_count(horizontal: usize, vertical: usize) -> Option<Self> {
+        const MAX_SAMPLES: usize = 16_384;
+        if horizontal == 0 || vertical == 0 || horizontal > MAX_SAMPLES || vertical > MAX_SAMPLES {
+            return None;
+        }
+        Self::wrap(unsafe {
+            ffi::ametal_rasterization_rate_layer_descriptor_new(horizontal, vertical)
+        })
+    }
+}
 opaque_symbol_class!(pub struct MetalRasterizationRateMapDescriptor => "MTLRasterizationRateMapDescriptor";);
 opaque_symbol_class!(pub struct MetalRasterizationRateSampleArray => "MTLRasterizationRateSampleArray";);
 opaque_symbol_class!(pub struct MetalRenderPassAttachmentDescriptor => "MTLRenderPassAttachmentDescriptor";);

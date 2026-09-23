@@ -45,7 +45,7 @@ public func ametal_buffer_length(_ handle: UnsafeMutableRawPointer?) -> Int {
 @_cdecl("ametal_buffer_storage_mode")
 public func ametal_buffer_storage_mode(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let buf: MTLBuffer = am_borrow(handle) else { return 0 }
-    return Int(buf.storageMode.rawValue)
+    return Int(bitPattern: buf.storageMode.rawValue)
 }
 
 @_cdecl("ametal_buffer_contents")

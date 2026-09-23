@@ -57,13 +57,13 @@ public func ametal_texture_height(_ handle: UnsafeMutableRawPointer?) -> Int {
 @_cdecl("ametal_texture_pixel_format")
 public func ametal_texture_pixel_format(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let t: MTLTexture = am_borrow(handle) else { return 0 }
-    return Int(t.pixelFormat.rawValue)
+    return Int(bitPattern: t.pixelFormat.rawValue)
 }
 
 @_cdecl("ametal_texture_type")
 public func ametal_texture_type(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let t: MTLTexture = am_borrow(handle) else { return 0 }
-    return Int(t.textureType.rawValue)
+    return Int(bitPattern: t.textureType.rawValue)
 }
 
 #if canImport(IOSurface)

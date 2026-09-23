@@ -11,6 +11,18 @@ public func ametal_new_class_instance(_ className: UnsafePointer<CChar>?) -> Uns
     return am_retain(cls.init())
 }
 
+@_cdecl("ametal_rasterization_rate_layer_descriptor_new")
+public func ametal_rasterization_rate_layer_descriptor_new(
+    _ horizontal: Int,
+    _ vertical: Int
+) -> UnsafeMutableRawPointer? {
+    guard horizontal > 0, vertical > 0, horizontal <= 16_384, vertical <= 16_384 else {
+        return nil
+    }
+    let sampleCount = MTLSize(width: horizontal, height: vertical, depth: 0)
+    return am_retain(MTLRasterizationRateLayerDescriptor(sampleCount: sampleCount))
+}
+
 @_cdecl("ametal_copy_metal_string_constant")
 public func ametal_copy_metal_string_constant(
     _ symbolName: UnsafePointer<CChar>?

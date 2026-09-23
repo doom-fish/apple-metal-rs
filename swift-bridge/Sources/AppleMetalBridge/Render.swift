@@ -18,7 +18,7 @@ public func ametal_device_new_render_pipeline_state(
     let descriptor = MTLRenderPipelineDescriptor()
     descriptor.vertexFunction = vertex
     descriptor.fragmentFunction = fragment
-    descriptor.colorAttachments[0].pixelFormat = MTLPixelFormat(rawValue: UInt(colorPixelFormat)) ?? .invalid
+    descriptor.colorAttachments[0].pixelFormat = UInt(exactly: colorPixelFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
     descriptor.sampleCount = sampleCount
 
     do {

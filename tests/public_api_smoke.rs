@@ -648,7 +648,9 @@ fn public_api_smoke() {
         );
     if let Some(indirect_command_buffer) = indirect_command_buffer.as_ref() {
         assert!(indirect_command_buffer.size() > 0);
-        indirect_command_buffer.reset_range(0..1);
+        indirect_command_buffer
+            .reset_range(0..1)
+            .expect("reset indirect command range");
     }
 
     let render_target = device

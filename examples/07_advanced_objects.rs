@@ -188,7 +188,9 @@ fn main() {
         4,
         resource_options::STORAGE_MODE_PRIVATE,
     ) {
-        indirect.reset_range(0..1);
+        indirect
+            .reset_range(0..1)
+            .expect("reset indirect command range");
         println!("indirect command buffer size={}", indirect.size());
     }
 

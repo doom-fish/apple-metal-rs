@@ -42,9 +42,10 @@ public func ametal_device_supports_counter_sampling(
     _ handle: UnsafeMutableRawPointer?,
     _ samplingPoint: Int
 ) -> Bool {
-    guard #available(macOS 10.15, *),
-          let device: MTLDevice = am_borrow(handle),
-          let point = MTLCounterSamplingPoint(rawValue: UInt(samplingPoint))
+    guard let device: MTLDevice = am_borrow(handle),
+          let rawPoint = UInt(exactly: samplingPoint),
+          rawPoint <= MTLCounterSamplingPoint.atBlitBoundary.rawValue,
+          let point = MTLCounterSamplingPoint(rawValue: rawPoint)
     else { return false }
     return device.supportsCounterSampling(point)
 }
@@ -77,7 +78,8 @@ public func ametal_device_new_command_queue_with_max_command_buffer_count(
     _ handle: UnsafeMutableRawPointer?,
     _ maxCommandBufferCount: Int
 ) -> UnsafeMutableRawPointer? {
-    guard let device: MTLDevice = am_borrow(handle),
+    guard maxCommandBufferCount > 0,
+          let device: MTLDevice = am_borrow(handle),
           let queue = device.makeCommandQueue(maxCommandBufferCount: maxCommandBufferCount)
     else { return nil }
     return am_retain(queue as AnyObject)
@@ -109,10 +111,15 @@ public func ametal_device_new_heap(
     _ size: Int,
     _ storageMode: Int
 ) -> UnsafeMutableRawPointer? {
-    guard let device: MTLDevice = am_borrow(handle) else { return nil }
+    guard size > 0,
+          let device: MTLDevice = am_borrow(handle),
+          let rawStorage = UInt(exactly: storageMode),
+          let storage = MTLStorageMode(rawValue: rawStorage),
+          storage == .shared || storage == .managed || storage == .private
+    else { return nil }
     let descriptor = MTLHeapDescriptor()
     descriptor.size = size
-    descriptor.storageMode = MTLStorageMode(rawValue: UInt(storageMode)) ?? .shared
+    descriptor.storageMode = storage
     guard let heap = device.makeHeap(descriptor: descriptor) else { return nil }
     return am_retain(heap as AnyObject)
 }
@@ -212,7 +219,10 @@ public func ametal_device_new_indirect_command_buffer(
     _ maxKernelBufferBindCount: Int,
     _ options: UInt
 ) -> UnsafeMutableRawPointer? {
-    guard #available(macOS 10.14, *),
+    guard maxCommandCount > 0,
+          maxVertexBufferBindCount >= 0,
+          maxFragmentBufferBindCount >= 0,
+          maxKernelBufferBindCount >= 0,
           let device: MTLDevice = am_borrow(handle)
     else { return nil }
 
@@ -241,7 +251,7 @@ public func ametal_device_new_acceleration_structure_with_size(
     _ handle: UnsafeMutableRawPointer?,
     _ size: Int
 ) -> UnsafeMutableRawPointer? {
-    guard #available(macOS 11.0, *),
+    guard size > 0,
           let device: MTLDevice = am_borrow(handle),
           let accelerationStructure = device.makeAccelerationStructure(size: size)
     else { return nil }
@@ -262,6 +272,14 @@ public func ametal_device_new_counter_sample_buffer(
           let counterSetName
     else { return nil }
 
+    guard sampleCount > 0,
+          let rawStorage = UInt(exactly: storageMode),
+          let storage = MTLStorageMode(rawValue: rawStorage),
+          storage == .shared || storage == .managed || storage == .private
+    else {
+        am_store_error_message(outErrorMessage, "invalid counter sample count or storage mode")
+        return nil
+    }
     let name = String(cString: counterSetName)
     let counterSets = device.counterSets ?? []
     guard let counterSet = counterSets.first(where: { $0.name == name }) else {
@@ -272,7 +290,7 @@ public func ametal_device_new_counter_sample_buffer(
     let descriptor = MTLCounterSampleBufferDescriptor()
     descriptor.counterSet = counterSet
     descriptor.sampleCount = sampleCount
-    descriptor.storageMode = MTLStorageMode(rawValue: UInt(storageMode)) ?? .shared
+    descriptor.storageMode = storage
     if let label {
         descriptor.label = String(cString: label)
     }
@@ -299,8 +317,16 @@ public func ametal_device_new_log_state(
     }
     guard let device: MTLDevice = am_borrow(handle) else { return nil }
 
+    guard bufferSize >= 0,
+          let rawLevel = Int(exactly: level),
+          let logLevel = MTLLogLevel(rawValue: rawLevel),
+          (MTLLogLevel.undefined.rawValue...MTLLogLevel.fault.rawValue).contains(rawLevel)
+    else {
+        am_store_error_message(outErrorMessage, "invalid log level or buffer size")
+        return nil
+    }
     let descriptor = MTLLogStateDescriptor()
-    descriptor.level = MTLLogLevel(rawValue: Int(level)) ?? .undefined
+    descriptor.level = logLevel
     descriptor.bufferSize = bufferSize
 
     do {
@@ -370,8 +396,14 @@ public func ametal_buffer_did_modify_range(
     _ location: Int,
     _ length: Int
 ) {
-    guard let buffer: MTLBuffer = am_borrow(handle) else { return }
-    buffer.didModifyRange(location..<(location + length))
+    let (end, overflow) = location.addingReportingOverflow(length)
+    guard location >= 0,
+          length >= 0,
+          !overflow,
+          let buffer: MTLBuffer = am_borrow(handle),
+          end <= buffer.length
+    else { return }
+    buffer.didModifyRange(location..<end)
 }
 
 @_cdecl("ametal_buffer_minimum_linear_texture_alignment")
@@ -459,13 +491,13 @@ public func ametal_texture_array_length(_ handle: UnsafeMutableRawPointer?) -> I
 @_cdecl("ametal_texture_usage")
 public func ametal_texture_usage(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let texture: MTLTexture = am_borrow(handle) else { return 0 }
-    return Int(texture.usage.rawValue)
+    return Int(bitPattern: texture.usage.rawValue)
 }
 
 @_cdecl("ametal_texture_storage_mode")
 public func ametal_texture_storage_mode(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let texture: MTLTexture = am_borrow(handle) else { return 0 }
-    return Int(texture.storageMode.rawValue)
+    return Int(bitPattern: texture.storageMode.rawValue)
 }
 
 private func amTextureTransferLengths(
@@ -627,7 +659,10 @@ public func ametal_texture_new_view(
     _ pixelFormat: Int
 ) -> UnsafeMutableRawPointer? {
     guard let texture: MTLTexture = am_borrow(handle),
-          let view = texture.makeTextureView(pixelFormat: MTLPixelFormat(rawValue: UInt(pixelFormat)) ?? .invalid)
+          let rawFormat = UInt(exactly: pixelFormat),
+          let format = MTLPixelFormat(rawValue: rawFormat),
+          format != .invalid,
+          let view = texture.makeTextureView(pixelFormat: format)
     else { return nil }
     return am_retain(view as AnyObject)
 }
@@ -651,7 +686,7 @@ public func ametal_compute_pipeline_state_new_visible_function_table(
     _ handle: UnsafeMutableRawPointer?,
     _ functionCount: Int
 ) -> UnsafeMutableRawPointer? {
-    guard #available(macOS 11.0, *),
+    guard functionCount >= 0,
           let pipeline: MTLComputePipelineState = am_borrow(handle)
     else { return nil }
     let descriptor = MTLVisibleFunctionTableDescriptor()
@@ -665,7 +700,7 @@ public func ametal_compute_pipeline_state_new_intersection_function_table(
     _ handle: UnsafeMutableRawPointer?,
     _ functionCount: Int
 ) -> UnsafeMutableRawPointer? {
-    guard #available(macOS 11.0, *),
+    guard functionCount >= 0,
           let pipeline: MTLComputePipelineState = am_borrow(handle)
     else { return nil }
     let descriptor = MTLIntersectionFunctionTableDescriptor()
@@ -717,8 +752,12 @@ public func ametal_heap_new_buffer(
     _ length: Int,
     _ options: UInt
 ) -> UnsafeMutableRawPointer? {
-    guard let heap: MTLHeap = am_borrow(handle),
-          let buffer = heap.makeBuffer(length: length, options: MTLResourceOptions(rawValue: options))
+    let resourceOptions = MTLResourceOptions(rawValue: options)
+    guard length > 0,
+          let heap: MTLHeap = am_borrow(handle),
+          (options & 0xF0) >> 4 == heap.storageMode.rawValue,
+          options & 0xF == heap.cpuCacheMode.rawValue,
+          let buffer = heap.makeBuffer(length: length, options: resourceOptions)
     else { return nil }
     return am_retain(buffer as AnyObject)
 }
@@ -764,6 +803,7 @@ public func ametal_heap_new_acceleration_structure_with_size(
     _ size: Int
 ) -> UnsafeMutableRawPointer? {
     guard #available(macOS 13.0, *),
+          size > 0,
           let heap: MTLHeap = am_borrow(handle),
           let accelerationStructure = heap.makeAccelerationStructure(size: size)
     else { return nil }
@@ -878,16 +918,18 @@ public func ametal_binary_archive_add_render_functions(
     _ sampleCount: Int,
     _ outErrorMessage: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
 ) -> Bool {
-    guard #available(macOS 11.0, *),
-          let archive: MTLBinaryArchive = am_borrow(handle),
+    guard let archive: MTLBinaryArchive = am_borrow(handle),
           let vertex: MTLFunction = am_borrow(vertexHandle),
-          let fragment: MTLFunction = am_borrow(fragmentHandle)
+          let fragment: MTLFunction = am_borrow(fragmentHandle),
+          sampleCount > 0,
+          let rawFormat = UInt(exactly: colorPixelFormat),
+          let colorFormat = MTLPixelFormat(rawValue: rawFormat)
     else { return false }
 
     let descriptor = MTLRenderPipelineDescriptor()
     descriptor.vertexFunction = vertex
     descriptor.fragmentFunction = fragment
-    descriptor.colorAttachments[0].pixelFormat = MTLPixelFormat(rawValue: UInt(colorPixelFormat)) ?? .invalid
+    descriptor.colorAttachments[0].pixelFormat = colorFormat
     descriptor.sampleCount = sampleCount
 
     do {
@@ -929,9 +971,16 @@ public func ametal_indirect_command_buffer_reset_range(
     _ handle: UnsafeMutableRawPointer?,
     _ location: Int,
     _ length: Int
-) {
-    guard let buffer: MTLIndirectCommandBuffer = am_borrow(handle) else { return }
-    buffer.reset(location..<(location + length))
+) -> Bool {
+    let (end, overflow) = location.addingReportingOverflow(length)
+    guard location >= 0,
+          length >= 0,
+          !overflow,
+          let buffer: MTLIndirectCommandBuffer = am_borrow(handle),
+          end <= buffer.size
+    else { return false }
+    buffer.reset(location..<end)
+    return true
 }
 
 @_cdecl("ametal_acceleration_structure_size")
@@ -968,11 +1017,15 @@ public func ametal_counter_sample_buffer_resolve_range(
     _ length: Int,
     _ outLen: UnsafeMutablePointer<Int>?
 ) -> UnsafeMutableRawPointer? {
-    guard #available(macOS 10.15, *),
-          let sampleBuffer: MTLCounterSampleBuffer = am_borrow(handle)
+    let (end, overflow) = location.addingReportingOverflow(length)
+    guard location >= 0,
+          length > 0,
+          !overflow,
+          let sampleBuffer: MTLCounterSampleBuffer = am_borrow(handle),
+          end <= sampleBuffer.sampleCount
     else { return nil }
     do {
-        guard let data = try sampleBuffer.resolveCounterRange(location..<(location + length)) else {
+        guard let data = try sampleBuffer.resolveCounterRange(location..<end) else {
             return nil
         }
         outLen?.pointee = data.count
@@ -1128,9 +1181,9 @@ public func ametal_capture_manager_supports_destination(
     _ handle: UnsafeMutableRawPointer?,
     _ destination: UInt
 ) -> Bool {
-    guard #available(macOS 10.15, *),
-          let manager: MTLCaptureManager = am_borrow(handle),
-          let destination = MTLCaptureDestination(rawValue: Int(destination))
+    guard let manager: MTLCaptureManager = am_borrow(handle),
+          let rawDestination = Int(exactly: destination),
+          let destination = MTLCaptureDestination(rawValue: rawDestination)
     else { return false }
     return manager.supportsDestination(destination)
 }

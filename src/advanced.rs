@@ -1008,6 +1008,22 @@ impl MetalTexture {
     /// Create a texture view with a compatible pixel format.
     #[must_use]
     pub fn new_view(&self, pixel_format: usize) -> Option<Self> {
+        use crate::pixel_format::{
+            DEPTH24UNORM_STENCIL8, DEPTH32FLOAT_STENCIL8, X24_STENCIL8, X32_STENCIL8,
+        };
+
+        let original = self.pixel_format();
+        let stencil_view = matches!(
+            (original, pixel_format),
+            (DEPTH32FLOAT_STENCIL8, X32_STENCIL8) | (DEPTH24UNORM_STENCIL8, X24_STENCIL8)
+        );
+        let same_size = matches!(
+            (color_bytes_per_pixel(original), color_bytes_per_pixel(pixel_format)),
+            (Some(original), Some(view)) if original == view
+        );
+        if !(pixel_format == original || stencil_view || same_size) {
+            return None;
+        }
         let ptr = unsafe { ffi::ametal_texture_new_view(self.as_ptr(), pixel_format) };
         if ptr.is_null() {
             None
@@ -1316,6 +1332,9 @@ impl Heap {
     /// Allocate a buffer from this heap.
     #[must_use]
     pub fn new_buffer(&self, length: usize, options: usize) -> Option<MetalBuffer> {
+        if isize::try_from(length).is_err() || isize::try_from(options).is_err() {
+            return None;
+        }
         let ptr = unsafe { ffi::ametal_heap_new_buffer(self.as_ptr(), length, options) };
         if ptr.is_null() {
             None
@@ -1550,14 +1569,31 @@ impl IndirectCommandBuffer {
     }
 
     /// Reset commands in `range` back to empty state.
-    pub fn reset_range(&self, range: Range<usize>) {
-        unsafe {
-            ffi::ametal_indirect_command_buffer_reset_range(
-                self.as_ptr(),
-                range.start,
-                range.end.saturating_sub(range.start),
-            );
+    #[allow(clippy::missing_errors_doc)]
+    pub fn reset_range(&self, range: Range<usize>) -> Result<(), crate::CommandBufferError> {
+        if range.start > range.end {
+            return Err(crate::CommandBufferError::InvalidRange);
+        }
+        let length = range.end - range.start;
+        let size = self.size();
+        if range.end > size {
+            return Err(crate::CommandBufferError::RangeOutOfBounds {
+                resource: "indirect command buffer",
+                offset: range.start,
+                length,
+                resource_length: size,
+            });
+        }
+        let accepted = unsafe {
+            ffi::ametal_indirect_command_buffer_reset_range(self.as_ptr(), range.start, length)
         };
+        if accepted {
+            Ok(())
+        } else {
+            Err(crate::CommandBufferError::NativeRejected {
+                operation: "indirect command buffer reset",
+            })
+        }
     }
 }
 
@@ -1592,12 +1628,15 @@ impl CounterSampleBuffer {
     /// Resolve raw counter bytes for `range`.
     #[must_use]
     pub fn resolve_range(&self, range: Range<usize>) -> Option<Vec<u8>> {
+        if range.start >= range.end || range.end > self.sample_count() {
+            return None;
+        }
         let mut out_len = 0usize;
         let ptr = unsafe {
             ffi::ametal_counter_sample_buffer_resolve_range(
                 self.as_ptr(),
                 range.start,
-                range.end.saturating_sub(range.start),
+                range.end - range.start,
                 &raw mut out_len,
             )
         };

@@ -26,8 +26,8 @@ public func ametal_device_new_spatial_scaler(
     }
 
     let descriptor = MTLFXSpatialScalerDescriptor()
-    descriptor.colorTextureFormat = MTLPixelFormat(rawValue: UInt(colorTextureFormat)) ?? .invalid
-    descriptor.outputTextureFormat = MTLPixelFormat(rawValue: UInt(outputTextureFormat)) ?? .invalid
+    descriptor.colorTextureFormat = UInt(exactly: colorTextureFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
+    descriptor.outputTextureFormat = UInt(exactly: outputTextureFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
     descriptor.inputWidth = inputWidth
     descriptor.inputHeight = inputHeight
     descriptor.outputWidth = outputWidth
@@ -51,9 +51,9 @@ public func ametal_spatial_scaler_texture_usage(
 
     switch kind {
     case 0:
-        return Int(scaler.colorTextureUsage.rawValue)
+        return Int(bitPattern: scaler.colorTextureUsage.rawValue)
     case 1:
-        return Int(scaler.outputTextureUsage.rawValue)
+        return Int(bitPattern: scaler.outputTextureUsage.rawValue)
     default:
         return 0
     }
@@ -145,10 +145,10 @@ public func ametal_device_new_temporal_scaler(
     }
 
     let descriptor = MTLFXTemporalScalerDescriptor()
-    descriptor.colorTextureFormat = MTLPixelFormat(rawValue: UInt(colorTextureFormat)) ?? .invalid
-    descriptor.depthTextureFormat = MTLPixelFormat(rawValue: UInt(depthTextureFormat)) ?? .invalid
-    descriptor.motionTextureFormat = MTLPixelFormat(rawValue: UInt(motionTextureFormat)) ?? .invalid
-    descriptor.outputTextureFormat = MTLPixelFormat(rawValue: UInt(outputTextureFormat)) ?? .invalid
+    descriptor.colorTextureFormat = UInt(exactly: colorTextureFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
+    descriptor.depthTextureFormat = UInt(exactly: depthTextureFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
+    descriptor.motionTextureFormat = UInt(exactly: motionTextureFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
+    descriptor.outputTextureFormat = UInt(exactly: outputTextureFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
     descriptor.inputWidth = inputWidth
     descriptor.inputHeight = inputHeight
     descriptor.outputWidth = outputWidth
@@ -160,7 +160,7 @@ public func ametal_device_new_temporal_scaler(
     descriptor.inputContentMaxScale = inputContentMaxScale
     if #available(macOS 14.4, *) {
         descriptor.isReactiveMaskTextureEnabled = reactiveMaskTextureEnabled
-        descriptor.reactiveMaskTextureFormat = MTLPixelFormat(rawValue: UInt(reactiveMaskTextureFormat)) ?? .invalid
+        descriptor.reactiveMaskTextureFormat = UInt(exactly: reactiveMaskTextureFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
     }
 
     guard let scaler = descriptor.makeTemporalScaler(device: device) else {
@@ -180,18 +180,18 @@ public func ametal_temporal_scaler_texture_usage(
 
     switch kind {
     case 0:
-        return Int(scaler.colorTextureUsage.rawValue)
+        return Int(bitPattern: scaler.colorTextureUsage.rawValue)
     case 1:
-        return Int(scaler.depthTextureUsage.rawValue)
+        return Int(bitPattern: scaler.depthTextureUsage.rawValue)
     case 2:
-        return Int(scaler.motionTextureUsage.rawValue)
+        return Int(bitPattern: scaler.motionTextureUsage.rawValue)
     case 3:
         if #available(macOS 14.4, *) {
-            return Int(scaler.reactiveTextureUsage.rawValue)
+            return Int(bitPattern: scaler.reactiveTextureUsage.rawValue)
         }
         return 0
     case 4:
-        return Int(scaler.outputTextureUsage.rawValue)
+        return Int(bitPattern: scaler.outputTextureUsage.rawValue)
     default:
         return 0
     }

@@ -299,7 +299,7 @@ private func amArgumentBufferReaches(_ start: MTLBuffer, target: MTLBuffer) -> B
 @_cdecl("ametal_device_argument_buffers_support")
 public func ametal_device_argument_buffers_support(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let device: MTLDevice = am_borrow(handle) else { return 0 }
-    return Int(device.argumentBuffersSupport.rawValue)
+    return Int(bitPattern: device.argumentBuffersSupport.rawValue)
 }
 
 @_cdecl("ametal_device_new_argument_encoder_with_descriptors")

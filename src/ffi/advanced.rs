@@ -313,7 +313,7 @@ extern "C" {
         handle: *mut c_void,
         location: usize,
         length: usize,
-    );
+    ) -> bool;
 
     /// Calls the `Metal` framework counterpart for `ametal_acceleration_structure_size`.
     pub fn ametal_acceleration_structure_size(handle: *mut c_void) -> usize;

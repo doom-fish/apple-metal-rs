@@ -576,7 +576,7 @@ fn exhaustive_symbol_surface_compiles() {
     let _ = apple_metal::MetalPointerType::new;
     let _ = apple_metal::MetalPrimitiveAccelerationStructureDescriptor::new;
     let _ = apple_metal::MetalRasterizationRateLayerArray::new;
-    let _ = apple_metal::MetalRasterizationRateLayerDescriptor::new;
+    let _ = apple_metal::MetalRasterizationRateLayerDescriptor::with_sample_count;
     let _ = apple_metal::MetalRasterizationRateMapDescriptor::new;
     let _ = apple_metal::MetalRasterizationRateSampleArray::new;
     let _ = apple_metal::MetalRenderPassAttachmentDescriptor::new;

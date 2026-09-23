@@ -26,7 +26,7 @@ public func ametal_command_buffer_wait_until_scheduled(_ handle: UnsafeMutableRa
 @_cdecl("ametal_command_buffer_status")
 public func ametal_command_buffer_status(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let commandBuffer: MTLCommandBuffer = am_borrow(handle) else { return 0 }
-    return Int(commandBuffer.status.rawValue)
+    return Int(bitPattern: commandBuffer.status.rawValue)
 }
 
 @_cdecl("ametal_command_buffer_error_message")
@@ -92,15 +92,17 @@ public func ametal_command_buffer_new_render_command_encoder(
     _ clearB: Double,
     _ clearA: Double
 ) -> UnsafeMutableRawPointer? {
+    let descriptor = MTLRenderPassDescriptor()
     guard let commandBuffer: MTLCommandBuffer = am_borrow(handle),
-          let texture: MTLTexture = am_borrow(textureHandle)
+          let texture: MTLTexture = am_borrow(textureHandle),
+          let attachment = descriptor.colorAttachments[0],
+          let rawLoadAction = UInt(exactly: loadAction),
+          let rawStoreAction = UInt(exactly: storeAction)
     else { return nil }
 
-    let descriptor = MTLRenderPassDescriptor()
-    let attachment = descriptor.colorAttachments[0]!
     attachment.texture = texture
-    attachment.loadAction = MTLLoadAction(rawValue: UInt(loadAction)) ?? .dontCare
-    attachment.storeAction = MTLStoreAction(rawValue: UInt(storeAction)) ?? .dontCare
+    attachment.loadAction = MTLLoadAction(rawValue: rawLoadAction) ?? .dontCare
+    attachment.storeAction = MTLStoreAction(rawValue: rawStoreAction) ?? .dontCare
     attachment.clearColor = MTLClearColor(red: clearR, green: clearG, blue: clearB, alpha: clearA)
 
     guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
@@ -387,10 +389,12 @@ public func ametal_render_command_encoder_draw_primitives(
     _ vertexStart: Int,
     _ vertexCount: Int
 ) {
-    guard let encoder: MTLRenderCommandEncoder = am_borrow(handle) else { return }
+    guard let encoder: MTLRenderCommandEncoder = am_borrow(handle),
+          let rawPrimitiveType = UInt(exactly: primitiveType)
+    else { return }
     amDeclareArgumentBufferResources(encoder)
     encoder.drawPrimitives(
-        type: MTLPrimitiveType(rawValue: UInt(primitiveType)) ?? .point,
+        type: MTLPrimitiveType(rawValue: rawPrimitiveType) ?? .point,
         vertexStart: vertexStart,
         vertexCount: vertexCount
     )
