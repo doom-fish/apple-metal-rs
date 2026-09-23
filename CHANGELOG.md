@@ -1,5 +1,129 @@
 # Changelog
 
+All notable changes to `apple-metal` are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.10.0] - Unreleased
+
+### Security
+
+- CPU texture transfers sized `BGRA10_XR` and `BGRA10_XR_sRGB` as 4 bytes per
+  pixel instead of 8 (MTLPixelFormat.h lists them as 64-bit formats), so a
+  `read_bytes_2d` that met its documented contract wrote past the caller's
+  slice and `replace_region_2d` read past it. Both the Rust and the Swift
+  validator now take their sizes from one table, `pixel_format::bytes_per_pixel`.
+- Dropping a `MetalDeviceObserver` never called `MTLRemoveDeviceObserver`, so a
+  device hot-plug afterwards called into freed user data. The observer is now
+  removed on drop, and its closure lives in a reference-counted context that
+  Metal's handler block keeps alive until Metal releases it.
+- `MetalBuffer::new_texture_view_2d` passed its offset, row stride and height
+  to Metal unchecked: views larger than their buffer were created (later
+  transfers ran out of bounds) and a misaligned offset aborted the process.
+- apple-metal 0.8 and 0.9 linked a static `AppleMetalBridge` with identical
+  `am_*` symbols but different ABIs and no `links` key, so a graph containing
+  both failed with duplicate symbols or bound one version's calls to the
+  other's code. See Changed for the new bridge names.
+
+### Fixed
+
+- The 18 macOS 15 bridge exports (residency sets, shader log state, command
+  queues with a log state) were annotated `@available(macOS 15.0, *)`, which
+  makes their availability guard statically true while Package.swift targets
+  macOS 11. The guards are now real run-time checks, and `new_log_state` and
+  `new_residency_set` return "... requires macOS 15.0 or later" on older
+  systems.
+- Process aborts reachable from safe code:
+  - trapping `UInt(x)`/`Int(x)` conversions of caller integers in the Swift
+    bridge (texture descriptors, heap and counter storage modes, log level,
+    capture destination, counter sampling point, view, pipeline, archive and
+    MetalFX pixel formats, load/store actions, primitive type);
+  - `CounterSampleBuffer::resolve_range` and `IndirectCommandBuffer::reset_range`
+    building `location..<(location + length)` from unchecked ranges;
+  - `MetalDevice::new_texture` and `Heap::new_texture` handing Metal unknown
+    pixel formats, unknown or atomic usage bits, extents beyond 16384 (2048 for
+    3D textures and array layers), unsupported sample counts, or formats the
+    device lacks (for example `Depth24Unorm_Stencil8` on Apple GPUs). Metal's
+    descriptor validation aborts on these even without the debug layer;
+  - `MetalTexture::new_view` with a format of a different size;
+  - heap buffers and textures whose storage or CPU cache mode differs from the
+    heap, and a force-unwrapped render pass attachment.
+- `MetalRasterizationRateLayerDescriptor::new` called the `init` the SDK marks
+  `API_UNAVAILABLE`.
+- `Heap::new_buffer` lacked the `isize::MAX` guard of `MetalDevice::new_buffer`,
+  and invalid heap and counter storage modes no longer fall back to shared.
+- COVERAGE.md said 430 audited symbols where COVERAGE_AUDIT.md lists 431. Both
+  now say that VERIFIED only means a named Rust item exists, and that the
+  Metal 4 (`MTL4*`) and `MTLTensor` families are opaque handles without
+  constructors or methods.
+- The README states the macOS 11 minimum and which features need macOS 13 or 15.
+
+### Changed
+
+- **BREAKING:** the package declares `links = "apple_metal_bridge"`, so a
+  build can contain only one apple-metal release from 0.10 on. The Swift
+  module and static library are now `AppleMetalSwiftBridge` and every bridge
+  export, including the raw `apple_metal::ffi` functions, is named `ametal_*`
+  (was `am_*`), so this release shares no symbol with 0.8 or 0.9.
+- **BREAKING:** `copy_all_devices_with_observer` is safe and takes a
+  `FnMut(MetalDevice, &str) + Send + 'static` closure instead of an
+  `extern "C"` callback and user-data pointer. The closure receives an owned
+  device and the notification name, and panics are contained.
+  `MetalDeviceObserver::remove` is idempotent; the type no longer has
+  `from_raw` or `label`.
+- **BREAKING:** `MetalBuffer::new_texture_view_2d` returns
+  `Result<MetalTexture, TextureViewError>`, and the view takes the buffer's
+  storage, CPU cache and hazard tracking modes instead of always being shared.
+- **BREAKING:** `TextureDescriptor` has new public fields `texture_type`,
+  `depth`, `array_length` and `sample_count`, so struct literals need them
+  (for example `..TextureDescriptor::new_2d(width, height, format)`). It now
+  derives `PartialEq`, `Eq` and `Hash`.
+- **BREAKING:** `IndirectCommandBuffer::reset_range` returns
+  `Result<(), CommandBufferError>` and checks the range against the command
+  count.
+- **BREAKING:** `CommandBufferError` has a `NotExecuted { status }` variant.
+- **BREAKING:** `MetalRasterizationRateLayerDescriptor::new` is replaced by
+  `with_sample_count(horizontal, vertical)`.
+- `CounterSampleBuffer::resolve_range` returns `None` for empty, reversed or
+  out-of-range ranges.
+- `MetalTexture::new_view` only creates views that Metal's validation accepts:
+  the texture's own format or its sRGB/linear twin, or, when the texture has
+  `texture_usage::PIXEL_FORMAT_VIEW`, a colour format of the same size or the
+  stencil view of a depth/stencil format.
+- Requires `apple-cf >=0.11, <0.12` and `doom-fish-utils >=0.4.1, <0.5`, and
+  `rust-version` is 1.82 (was 1.76).
+
+### Added
+
+- `pixel_format::bytes_per_pixel` (also re-exported as
+  `apple_metal::bytes_per_pixel`): bytes per pixel for every uncompressed
+  `MTLPixelFormat`, including depth-only and stencil-only formats, and `None`
+  for block-compressed, 4:2:2, combined depth/stencil, invalid, unspecialized
+  and unknown values. It is checked against the macOS 26.5 SDK header, and
+  `tests/pixel_format_table.rs` re-checks it against the installed SDK.
+- `pixel_format` constants for all 140 SDK formats, and
+  `texture_usage::PIXEL_FORMAT_VIEW`.
+- `CommandBuffer::add_scheduled_handler` and `add_completed_handler`, taking
+  `FnOnce(Result<(), CommandBufferError>) + Send + 'static`. They must be added
+  before commit. Handlers still run after the Rust wrapper is dropped; when an
+  uncommitted buffer is released they receive `NotExecuted`.
+- `Event::notify_listener(listener, value, handler)` for `MTLSharedEvent`
+  notifications.
+- `MetalDevice::new_buffer_with_bytes` for shared or managed buffers.
+- `TextureDescriptor::with_texture_type`, `with_depth`, `with_array_length` and
+  `with_sample_count`, for 1D, 3D, array, cube, cube-array and multisample
+  textures on devices and heaps.
+- `TextureViewError`.
+
+### Removed
+
+- `MetalDeviceObserverCallback` and the raw-callback form of
+  `copy_all_devices_with_observer`.
+- `MetalRasterizationRateLayerDescriptor::new`.
+- The `am_device_new_texture_2d` and `am_heap_new_texture_2d` raw exports;
+  use `ametal_device_new_texture` and `ametal_heap_new_texture`.
+
 ## [0.9.0] - 2026-09-07
 
 ### Changed (breaking)
@@ -37,6 +161,12 @@
   rejects packed `l10r` surfaces instead of guessing a storage mapping.
 - Raised in-family requirements to `apple-cf >=0.10, <0.11` and
   `doom-fish-utils >=0.4, <0.5`.
+
+## [0.8.8] - 2026-06-06
+
+- Removed the unsound `Sync` impl on `CommandBuffer` and an empty module map, and
+  documented the `MetalBuffer` data-race hazard and `MetalTexture::from_raw`
+  ownership.
 
 ## [0.8.7] - 2026-05-20
 

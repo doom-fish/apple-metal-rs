@@ -41,6 +41,11 @@ remains out of scope for this crate.
   `new_log_state` return an error on older systems. The `MetalFX` scalers need
   macOS 13, and their constructors return `None` before that.
 
+```toml
+[dependencies]
+apple-metal = "0.10"
+```
+
 Only one `apple-metal` release from 0.10 on can be linked into a binary: the
 package declares `links = "apple_metal_bridge"`, so Cargo rejects a graph with
 two of them. Its Swift bridge (`AppleMetalSwiftBridge`, C symbols `ametal_*`)
