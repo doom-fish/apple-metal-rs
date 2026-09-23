@@ -9,9 +9,12 @@ use crate::{
     util::{c_string, take_optional_string},
     ComputePipelineState, DynamicLibrary, MetalDevice, MetalLibrary, RenderPipelineState,
 };
-use core::ffi::{c_char, c_void};
+use core::ffi::{c_char, c_void, CStr};
 use core::ptr;
+use core::sync::atomic::{AtomicBool, Ordering};
+use doom_fish_utils::callback_context::CallbackContext;
 use std::path::Path;
+use std::sync::{Mutex, PoisonError};
 
 macro_rules! opaque_symbol_handle {
     ($(#[$meta:meta])* pub struct $name:ident;) => {
@@ -498,23 +501,66 @@ raw_value_type!(
     pub struct MetalSparseTextureMappingMode(usize);
 );
 
-opaque_symbol_handle!(
-    /// Mirrors the `Metal` framework counterpart for `MetalDeviceObserver`.
-    pub struct MetalDeviceObserver;
-);
+type DeviceObserverHandler = Mutex<Box<dyn FnMut(MetalDevice, &str) + Send>>;
 
-/// Mirrors the `Metal` framework counterpart for `MetalDeviceObserverCallback`.
-pub type MetalDeviceObserverCallback = unsafe extern "C" fn(
-    device: *mut c_void,
-    notification_name: *const c_char,
-    user_data: *mut c_void,
-);
+/// Mirrors the `Metal` framework counterpart for `MetalDeviceObserver`.
+pub struct MetalDeviceObserver {
+    ptr: *mut c_void,
+    removed: AtomicBool,
+    context: CallbackContext<DeviceObserverHandler>,
+}
+
+unsafe impl Send for MetalDeviceObserver {}
+unsafe impl Sync for MetalDeviceObserver {}
+
+impl Drop for MetalDeviceObserver {
+    fn drop(&mut self) {
+        self.remove();
+        unsafe { ffi::ametal_object_release(self.ptr) };
+    }
+}
 
 impl MetalDeviceObserver {
+    #[must_use]
+    pub const fn as_ptr(&self) -> *mut c_void {
+        self.ptr
+    }
+
     /// Calls the `Metal` framework counterpart for `remove`.
     pub fn remove(&self) {
-        unsafe { ffi::ametal_remove_device_observer(self.as_ptr()) };
+        if self.removed.swap(true, Ordering::AcqRel) {
+            return;
+        }
+        self.context.deactivate();
+        unsafe { ffi::ametal_remove_device_observer(self.ptr) };
     }
+}
+
+unsafe extern "C" fn device_observer_trampoline(
+    device: *mut c_void,
+    notification_name: *const c_char,
+    context: *mut c_void,
+) {
+    let device = (!device.is_null()).then(|| unsafe { MetalDevice::from_retained_ptr(device) });
+    let notification_name = if notification_name.is_null() {
+        String::new()
+    } else {
+        unsafe { CStr::from_ptr(notification_name) }
+            .to_string_lossy()
+            .into_owned()
+    };
+    let _ = unsafe {
+        CallbackContext::<DeviceObserverHandler>::with(
+            context,
+            "MetalDeviceObserver",
+            move |handler| {
+                if let Some(device) = device {
+                    let mut handler = handler.lock().unwrap_or_else(PoisonError::into_inner);
+                    (*handler)(device, &notification_name);
+                }
+            },
+        )
+    };
 }
 
 /// Calls the `Metal` framework counterpart for `copy_all_devices`.
@@ -526,30 +572,33 @@ pub fn copy_all_devices() -> Vec<MetalDevice> {
 }
 
 /// Enumerate all Metal devices while registering a hot-plug/removal observer.
-///
-/// # Safety
-///
-/// * `callback`, if `Some`, must be a valid function pointer that remains
-///   valid for the lifetime of the returned `MetalDeviceObserver`.
-/// * `user_data` is forwarded to `callback` without inspection; the caller
-///   is responsible for ensuring it remains valid and for any required
-///   synchronization.
-pub unsafe fn copy_all_devices_with_observer(
-    callback: Option<MetalDeviceObserverCallback>,
-    user_data: *mut c_void,
-) -> (Vec<MetalDevice>, Option<MetalDeviceObserver>) {
+#[must_use]
+pub fn copy_all_devices_with_observer<F>(
+    handler: F,
+) -> (Vec<MetalDevice>, Option<MetalDeviceObserver>)
+where
+    F: FnMut(MetalDevice, &str) + Send + 'static,
+{
+    let context: CallbackContext<DeviceObserverHandler> =
+        CallbackContext::new(Mutex::new(Box::new(handler)));
     let mut count = 0;
     let mut observer = ptr::null_mut();
-    let ptr = ffi::ametal_copy_all_devices_with_observer(
-        &raw mut count,
-        &raw mut observer,
-        callback,
-        user_data,
-    );
-    (
-        take_device_array(ptr, count),
-        MetalDeviceObserver::wrap(observer),
-    )
+    let devices = unsafe {
+        ffi::ametal_copy_all_devices_with_observer(
+            &raw mut count,
+            &raw mut observer,
+            Some(device_observer_trampoline),
+            context.retained_ptr(),
+            Some(CallbackContext::<DeviceObserverHandler>::RELEASE),
+        )
+    };
+    let devices = unsafe { take_device_array(devices, count) };
+    let observer = (!observer.is_null()).then(|| MetalDeviceObserver {
+        ptr: observer,
+        removed: AtomicBool::new(false),
+        context,
+    });
+    (devices, observer)
 }
 
 /// Calls the `Metal` framework counterpart for `remove_device_observer`.

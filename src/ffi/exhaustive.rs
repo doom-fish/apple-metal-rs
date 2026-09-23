@@ -12,7 +12,8 @@ extern "C" {
         out_count: *mut usize,
         out_observer: *mut *mut c_void,
         callback: Option<unsafe extern "C" fn(*mut c_void, *const c_char, *mut c_void)>,
-        user_data: *mut c_void,
+        context: *mut c_void,
+        release: Option<unsafe extern "C" fn(*mut c_void)>,
     ) -> *mut *mut c_void;
     /// Calls the `Metal` framework counterpart for `ametal_remove_device_observer`.
     pub fn ametal_remove_device_observer(observer_handle: *mut c_void);

@@ -354,7 +354,7 @@ fn exhaustive_symbol_surface_compiles() {
     let _: fn() -> Option<String> = apple_metal::metal_log_state_error_domain;
     let _: fn() -> Option<String> = apple_metal::metal_tensor_domain;
     let _ = apple_metal::copy_all_devices;
-    let _ = apple_metal::copy_all_devices_with_observer;
+    let _ = apple_metal::copy_all_devices_with_observer::<fn(apple_metal::MetalDevice, &str)>;
     let _ = apple_metal::remove_device_observer;
     let _ = apple_metal::io_compression_context_default_chunk_size;
     let _ = apple_metal::create_io_compression_context;
@@ -477,7 +477,6 @@ fn exhaustive_symbol_surface_compiles() {
     let _: Option<apple_metal::MetalNewComputePipelineStateWithReflectionCompletionHandler> = None;
     let _: Option<apple_metal::MetalNewRenderPipelineStateCompletionHandler> = None;
     let _: Option<apple_metal::MetalNewRenderPipelineStateWithReflectionCompletionHandler> = None;
-    let _: Option<apple_metal::MetalDeviceObserverCallback> = None;
     let _ = apple_metal::Metal4AccelerationStructureBoundingBoxGeometryDescriptor::new;
     let _ = apple_metal::Metal4AccelerationStructureCurveGeometryDescriptor::new;
     let _ = apple_metal::Metal4AccelerationStructureDescriptor::new;

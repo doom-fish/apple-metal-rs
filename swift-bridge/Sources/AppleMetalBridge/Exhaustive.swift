@@ -47,20 +47,18 @@ public func ametal_copy_all_devices_with_observer(
     _ outCount: UnsafeMutablePointer<Int>?,
     _ outObserver: UnsafeMutablePointer<UnsafeMutableRawPointer?>?,
     _ callback: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, UnsafeMutableRawPointer?) -> Void)?,
-    _ userData: UnsafeMutableRawPointer?
+    _ context: UnsafeMutableRawPointer?,
+    _ release: (@convention(c) (UnsafeMutableRawPointer?) -> Void)?
 ) -> UnsafeMutablePointer<UnsafeMutableRawPointer?>? {
-    guard #available(macOS 11.0, *) else {
-        outCount?.pointee = 0
-        outObserver?.pointee = nil
+    outCount?.pointee = 0
+    outObserver?.pointee = nil
+    guard let owner = AMCallbackContextOwner(context, release), let callback else {
         return nil
     }
 
     let result = MTLCopyAllDevicesWithObserver { device, notification in
-        guard let callback else { return }
-        let deviceHandle = am_retain(device)
         let notificationName = strdup(notification.rawValue)
-        callback(deviceHandle, notificationName, userData)
-        am_release(deviceHandle)
+        callback(am_retain(device), notificationName, owner.context)
         free(notificationName)
     }
     outObserver?.pointee = am_retain(result.observer)
@@ -79,7 +77,6 @@ public func ametal_copy_all_devices_with_observer(
 
 @_cdecl("ametal_remove_device_observer")
 public func ametal_remove_device_observer(_ observerHandle: UnsafeMutableRawPointer?) {
-    guard #available(macOS 11.0, *) else { return }
     guard let observer: NSObject = am_borrow(observerHandle) else { return }
     MTLRemoveDeviceObserver(observer)
 }

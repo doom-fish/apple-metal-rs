@@ -25,3 +25,21 @@ public func am_borrow<T>(_ handle: UnsafeMutableRawPointer?) -> T? {
     guard let handle = handle else { return nil }
     return Unmanaged<AnyObject>.fromOpaque(handle).takeUnretainedValue() as? T
 }
+
+final class AMCallbackContextOwner {
+    let context: UnsafeMutableRawPointer
+    private let release: @convention(c) (UnsafeMutableRawPointer?) -> Void
+
+    init?(
+        _ context: UnsafeMutableRawPointer?,
+        _ release: (@convention(c) (UnsafeMutableRawPointer?) -> Void)?
+    ) {
+        guard let context, let release else { return nil }
+        self.context = context
+        self.release = release
+    }
+
+    deinit {
+        release(context)
+    }
+}
