@@ -2,16 +2,16 @@ import Foundation
 import Metal
 import MetalFX
 
-@_cdecl("am_spatial_scaler_supports_device")
-public func am_spatial_scaler_supports_device(_ deviceHandle: UnsafeMutableRawPointer?) -> Bool {
+@_cdecl("ametal_spatial_scaler_supports_device")
+public func ametal_spatial_scaler_supports_device(_ deviceHandle: UnsafeMutableRawPointer?) -> Bool {
     guard #available(macOS 13.0, *), let device: MTLDevice = am_borrow(deviceHandle) else {
         return false
     }
     return MTLFXSpatialScalerDescriptor.supportsDevice(device)
 }
 
-@_cdecl("am_device_new_spatial_scaler")
-public func am_device_new_spatial_scaler(
+@_cdecl("ametal_device_new_spatial_scaler")
+public func ametal_device_new_spatial_scaler(
     _ deviceHandle: UnsafeMutableRawPointer?,
     _ colorTextureFormat: Int,
     _ outputTextureFormat: Int,
@@ -40,8 +40,8 @@ public func am_device_new_spatial_scaler(
     return am_retain(scaler as AnyObject)
 }
 
-@_cdecl("am_spatial_scaler_texture_usage")
-public func am_spatial_scaler_texture_usage(
+@_cdecl("ametal_spatial_scaler_texture_usage")
+public func ametal_spatial_scaler_texture_usage(
     _ handle: UnsafeMutableRawPointer?,
     _ kind: Int
 ) -> Int {
@@ -59,8 +59,8 @@ public func am_spatial_scaler_texture_usage(
     }
 }
 
-@_cdecl("am_spatial_scaler_configure")
-public func am_spatial_scaler_configure(
+@_cdecl("ametal_spatial_scaler_configure")
+public func ametal_spatial_scaler_configure(
     _ handle: UnsafeMutableRawPointer?,
     _ inputContentWidth: Int,
     _ inputContentHeight: Int,
@@ -81,8 +81,8 @@ public func am_spatial_scaler_configure(
     scaler.fence = am_borrow(fenceHandle)
 }
 
-@_cdecl("am_spatial_scaler_encode")
-public func am_spatial_scaler_encode(
+@_cdecl("ametal_spatial_scaler_encode")
+public func ametal_spatial_scaler_encode(
     _ handle: UnsafeMutableRawPointer?,
     _ commandBufferHandle: UnsafeMutableRawPointer?
 ) {
@@ -93,16 +93,16 @@ public func am_spatial_scaler_encode(
     scaler.encode(commandBuffer: commandBuffer)
 }
 
-@_cdecl("am_temporal_scaler_supports_device")
-public func am_temporal_scaler_supports_device(_ deviceHandle: UnsafeMutableRawPointer?) -> Bool {
+@_cdecl("ametal_temporal_scaler_supports_device")
+public func ametal_temporal_scaler_supports_device(_ deviceHandle: UnsafeMutableRawPointer?) -> Bool {
     guard #available(macOS 13.0, *), let device: MTLDevice = am_borrow(deviceHandle) else {
         return false
     }
     return MTLFXTemporalScalerDescriptor.supportsDevice(device)
 }
 
-@_cdecl("am_temporal_scaler_supported_input_content_min_scale")
-public func am_temporal_scaler_supported_input_content_min_scale(
+@_cdecl("ametal_temporal_scaler_supported_input_content_min_scale")
+public func ametal_temporal_scaler_supported_input_content_min_scale(
     _ deviceHandle: UnsafeMutableRawPointer?
 ) -> Float {
     guard #available(macOS 14.0, *), let device: MTLDevice = am_borrow(deviceHandle) else {
@@ -111,8 +111,8 @@ public func am_temporal_scaler_supported_input_content_min_scale(
     return MTLFXTemporalScalerDescriptor.supportedInputContentMinScale(device: device)
 }
 
-@_cdecl("am_temporal_scaler_supported_input_content_max_scale")
-public func am_temporal_scaler_supported_input_content_max_scale(
+@_cdecl("ametal_temporal_scaler_supported_input_content_max_scale")
+public func ametal_temporal_scaler_supported_input_content_max_scale(
     _ deviceHandle: UnsafeMutableRawPointer?
 ) -> Float {
     guard #available(macOS 14.0, *), let device: MTLDevice = am_borrow(deviceHandle) else {
@@ -121,8 +121,8 @@ public func am_temporal_scaler_supported_input_content_max_scale(
     return MTLFXTemporalScalerDescriptor.supportedInputContentMaxScale(device: device)
 }
 
-@_cdecl("am_device_new_temporal_scaler")
-public func am_device_new_temporal_scaler(
+@_cdecl("ametal_device_new_temporal_scaler")
+public func ametal_device_new_temporal_scaler(
     _ deviceHandle: UnsafeMutableRawPointer?,
     _ colorTextureFormat: Int,
     _ depthTextureFormat: Int,
@@ -169,8 +169,8 @@ public func am_device_new_temporal_scaler(
     return am_retain(scaler as AnyObject)
 }
 
-@_cdecl("am_temporal_scaler_texture_usage")
-public func am_temporal_scaler_texture_usage(
+@_cdecl("ametal_temporal_scaler_texture_usage")
+public func ametal_temporal_scaler_texture_usage(
     _ handle: UnsafeMutableRawPointer?,
     _ kind: Int
 ) -> Int {
@@ -197,8 +197,8 @@ public func am_temporal_scaler_texture_usage(
     }
 }
 
-@_cdecl("am_temporal_scaler_set_textures")
-public func am_temporal_scaler_set_textures(
+@_cdecl("ametal_temporal_scaler_set_textures")
+public func ametal_temporal_scaler_set_textures(
     _ handle: UnsafeMutableRawPointer?,
     _ colorTextureHandle: UnsafeMutableRawPointer?,
     _ depthTextureHandle: UnsafeMutableRawPointer?,
@@ -227,8 +227,8 @@ public func am_temporal_scaler_set_textures(
     scaler.fence = am_borrow(fenceHandle)
 }
 
-@_cdecl("am_temporal_scaler_set_frame_state")
-public func am_temporal_scaler_set_frame_state(
+@_cdecl("ametal_temporal_scaler_set_frame_state")
+public func ametal_temporal_scaler_set_frame_state(
     _ handle: UnsafeMutableRawPointer?,
     _ inputContentWidth: Int,
     _ inputContentHeight: Int,
@@ -255,8 +255,8 @@ public func am_temporal_scaler_set_frame_state(
     scaler.isDepthReversed = depthReversed
 }
 
-@_cdecl("am_temporal_scaler_encode")
-public func am_temporal_scaler_encode(
+@_cdecl("ametal_temporal_scaler_encode")
+public func ametal_temporal_scaler_encode(
     _ handle: UnsafeMutableRawPointer?,
     _ commandBufferHandle: UnsafeMutableRawPointer?
 ) {

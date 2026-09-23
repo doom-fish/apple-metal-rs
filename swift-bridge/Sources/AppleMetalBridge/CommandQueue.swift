@@ -3,40 +3,40 @@
 import Foundation
 import Metal
 
-@_cdecl("am_device_new_command_queue")
-public func am_device_new_command_queue(_ device_handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+@_cdecl("ametal_device_new_command_queue")
+public func ametal_device_new_command_queue(_ device_handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
     guard let dev: MTLDevice = am_borrow(device_handle),
           let queue = dev.makeCommandQueue()
     else { return nil }
     return am_retain(queue as AnyObject)
 }
 
-@_cdecl("am_command_queue_release")
-public func am_command_queue_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
+@_cdecl("ametal_command_queue_release")
+public func ametal_command_queue_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
 
-@_cdecl("am_command_queue_new_command_buffer")
-public func am_command_queue_new_command_buffer(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+@_cdecl("ametal_command_queue_new_command_buffer")
+public func ametal_command_queue_new_command_buffer(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
     guard let q: MTLCommandQueue = am_borrow(handle),
           let cb = q.makeCommandBuffer()
     else { return nil }
     return am_retain(cb as AnyObject)
 }
 
-@_cdecl("am_command_buffer_release")
-public func am_command_buffer_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
+@_cdecl("ametal_command_buffer_release")
+public func ametal_command_buffer_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
 
-@_cdecl("am_command_buffer_commit")
-public func am_command_buffer_commit(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_command_buffer_commit")
+public func ametal_command_buffer_commit(_ handle: UnsafeMutableRawPointer?) {
     if let cb: MTLCommandBuffer = am_borrow(handle) { cb.commit() }
 }
 
-@_cdecl("am_command_buffer_wait_until_completed")
-public func am_command_buffer_wait_until_completed(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_command_buffer_wait_until_completed")
+public func ametal_command_buffer_wait_until_completed(_ handle: UnsafeMutableRawPointer?) {
     if let cb: MTLCommandBuffer = am_borrow(handle) { cb.waitUntilCompleted() }
 }
 
-@_cdecl("am_command_buffer_blit_copy_buffer")
-public func am_command_buffer_blit_copy_buffer(
+@_cdecl("ametal_command_buffer_blit_copy_buffer")
+public func ametal_command_buffer_blit_copy_buffer(
     _ cb_handle: UnsafeMutableRawPointer?,
     _ src_handle: UnsafeMutableRawPointer?,
     _ src_offset: Int,

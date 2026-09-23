@@ -13,7 +13,7 @@ macro_rules! opaque_state {
         impl Drop for $name {
             fn drop(&mut self) {
                 if !self.ptr.is_null() {
-                    unsafe { ffi::am_object_release(self.ptr) };
+                    unsafe { ffi::ametal_object_release(self.ptr) };
                     self.ptr = core::ptr::null_mut();
                 }
             }
@@ -290,7 +290,7 @@ impl DepthStencilState {
     /// Metal's label for this state object, if one was set.
     #[must_use]
     pub fn label(&self) -> Option<String> {
-        unsafe { take_optional_string(ffi::am_object_copy_label(self.as_ptr())) }
+        unsafe { take_optional_string(ffi::ametal_object_copy_label(self.as_ptr())) }
     }
 }
 
@@ -298,7 +298,7 @@ impl SamplerState {
     /// Metal's label for this state object, if one was set.
     #[must_use]
     pub fn label(&self) -> Option<String> {
-        unsafe { take_optional_string(ffi::am_object_copy_label(self.as_ptr())) }
+        unsafe { take_optional_string(ffi::ametal_object_copy_label(self.as_ptr())) }
     }
 }
 
@@ -306,7 +306,7 @@ impl MetalDevice {
     /// Query the device for the supported argument-buffer tier.
     #[must_use]
     pub fn argument_buffers_support(&self) -> usize {
-        unsafe { ffi::am_device_argument_buffers_support(self.as_ptr()) }
+        unsafe { ffi::ametal_device_argument_buffers_support(self.as_ptr()) }
     }
 
     /// Compile a `MTLDepthStencilState` from the given descriptor.
@@ -325,7 +325,7 @@ impl MetalDevice {
         let front = descriptor.front_face_stencil.unwrap_or_default();
         let back = descriptor.back_face_stencil.unwrap_or_default();
         DepthStencilState::wrap(unsafe {
-            ffi::am_device_new_depth_stencil_state(
+            ffi::ametal_device_new_depth_stencil_state(
                 self.as_ptr(),
                 descriptor.depth_compare_function,
                 descriptor.depth_write_enabled,
@@ -359,7 +359,7 @@ impl MetalDevice {
             .as_deref()
             .map_or(core::ptr::null(), core::ffi::CStr::as_ptr);
         SamplerState::wrap(unsafe {
-            ffi::am_device_new_sampler_state(
+            ffi::ametal_device_new_sampler_state(
                 self.as_ptr(),
                 descriptor.min_filter,
                 descriptor.mag_filter,

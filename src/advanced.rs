@@ -28,7 +28,7 @@ macro_rules! opaque_handle {
                     // SAFETY: `ptr` is a non-null, +1-retained ObjC handle
                     // exclusively owned by this struct.  Setting it to null
                     // immediately prevents any subsequent release.
-                    unsafe { ffi::am_object_release(self.ptr) };
+                    unsafe { ffi::ametal_object_release(self.ptr) };
                     self.ptr = core::ptr::null_mut();
                 }
             }
@@ -187,46 +187,46 @@ impl MetalDevice {
     /// Human-readable device name.
     #[must_use]
     pub fn name(&self) -> String {
-        unsafe { take_string(ffi::am_device_name(self.as_ptr())) }
+        unsafe { take_string(ffi::ametal_device_name(self.as_ptr())) }
     }
 
     /// Global `IORegistry` identifier for the device.
     #[must_use]
     pub fn registry_id(&self) -> u64 {
-        unsafe { ffi::am_device_registry_id(self.as_ptr()) }
+        unsafe { ffi::ametal_device_registry_id(self.as_ptr()) }
     }
 
     /// Whether this device supports Metal dynamic libraries.
     #[must_use]
     pub fn supports_dynamic_libraries(&self) -> bool {
-        unsafe { ffi::am_device_supports_dynamic_libraries(self.as_ptr()) }
+        unsafe { ffi::ametal_device_supports_dynamic_libraries(self.as_ptr()) }
     }
 
     /// Whether this device supports render-stage dynamic libraries.
     #[must_use]
     pub fn supports_render_dynamic_libraries(&self) -> bool {
-        unsafe { ffi::am_device_supports_render_dynamic_libraries(self.as_ptr()) }
+        unsafe { ffi::ametal_device_supports_render_dynamic_libraries(self.as_ptr()) }
     }
 
     /// Whether this device supports compute ray tracing.
     #[must_use]
     pub fn supports_raytracing(&self) -> bool {
-        unsafe { ffi::am_device_supports_raytracing(self.as_ptr()) }
+        unsafe { ffi::ametal_device_supports_raytracing(self.as_ptr()) }
     }
 
     /// Query support for a hardware counter sampling point.
     #[must_use]
     pub fn supports_counter_sampling(&self, sampling_point: usize) -> bool {
-        unsafe { ffi::am_device_supports_counter_sampling(self.as_ptr(), sampling_point) }
+        unsafe { ffi::ametal_device_supports_counter_sampling(self.as_ptr(), sampling_point) }
     }
 
     /// Return the names of all counter sets exposed by this device.
     #[must_use]
     pub fn counter_set_names(&self) -> Vec<String> {
-        let count = unsafe { ffi::am_device_counter_set_count(self.as_ptr()) };
+        let count = unsafe { ffi::ametal_device_counter_set_count(self.as_ptr()) };
         (0..count)
             .filter_map(|index| unsafe {
-                take_optional_string(ffi::am_device_counter_set_name_at(self.as_ptr(), index))
+                take_optional_string(ffi::ametal_device_counter_set_name_at(self.as_ptr(), index))
             })
             .collect()
     }
@@ -238,7 +238,7 @@ impl MetalDevice {
         max_command_buffer_count: usize,
     ) -> Option<CommandQueue> {
         let ptr = unsafe {
-            ffi::am_device_new_command_queue_with_max_command_buffer_count(
+            ffi::ametal_device_new_command_queue_with_max_command_buffer_count(
                 self.as_ptr(),
                 max_command_buffer_count,
             )
@@ -258,7 +258,7 @@ impl MetalDevice {
         log_state: &LogState,
     ) -> Option<CommandQueue> {
         let ptr = unsafe {
-            ffi::am_device_new_command_queue_with_log_state(
+            ffi::ametal_device_new_command_queue_with_log_state(
                 self.as_ptr(),
                 max_command_buffer_count,
                 log_state.as_ptr(),
@@ -274,19 +274,19 @@ impl MetalDevice {
     /// Create a heap with the requested size and storage mode.
     #[must_use]
     pub fn new_heap(&self, size: usize, storage_mode: usize) -> Option<Heap> {
-        Heap::wrap(unsafe { ffi::am_device_new_heap(self.as_ptr(), size, storage_mode) })
+        Heap::wrap(unsafe { ffi::ametal_device_new_heap(self.as_ptr(), size, storage_mode) })
     }
 
     /// Create a new fence.
     #[must_use]
     pub fn new_fence(&self) -> Option<Fence> {
-        Fence::wrap(unsafe { ffi::am_device_new_fence(self.as_ptr()) })
+        Fence::wrap(unsafe { ffi::ametal_device_new_fence(self.as_ptr()) })
     }
 
     /// Create a new shared event.
     #[must_use]
     pub fn new_shared_event(&self) -> Option<Event> {
-        Event::wrap(unsafe { ffi::am_device_new_shared_event(self.as_ptr()) })
+        Event::wrap(unsafe { ffi::ametal_device_new_shared_event(self.as_ptr()) })
     }
 
     /// Compile `source` as a Metal dynamic library with the given `install_name`.
@@ -303,7 +303,7 @@ impl MetalDevice {
         let install_name = c_string(install_name)?;
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr = unsafe {
-            ffi::am_device_new_dynamic_library_with_source(
+            ffi::ametal_device_new_dynamic_library_with_source(
                 self.as_ptr(),
                 source.as_ptr(),
                 install_name.as_ptr(),
@@ -325,7 +325,11 @@ impl MetalDevice {
         let path = c_string(path.to_string_lossy().as_ref())?;
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr = unsafe {
-            ffi::am_device_new_dynamic_library_with_url(self.as_ptr(), path.as_ptr(), &raw mut err)
+            ffi::ametal_device_new_dynamic_library_with_url(
+                self.as_ptr(),
+                path.as_ptr(),
+                &raw mut err,
+            )
         };
         DynamicLibrary::wrap(ptr).ok_or_else(|| unsafe {
             take_optional_string(err)
@@ -347,7 +351,7 @@ impl MetalDevice {
             .map_or(core::ptr::null(), |path| path.as_c_str().as_ptr());
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr =
-            unsafe { ffi::am_device_new_binary_archive(self.as_ptr(), raw_path, &raw mut err) };
+            unsafe { ffi::ametal_device_new_binary_archive(self.as_ptr(), raw_path, &raw mut err) };
         BinaryArchive::wrap(ptr).ok_or_else(|| unsafe {
             take_optional_string(err)
                 .unwrap_or_else(|| "MTLDevice.makeBinaryArchive returned nil".to_string())
@@ -366,7 +370,7 @@ impl MetalDevice {
         options: usize,
     ) -> Option<IndirectCommandBuffer> {
         IndirectCommandBuffer::wrap(unsafe {
-            ffi::am_device_new_indirect_command_buffer(
+            ffi::ametal_device_new_indirect_command_buffer(
                 self.as_ptr(),
                 command_types,
                 max_command_count,
@@ -385,7 +389,7 @@ impl MetalDevice {
         size: usize,
     ) -> Option<AccelerationStructure> {
         AccelerationStructure::wrap(unsafe {
-            ffi::am_device_new_acceleration_structure_with_size(self.as_ptr(), size)
+            ffi::ametal_device_new_acceleration_structure_with_size(self.as_ptr(), size)
         })
     }
 
@@ -408,7 +412,7 @@ impl MetalDevice {
             .map_or(core::ptr::null(), |label| label.as_c_str().as_ptr());
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr = unsafe {
-            ffi::am_device_new_counter_sample_buffer(
+            ffi::ametal_device_new_counter_sample_buffer(
                 self.as_ptr(),
                 counter_set_name.as_ptr(),
                 sample_count,
@@ -431,7 +435,7 @@ impl MetalDevice {
     pub fn new_log_state(&self, level: usize, buffer_size: isize) -> Result<LogState, String> {
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr = unsafe {
-            ffi::am_device_new_log_state(self.as_ptr(), level, buffer_size, &raw mut err)
+            ffi::ametal_device_new_log_state(self.as_ptr(), level, buffer_size, &raw mut err)
         };
         LogState::wrap(ptr).ok_or_else(|| unsafe {
             take_optional_string(err)
@@ -455,7 +459,7 @@ impl MetalDevice {
             .map_or(core::ptr::null(), |label| label.as_c_str().as_ptr());
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr = unsafe {
-            ffi::am_device_new_residency_set(
+            ffi::ametal_device_new_residency_set(
                 self.as_ptr(),
                 raw_label,
                 initial_capacity,
@@ -472,13 +476,15 @@ impl MetalDevice {
 impl CommandQueue {
     /// Add `residency_set` to the queue-wide residency list.
     pub fn add_residency_set(&self, residency_set: &ResidencySet) {
-        unsafe { ffi::am_command_queue_add_residency_set(self.as_ptr(), residency_set.as_ptr()) };
+        unsafe {
+            ffi::ametal_command_queue_add_residency_set(self.as_ptr(), residency_set.as_ptr());
+        };
     }
 
     /// Remove `residency_set` from the queue-wide residency list.
     pub fn remove_residency_set(&self, residency_set: &ResidencySet) {
         unsafe {
-            ffi::am_command_queue_remove_residency_set(self.as_ptr(), residency_set.as_ptr());
+            ffi::ametal_command_queue_remove_residency_set(self.as_ptr(), residency_set.as_ptr());
         };
     }
 }
@@ -500,7 +506,7 @@ impl MetalBuffer {
         let length = range.end - range.start;
         self.checked_range_end(range.start, length)?;
         unsafe {
-            ffi::am_buffer_did_modify_range(self.as_ptr(), range.start, length);
+            ffi::ametal_buffer_did_modify_range(self.as_ptr(), range.start, length);
         };
         Ok(())
     }
@@ -516,7 +522,7 @@ impl MetalBuffer {
         offset: usize,
     ) -> Option<MetalTexture> {
         let ptr = unsafe {
-            ffi::am_buffer_new_texture_view_2d(
+            ffi::ametal_buffer_new_texture_view_2d(
                 self.as_ptr(),
                 pixel_format,
                 width,
@@ -696,31 +702,31 @@ impl MetalTexture {
     /// Texture depth in pixels.
     #[must_use]
     pub fn depth(&self) -> usize {
-        unsafe { ffi::am_texture_depth(self.as_ptr()) }
+        unsafe { ffi::ametal_texture_depth(self.as_ptr()) }
     }
 
     /// Number of mipmap levels.
     #[must_use]
     pub fn mipmap_level_count(&self) -> usize {
-        unsafe { ffi::am_texture_mipmap_level_count(self.as_ptr()) }
+        unsafe { ffi::ametal_texture_mipmap_level_count(self.as_ptr()) }
     }
 
     /// Number of array slices.
     #[must_use]
     pub fn array_length(&self) -> usize {
-        unsafe { ffi::am_texture_array_length(self.as_ptr()) }
+        unsafe { ffi::ametal_texture_array_length(self.as_ptr()) }
     }
 
     /// `MTLTextureUsage` bitmask.
     #[must_use]
     pub fn usage(&self) -> usize {
-        unsafe { ffi::am_texture_usage(self.as_ptr()) }
+        unsafe { ffi::ametal_texture_usage(self.as_ptr()) }
     }
 
     /// `MTLStorageMode` enum value.
     #[must_use]
     pub fn storage_mode(&self) -> usize {
-        unsafe { ffi::am_texture_storage_mode(self.as_ptr()) }
+        unsafe { ffi::ametal_texture_storage_mode(self.as_ptr()) }
     }
 
     /// Upload bytes into slice zero of a 2D texture region.
@@ -767,7 +773,7 @@ impl MetalTexture {
             slice,
         )?;
         let accepted = unsafe {
-            ffi::am_texture_replace_region_2d(
+            ffi::ametal_texture_replace_region_2d(
                 self.as_ptr(),
                 origin.0,
                 origin.1,
@@ -829,7 +835,7 @@ impl MetalTexture {
             slice,
         )?;
         let accepted = unsafe {
-            ffi::am_texture_get_bytes_2d(
+            ffi::ametal_texture_get_bytes_2d(
                 self.as_ptr(),
                 out.as_mut_ptr(),
                 out.len(),
@@ -852,7 +858,7 @@ impl MetalTexture {
     /// Create a texture view with a compatible pixel format.
     #[must_use]
     pub fn new_view(&self, pixel_format: usize) -> Option<Self> {
-        let ptr = unsafe { ffi::am_texture_new_view(self.as_ptr(), pixel_format) };
+        let ptr = unsafe { ffi::ametal_texture_new_view(self.as_ptr(), pixel_format) };
         if ptr.is_null() {
             None
         } else {
@@ -1099,13 +1105,15 @@ impl ComputePipelineState {
     /// Thread execution width for this compute pipeline.
     #[must_use]
     pub fn thread_execution_width(&self) -> usize {
-        unsafe { ffi::am_compute_pipeline_state_thread_execution_width(self.as_ptr()) }
+        unsafe { ffi::ametal_compute_pipeline_state_thread_execution_width(self.as_ptr()) }
     }
 
     /// Maximum threads per threadgroup.
     #[must_use]
     pub fn max_total_threads_per_threadgroup(&self) -> usize {
-        unsafe { ffi::am_compute_pipeline_state_max_total_threads_per_threadgroup(self.as_ptr()) }
+        unsafe {
+            ffi::ametal_compute_pipeline_state_max_total_threads_per_threadgroup(self.as_ptr())
+        }
     }
 
     /// Allocate a visible function table for this pipeline.
@@ -1115,7 +1123,10 @@ impl ComputePipelineState {
         function_count: usize,
     ) -> Option<VisibleFunctionTable> {
         VisibleFunctionTable::wrap(unsafe {
-            ffi::am_compute_pipeline_state_new_visible_function_table(self.as_ptr(), function_count)
+            ffi::ametal_compute_pipeline_state_new_visible_function_table(
+                self.as_ptr(),
+                function_count,
+            )
         })
     }
 
@@ -1126,7 +1137,7 @@ impl ComputePipelineState {
         function_count: usize,
     ) -> Option<IntersectionFunctionTable> {
         IntersectionFunctionTable::wrap(unsafe {
-            ffi::am_compute_pipeline_state_new_intersection_function_table(
+            ffi::ametal_compute_pipeline_state_new_intersection_function_table(
                 self.as_ptr(),
                 function_count,
             )
@@ -1138,7 +1149,7 @@ impl MetalFunction {
     /// Create an argument encoder for the argument buffer bound at `buffer_index`.
     #[must_use]
     pub fn new_argument_encoder(&self, buffer_index: usize) -> Option<ArgumentEncoder> {
-        let ptr = unsafe { ffi::am_function_new_argument_encoder(self.as_ptr(), buffer_index) };
+        let ptr = unsafe { ffi::ametal_function_new_argument_encoder(self.as_ptr(), buffer_index) };
         if ptr.is_null() {
             None
         } else {
@@ -1151,31 +1162,31 @@ impl Heap {
     /// Heap size in bytes.
     #[must_use]
     pub fn size(&self) -> usize {
-        unsafe { ffi::am_heap_size(self.as_ptr()) }
+        unsafe { ffi::ametal_heap_size(self.as_ptr()) }
     }
 
     /// Bytes currently used by heap-backed resources.
     #[must_use]
     pub fn used_size(&self) -> usize {
-        unsafe { ffi::am_heap_used_size(self.as_ptr()) }
+        unsafe { ffi::ametal_heap_used_size(self.as_ptr()) }
     }
 
     /// Current heap allocation size in bytes.
     #[must_use]
     pub fn current_allocated_size(&self) -> usize {
-        unsafe { ffi::am_heap_current_allocated_size(self.as_ptr()) }
+        unsafe { ffi::ametal_heap_current_allocated_size(self.as_ptr()) }
     }
 
     /// Largest allocatable block in the heap for the given alignment.
     #[must_use]
     pub fn max_available_size(&self, alignment: usize) -> usize {
-        unsafe { ffi::am_heap_max_available_size(self.as_ptr(), alignment) }
+        unsafe { ffi::ametal_heap_max_available_size(self.as_ptr(), alignment) }
     }
 
     /// Allocate a buffer from this heap.
     #[must_use]
     pub fn new_buffer(&self, length: usize, options: usize) -> Option<MetalBuffer> {
-        let ptr = unsafe { ffi::am_heap_new_buffer(self.as_ptr(), length, options) };
+        let ptr = unsafe { ffi::ametal_heap_new_buffer(self.as_ptr(), length, options) };
         if ptr.is_null() {
             None
         } else {
@@ -1187,7 +1198,7 @@ impl Heap {
     #[must_use]
     pub fn new_texture(&self, descriptor: TextureDescriptor) -> Option<MetalTexture> {
         let ptr = unsafe {
-            ffi::am_heap_new_texture_2d(
+            ffi::ametal_heap_new_texture_2d(
                 self.as_ptr(),
                 descriptor.pixel_format,
                 descriptor.width,
@@ -1211,14 +1222,14 @@ impl Heap {
         size: usize,
     ) -> Option<AccelerationStructure> {
         AccelerationStructure::wrap(unsafe {
-            ffi::am_heap_new_acceleration_structure_with_size(self.as_ptr(), size)
+            ffi::ametal_heap_new_acceleration_structure_with_size(self.as_ptr(), size)
         })
     }
 
     /// Set the heap purgeable state.
     #[must_use]
     pub fn set_purgeable_state(&self, state: usize) -> usize {
-        unsafe { ffi::am_heap_set_purgeable_state(self.as_ptr(), state) }
+        unsafe { ffi::ametal_heap_set_purgeable_state(self.as_ptr(), state) }
     }
 }
 
@@ -1226,18 +1237,18 @@ impl Event {
     /// Current `signaledValue`.
     #[must_use]
     pub fn signaled_value(&self) -> u64 {
-        unsafe { ffi::am_event_signaled_value(self.as_ptr()) }
+        unsafe { ffi::ametal_event_signaled_value(self.as_ptr()) }
     }
 
     /// Update the event's `signaledValue`.
     pub fn set_signaled_value(&self, value: u64) {
-        unsafe { ffi::am_event_set_signaled_value(self.as_ptr(), value) };
+        unsafe { ffi::ametal_event_set_signaled_value(self.as_ptr(), value) };
     }
 
     /// Wait until the event reaches at least `value`.
     #[must_use]
     pub fn wait_until_signaled_value(&self, value: u64, timeout_ms: u64) -> bool {
-        unsafe { ffi::am_event_wait_until_signaled_value(self.as_ptr(), value, timeout_ms) }
+        unsafe { ffi::ametal_event_wait_until_signaled_value(self.as_ptr(), value, timeout_ms) }
     }
 }
 
@@ -1245,7 +1256,7 @@ impl DynamicLibrary {
     /// Install name embedded into the dynamic library.
     #[must_use]
     pub fn install_name(&self) -> String {
-        unsafe { take_string(ffi::am_dynamic_library_install_name(self.as_ptr())) }
+        unsafe { take_string(ffi::ametal_dynamic_library_install_name(self.as_ptr())) }
     }
 
     /// Serialize this dynamic library to `path`.
@@ -1257,7 +1268,7 @@ impl DynamicLibrary {
         let path = c_string(path.to_string_lossy().as_ref())?;
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ok = unsafe {
-            ffi::am_dynamic_library_serialize_to_url(self.as_ptr(), path.as_ptr(), &raw mut err)
+            ffi::ametal_dynamic_library_serialize_to_url(self.as_ptr(), path.as_ptr(), &raw mut err)
         };
         if ok {
             Ok(())
@@ -1279,7 +1290,7 @@ impl BinaryArchive {
     pub fn add_compute_function(&self, function: &MetalFunction) -> Result<(), String> {
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ok = unsafe {
-            ffi::am_binary_archive_add_compute_function(
+            ffi::ametal_binary_archive_add_compute_function(
                 self.as_ptr(),
                 function.as_ptr(),
                 &raw mut err,
@@ -1310,7 +1321,7 @@ impl BinaryArchive {
     ) -> Result<(), String> {
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ok = unsafe {
-            ffi::am_binary_archive_add_render_functions(
+            ffi::ametal_binary_archive_add_render_functions(
                 self.as_ptr(),
                 vertex.as_ptr(),
                 fragment.as_ptr(),
@@ -1339,7 +1350,7 @@ impl BinaryArchive {
         let path = c_string(path.to_string_lossy().as_ref())?;
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ok = unsafe {
-            ffi::am_binary_archive_serialize_to_url(self.as_ptr(), path.as_ptr(), &raw mut err)
+            ffi::ametal_binary_archive_serialize_to_url(self.as_ptr(), path.as_ptr(), &raw mut err)
         };
         if ok {
             Ok(())
@@ -1356,13 +1367,13 @@ impl IndirectCommandBuffer {
     /// Size of the indirect command buffer in bytes.
     #[must_use]
     pub fn size(&self) -> usize {
-        unsafe { ffi::am_indirect_command_buffer_size(self.as_ptr()) }
+        unsafe { ffi::ametal_indirect_command_buffer_size(self.as_ptr()) }
     }
 
     /// Reset commands in `range` back to empty state.
     pub fn reset_range(&self, range: Range<usize>) {
         unsafe {
-            ffi::am_indirect_command_buffer_reset_range(
+            ffi::ametal_indirect_command_buffer_reset_range(
                 self.as_ptr(),
                 range.start,
                 range.end.saturating_sub(range.start),
@@ -1375,7 +1386,7 @@ impl AccelerationStructure {
     /// Allocated storage size in bytes.
     #[must_use]
     pub fn size(&self) -> usize {
-        unsafe { ffi::am_acceleration_structure_size(self.as_ptr()) }
+        unsafe { ffi::ametal_acceleration_structure_size(self.as_ptr()) }
     }
 }
 
@@ -1383,7 +1394,7 @@ impl IntersectionFunctionTable {
     /// Populate `index` with the built-in opaque triangle intersection function.
     pub fn set_opaque_triangle_intersection_function(&self, signature: usize, index: usize) {
         unsafe {
-            ffi::am_intersection_function_table_set_opaque_triangle(
+            ffi::ametal_intersection_function_table_set_opaque_triangle(
                 self.as_ptr(),
                 signature,
                 index,
@@ -1396,7 +1407,7 @@ impl CounterSampleBuffer {
     /// Number of samples available in the buffer.
     #[must_use]
     pub fn sample_count(&self) -> usize {
-        unsafe { ffi::am_counter_sample_buffer_sample_count(self.as_ptr()) }
+        unsafe { ffi::ametal_counter_sample_buffer_sample_count(self.as_ptr()) }
     }
 
     /// Resolve raw counter bytes for `range`.
@@ -1404,7 +1415,7 @@ impl CounterSampleBuffer {
     pub fn resolve_range(&self, range: Range<usize>) -> Option<Vec<u8>> {
         let mut out_len = 0usize;
         let ptr = unsafe {
-            ffi::am_counter_sample_buffer_resolve_range(
+            ffi::ametal_counter_sample_buffer_resolve_range(
                 self.as_ptr(),
                 range.start,
                 range.end.saturating_sub(range.start),
@@ -1424,70 +1435,70 @@ impl CounterSampleBuffer {
 impl ResidencySet {
     /// Add `buffer` to the set.
     pub fn add_buffer(&self, buffer: &MetalBuffer) {
-        unsafe { ffi::am_residency_set_add_buffer(self.as_ptr(), buffer.as_ptr()) };
+        unsafe { ffi::ametal_residency_set_add_buffer(self.as_ptr(), buffer.as_ptr()) };
     }
 
     /// Add `texture` to the set.
     pub fn add_texture(&self, texture: &MetalTexture) {
-        unsafe { ffi::am_residency_set_add_texture(self.as_ptr(), texture.as_ptr()) };
+        unsafe { ffi::ametal_residency_set_add_texture(self.as_ptr(), texture.as_ptr()) };
     }
 
     /// Add `heap` to the set.
     pub fn add_heap(&self, heap: &Heap) {
-        unsafe { ffi::am_residency_set_add_heap(self.as_ptr(), heap.as_ptr()) };
+        unsafe { ffi::ametal_residency_set_add_heap(self.as_ptr(), heap.as_ptr()) };
     }
 
     /// Remove `buffer` from the set.
     pub fn remove_buffer(&self, buffer: &MetalBuffer) {
-        unsafe { ffi::am_residency_set_remove_buffer(self.as_ptr(), buffer.as_ptr()) };
+        unsafe { ffi::ametal_residency_set_remove_buffer(self.as_ptr(), buffer.as_ptr()) };
     }
 
     /// Remove `texture` from the set.
     pub fn remove_texture(&self, texture: &MetalTexture) {
-        unsafe { ffi::am_residency_set_remove_texture(self.as_ptr(), texture.as_ptr()) };
+        unsafe { ffi::ametal_residency_set_remove_texture(self.as_ptr(), texture.as_ptr()) };
     }
 
     /// Remove `heap` from the set.
     pub fn remove_heap(&self, heap: &Heap) {
-        unsafe { ffi::am_residency_set_remove_heap(self.as_ptr(), heap.as_ptr()) };
+        unsafe { ffi::ametal_residency_set_remove_heap(self.as_ptr(), heap.as_ptr()) };
     }
 
     /// Remove all pending and committed allocations.
     pub fn remove_all_allocations(&self) {
-        unsafe { ffi::am_residency_set_remove_all_allocations(self.as_ptr()) };
+        unsafe { ffi::ametal_residency_set_remove_all_allocations(self.as_ptr()) };
     }
 
     /// Whether the set currently contains `buffer`.
     #[must_use]
     pub fn contains_buffer(&self, buffer: &MetalBuffer) -> bool {
-        unsafe { ffi::am_residency_set_contains_buffer(self.as_ptr(), buffer.as_ptr()) }
+        unsafe { ffi::ametal_residency_set_contains_buffer(self.as_ptr(), buffer.as_ptr()) }
     }
 
     /// Whether the set currently contains `texture`.
     #[must_use]
     pub fn contains_texture(&self, texture: &MetalTexture) -> bool {
-        unsafe { ffi::am_residency_set_contains_texture(self.as_ptr(), texture.as_ptr()) }
+        unsafe { ffi::ametal_residency_set_contains_texture(self.as_ptr(), texture.as_ptr()) }
     }
 
     /// Number of allocations in the set.
     #[must_use]
     pub fn allocation_count(&self) -> usize {
-        unsafe { ffi::am_residency_set_allocation_count(self.as_ptr()) }
+        unsafe { ffi::ametal_residency_set_allocation_count(self.as_ptr()) }
     }
 
     /// Commit pending add/remove changes.
     pub fn commit(&self) {
-        unsafe { ffi::am_residency_set_commit(self.as_ptr()) };
+        unsafe { ffi::ametal_residency_set_commit(self.as_ptr()) };
     }
 
     /// Request residency for all committed allocations.
     pub fn request_residency(&self) {
-        unsafe { ffi::am_residency_set_request_residency(self.as_ptr()) };
+        unsafe { ffi::ametal_residency_set_request_residency(self.as_ptr()) };
     }
 
     /// End residency for all committed allocations.
     pub fn end_residency(&self) {
-        unsafe { ffi::am_residency_set_end_residency(self.as_ptr()) };
+        unsafe { ffi::ametal_residency_set_end_residency(self.as_ptr()) };
     }
 }
 
@@ -1495,26 +1506,26 @@ impl CaptureManager {
     /// Retrieve the process-global capture manager.
     #[must_use]
     pub fn shared() -> Option<Self> {
-        Self::wrap(unsafe { ffi::am_capture_manager_shared() })
+        Self::wrap(unsafe { ffi::ametal_capture_manager_shared() })
     }
 
     /// Query whether the given capture destination is supported.
     #[must_use]
     pub fn supports_destination(&self, destination: usize) -> bool {
-        unsafe { ffi::am_capture_manager_supports_destination(self.as_ptr(), destination) }
+        unsafe { ffi::ametal_capture_manager_supports_destination(self.as_ptr(), destination) }
     }
 
     /// Whether a capture is currently in progress.
     #[must_use]
     pub fn is_capturing(&self) -> bool {
-        unsafe { ffi::am_capture_manager_is_capturing(self.as_ptr()) }
+        unsafe { ffi::ametal_capture_manager_is_capturing(self.as_ptr()) }
     }
 
     /// Create a capture scope that captures all command queues on `device`.
     #[must_use]
     pub fn new_capture_scope_with_device(&self, device: &MetalDevice) -> Option<CaptureScope> {
         CaptureScope::wrap(unsafe {
-            ffi::am_capture_manager_new_scope_with_device(self.as_ptr(), device.as_ptr())
+            ffi::ametal_capture_manager_new_scope_with_device(self.as_ptr(), device.as_ptr())
         })
     }
 
@@ -1525,7 +1536,7 @@ impl CaptureManager {
         command_queue: &CommandQueue,
     ) -> Option<CaptureScope> {
         CaptureScope::wrap(unsafe {
-            ffi::am_capture_manager_new_scope_with_command_queue(
+            ffi::ametal_capture_manager_new_scope_with_command_queue(
                 self.as_ptr(),
                 command_queue.as_ptr(),
             )
@@ -1536,12 +1547,12 @@ impl CaptureManager {
 impl CaptureScope {
     /// Mark the start of the capture scope.
     pub fn begin(&self) {
-        unsafe { ffi::am_capture_scope_begin(self.as_ptr()) };
+        unsafe { ffi::ametal_capture_scope_begin(self.as_ptr()) };
     }
 
     /// Mark the end of the capture scope.
     pub fn end(&self) {
-        unsafe { ffi::am_capture_scope_end(self.as_ptr()) };
+        unsafe { ffi::ametal_capture_scope_end(self.as_ptr()) };
     }
 }
 

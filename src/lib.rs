@@ -213,7 +213,7 @@ unsafe impl Sync for MetalDevice {}
 impl Drop for MetalDevice {
     fn drop(&mut self) {
         if self.drop_on_release && !self.ptr.is_null() {
-            unsafe { ffi::am_device_release(self.ptr) };
+            unsafe { ffi::ametal_device_release(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
@@ -223,7 +223,7 @@ impl MetalDevice {
     /// Return the system's default Metal device.
     #[must_use]
     pub fn system_default() -> Option<Self> {
-        let p = unsafe { ffi::am_device_system_default() };
+        let p = unsafe { ffi::ametal_device_system_default() };
         if p.is_null() {
             None
         } else {
@@ -240,20 +240,20 @@ impl MetalDevice {
     /// True if the GPU uses unified memory (Apple Silicon).
     #[must_use]
     pub fn has_unified_memory(&self) -> bool {
-        unsafe { ffi::am_device_has_unified_memory(self.ptr) }
+        unsafe { ffi::ametal_device_has_unified_memory(self.ptr) }
     }
 
     /// Recommended maximum working-set size in bytes.
     #[must_use]
     pub fn recommended_max_working_set_size(&self) -> u64 {
-        unsafe { ffi::am_device_recommended_max_working_set_size(self.ptr) }
+        unsafe { ffi::ametal_device_recommended_max_working_set_size(self.ptr) }
     }
 
     /// True if this device supports the requested feature family —
     /// see [`gpu_family`].
     #[must_use]
     pub fn supports_family(&self, family: i64) -> bool {
-        unsafe { ffi::am_device_supports_family(self.ptr, family) }
+        unsafe { ffi::ametal_device_supports_family(self.ptr, family) }
     }
 
     /// Allocate a GPU-visible buffer of `length` bytes.
@@ -264,7 +264,7 @@ impl MetalDevice {
         if length > isize::MAX as usize {
             return None;
         }
-        let p = unsafe { ffi::am_device_new_buffer(self.ptr, length, options) };
+        let p = unsafe { ffi::ametal_device_new_buffer(self.ptr, length, options) };
         if p.is_null() {
             None
         } else {
@@ -288,7 +288,7 @@ impl MetalDevice {
             return None;
         }
         let p = unsafe {
-            ffi::am_device_new_texture_2d(
+            ffi::ametal_device_new_texture_2d(
                 self.ptr,
                 descriptor.pixel_format,
                 descriptor.width,
@@ -308,7 +308,7 @@ impl MetalDevice {
     /// Create a new `MTLCommandQueue` to schedule GPU work.
     #[must_use]
     pub fn new_command_queue(&self) -> Option<CommandQueue> {
-        let p = unsafe { ffi::am_device_new_command_queue(self.ptr) };
+        let p = unsafe { ffi::ametal_device_new_command_queue(self.ptr) };
         if p.is_null() {
             None
         } else {
@@ -327,7 +327,7 @@ impl MetalDevice {
         let csrc = std::ffi::CString::new(source).map_err(|e| e.to_string())?;
         let mut err_msg: *mut core::ffi::c_char = core::ptr::null_mut();
         let p = unsafe {
-            ffi::am_device_new_library_with_source(self.ptr, csrc.as_ptr(), &raw mut err_msg)
+            ffi::ametal_device_new_library_with_source(self.ptr, csrc.as_ptr(), &raw mut err_msg)
         };
         if p.is_null() {
             let msg = if err_msg.is_null() {
@@ -358,7 +358,7 @@ impl MetalDevice {
     ) -> Result<ComputePipelineState, String> {
         let mut err_msg: *mut core::ffi::c_char = core::ptr::null_mut();
         let p = unsafe {
-            ffi::am_device_new_compute_pipeline_state(self.ptr, function.ptr, &raw mut err_msg)
+            ffi::ametal_device_new_compute_pipeline_state(self.ptr, function.ptr, &raw mut err_msg)
         };
         if p.is_null() {
             let msg = if err_msg.is_null() {
@@ -422,7 +422,7 @@ unsafe impl Sync for CommandQueue {}
 impl Drop for CommandQueue {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { ffi::am_command_queue_release(self.ptr) };
+            unsafe { ffi::ametal_command_queue_release(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
@@ -432,7 +432,7 @@ impl CommandQueue {
     /// Create a new command buffer for recording GPU commands.
     #[must_use]
     pub fn new_command_buffer(&self) -> Option<CommandBuffer> {
-        let p = unsafe { ffi::am_command_queue_new_command_buffer(self.ptr) };
+        let p = unsafe { ffi::ametal_command_queue_new_command_buffer(self.ptr) };
         if p.is_null() {
             None
         } else {
@@ -480,7 +480,7 @@ unsafe impl Sync for CommandBufferInner {}
 impl Drop for CommandBufferInner {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { ffi::am_command_buffer_release(self.ptr) };
+            unsafe { ffi::ametal_command_buffer_release(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
@@ -513,7 +513,7 @@ unsafe impl Sync for MetalLibrary {}
 impl Drop for MetalLibrary {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { ffi::am_library_release(self.ptr) };
+            unsafe { ffi::ametal_library_release(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
@@ -524,7 +524,7 @@ impl MetalLibrary {
     #[must_use]
     pub fn new_function(&self, name: &str) -> Option<MetalFunction> {
         let cname = std::ffi::CString::new(name).ok()?;
-        let p = unsafe { ffi::am_library_new_function(self.ptr, cname.as_ptr()) };
+        let p = unsafe { ffi::ametal_library_new_function(self.ptr, cname.as_ptr()) };
         if p.is_null() {
             None
         } else {
@@ -552,7 +552,7 @@ unsafe impl Sync for MetalFunction {}
 impl Drop for MetalFunction {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { ffi::am_function_release(self.ptr) };
+            unsafe { ffi::ametal_function_release(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
@@ -579,7 +579,7 @@ unsafe impl Sync for ComputePipelineState {}
 impl Drop for ComputePipelineState {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { ffi::am_compute_pipeline_state_release(self.ptr) };
+            unsafe { ffi::ametal_compute_pipeline_state_release(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
@@ -695,7 +695,7 @@ impl Drop for MetalBufferWriteMapping<'_> {
     fn drop(&mut self) {
         if self.storage_mode == storage_mode::MANAGED {
             unsafe {
-                ffi::am_buffer_did_modify_range(self.buffer.as_ptr(), 0, self.length);
+                ffi::ametal_buffer_did_modify_range(self.buffer.as_ptr(), 0, self.length);
             }
         }
     }
@@ -720,7 +720,7 @@ unsafe impl Sync for MetalBufferInner {}
 impl Drop for MetalBufferInner {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { ffi::am_buffer_release(self.ptr) };
+            unsafe { ffi::ametal_buffer_release(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
@@ -731,13 +731,13 @@ impl MetalBuffer {
     /// Buffer length in bytes.
     #[must_use]
     pub fn length(&self) -> usize {
-        unsafe { ffi::am_buffer_length(self.as_ptr()) }
+        unsafe { ffi::ametal_buffer_length(self.as_ptr()) }
     }
 
     /// `MTLStorageMode` enum value.
     #[must_use]
     pub fn storage_mode(&self) -> usize {
-        unsafe { ffi::am_buffer_storage_mode(self.as_ptr()) }
+        unsafe { ffi::ametal_buffer_storage_mode(self.as_ptr()) }
     }
 
     /// Whether this buffer's storage mode permits CPU mapping.
@@ -755,7 +755,7 @@ impl MetalBuffer {
     /// storage before mapping the staging buffer.
     #[must_use]
     pub fn new_staging_buffer(&self) -> Option<Self> {
-        let pointer = unsafe { ffi::am_buffer_new_staging_buffer(self.as_ptr()) };
+        let pointer = unsafe { ffi::ametal_buffer_new_staging_buffer(self.as_ptr()) };
         if pointer.is_null() {
             None
         } else {
@@ -777,8 +777,9 @@ impl MetalBuffer {
     pub unsafe fn map_read(&self) -> Result<MetalBufferReadMapping<'_>, MetalBufferAccessError> {
         let storage_mode = self.ensure_cpu_accessible()?;
         let mapping_lock = self.lock_mapping()?;
-        let pointer = core::ptr::NonNull::new(ffi::am_buffer_contents(self.as_ptr()).cast::<u8>())
-            .ok_or(MetalBufferAccessError::MappingUnavailable)?;
+        let pointer =
+            core::ptr::NonNull::new(ffi::ametal_buffer_contents(self.as_ptr()).cast::<u8>())
+                .ok_or(MetalBufferAccessError::MappingUnavailable)?;
         let _ = storage_mode;
         Ok(MetalBufferReadMapping {
             pointer,
@@ -802,8 +803,9 @@ impl MetalBuffer {
     pub unsafe fn map_write(&self) -> Result<MetalBufferWriteMapping<'_>, MetalBufferAccessError> {
         let storage_mode = self.ensure_cpu_accessible()?;
         let mapping_lock = self.lock_mapping()?;
-        let pointer = core::ptr::NonNull::new(ffi::am_buffer_contents(self.as_ptr()).cast::<u8>())
-            .ok_or(MetalBufferAccessError::MappingUnavailable)?;
+        let pointer =
+            core::ptr::NonNull::new(ffi::ametal_buffer_contents(self.as_ptr()).cast::<u8>())
+                .ok_or(MetalBufferAccessError::MappingUnavailable)?;
         Ok(MetalBufferWriteMapping {
             buffer: self,
             pointer,
@@ -947,7 +949,7 @@ unsafe impl Sync for MetalTexture {}
 impl Drop for MetalTexture {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { ffi::am_texture_release(self.ptr) };
+            unsafe { ffi::ametal_texture_release(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
@@ -957,25 +959,25 @@ impl MetalTexture {
     /// Texture width in pixels.
     #[must_use]
     pub fn width(&self) -> usize {
-        unsafe { ffi::am_texture_width(self.ptr) }
+        unsafe { ffi::ametal_texture_width(self.ptr) }
     }
 
     /// Texture height in pixels.
     #[must_use]
     pub fn height(&self) -> usize {
-        unsafe { ffi::am_texture_height(self.ptr) }
+        unsafe { ffi::ametal_texture_height(self.ptr) }
     }
 
     /// Underlying `MTLPixelFormat` enum value — see [`pixel_format`].
     #[must_use]
     pub fn pixel_format(&self) -> usize {
-        unsafe { ffi::am_texture_pixel_format(self.ptr) }
+        unsafe { ffi::ametal_texture_pixel_format(self.ptr) }
     }
 
     /// Underlying `MTLTextureType` enum value — see [`texture_type`].
     #[must_use]
     pub fn texture_type(&self) -> usize {
-        unsafe { ffi::am_texture_type(self.ptr) }
+        unsafe { ffi::ametal_texture_type(self.ptr) }
     }
 
     /// Raw `id<MTLTexture>` pointer.
@@ -1209,7 +1211,7 @@ mod iosurface_ext {
                 }
             }
             let p = unsafe {
-                ffi::am_device_new_texture_from_iosurface(
+                ffi::ametal_device_new_texture_from_iosurface(
                     device.as_ptr(),
                     self.as_ptr().cast::<c_void>(),
                     plane_index,

@@ -45,8 +45,8 @@ private func am_apply_tile_color_attachments(
     }
 }
 
-@_cdecl("am_device_new_compute_pipeline_state_with_descriptor")
-public func am_device_new_compute_pipeline_state_with_descriptor(
+@_cdecl("ametal_device_new_compute_pipeline_state_with_descriptor")
+public func ametal_device_new_compute_pipeline_state_with_descriptor(
     _ deviceHandle: UnsafeMutableRawPointer?,
     _ functionHandle: UnsafeMutableRawPointer?,
     _ label: UnsafePointer<CChar>?,
@@ -84,8 +84,8 @@ public func am_device_new_compute_pipeline_state_with_descriptor(
     }
 }
 
-@_cdecl("am_device_new_render_pipeline_state_with_descriptor")
-public func am_device_new_render_pipeline_state_with_descriptor(
+@_cdecl("ametal_device_new_render_pipeline_state_with_descriptor")
+public func ametal_device_new_render_pipeline_state_with_descriptor(
     _ deviceHandle: UnsafeMutableRawPointer?,
     _ vertexHandle: UnsafeMutableRawPointer?,
     _ fragmentHandle: UnsafeMutableRawPointer?,
@@ -130,8 +130,8 @@ public func am_device_new_render_pipeline_state_with_descriptor(
     }
 }
 
-@_cdecl("am_device_new_tile_render_pipeline_state")
-public func am_device_new_tile_render_pipeline_state(
+@_cdecl("ametal_device_new_tile_render_pipeline_state")
+public func ametal_device_new_tile_render_pipeline_state(
     _ deviceHandle: UnsafeMutableRawPointer?,
     _ tileFunctionHandle: UnsafeMutableRawPointer?,
     _ label: UnsafePointer<CChar>?,

@@ -329,7 +329,7 @@ impl MetalDevice {
             .map_or(core::ptr::null(), core::ffi::CStr::as_ptr);
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr = unsafe {
-            ffi::am_device_new_compute_pipeline_state_with_descriptor(
+            ffi::ametal_device_new_compute_pipeline_state_with_descriptor(
                 self.as_ptr(),
                 descriptor.compute_function.as_ptr(),
                 label_ptr,
@@ -368,7 +368,7 @@ impl MetalDevice {
             .map_or(core::ptr::null(), core::ffi::CStr::as_ptr);
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr = unsafe {
-            ffi::am_device_new_render_pipeline_state_with_descriptor(
+            ffi::ametal_device_new_render_pipeline_state_with_descriptor(
                 self.as_ptr(),
                 descriptor.vertex_function.as_ptr(),
                 descriptor
@@ -416,7 +416,7 @@ impl MetalDevice {
             .map_or(core::ptr::null(), core::ffi::CStr::as_ptr);
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr = unsafe {
-            ffi::am_device_new_tile_render_pipeline_state(
+            ffi::ametal_device_new_tile_render_pipeline_state(
                 self.as_ptr(),
                 descriptor.tile_function.as_ptr(),
                 label_ptr,

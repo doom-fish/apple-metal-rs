@@ -3,8 +3,8 @@
 import Foundation
 import Metal
 
-@_cdecl("am_device_new_buffer")
-public func am_device_new_buffer(
+@_cdecl("ametal_device_new_buffer")
+public func ametal_device_new_buffer(
     _ device_handle: UnsafeMutableRawPointer?,
     _ length: Int,
     _ options: UInt
@@ -16,31 +16,31 @@ public func am_device_new_buffer(
     return am_retain(buf as AnyObject)
 }
 
-@_cdecl("am_buffer_release")
-public func am_buffer_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
+@_cdecl("ametal_buffer_release")
+public func ametal_buffer_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
 
-@_cdecl("am_buffer_length")
-public func am_buffer_length(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_buffer_length")
+public func ametal_buffer_length(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let buf: MTLBuffer = am_borrow(handle) else { return 0 }
     return buf.length
 }
 
-@_cdecl("am_buffer_storage_mode")
-public func am_buffer_storage_mode(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_buffer_storage_mode")
+public func ametal_buffer_storage_mode(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let buf: MTLBuffer = am_borrow(handle) else { return 0 }
     return Int(buf.storageMode.rawValue)
 }
 
-@_cdecl("am_buffer_contents")
-public func am_buffer_contents(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+@_cdecl("ametal_buffer_contents")
+public func ametal_buffer_contents(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
     guard let buf: MTLBuffer = am_borrow(handle),
           buf.storageMode == .shared || buf.storageMode == .managed
     else { return nil }
     return buf.contents()
 }
 
-@_cdecl("am_buffer_new_staging_buffer")
-public func am_buffer_new_staging_buffer(
+@_cdecl("ametal_buffer_new_staging_buffer")
+public func ametal_buffer_new_staging_buffer(
     _ handle: UnsafeMutableRawPointer?
 ) -> UnsafeMutableRawPointer? {
     guard let buf: MTLBuffer = am_borrow(handle),

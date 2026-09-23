@@ -1,8 +1,8 @@
 import Foundation
 import Metal
 
-@_cdecl("am_device_new_render_pipeline_state")
-public func am_device_new_render_pipeline_state(
+@_cdecl("ametal_device_new_render_pipeline_state")
+public func ametal_device_new_render_pipeline_state(
     _ deviceHandle: UnsafeMutableRawPointer?,
     _ vertexHandle: UnsafeMutableRawPointer?,
     _ fragmentHandle: UnsafeMutableRawPointer?,

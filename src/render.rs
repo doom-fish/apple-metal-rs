@@ -52,7 +52,7 @@ unsafe impl Sync for RenderPipelineState {}
 impl Drop for RenderPipelineState {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { ffi::am_object_release(self.ptr) };
+            unsafe { ffi::ametal_object_release(self.ptr) };
             self.ptr = core::ptr::null_mut();
         }
     }
@@ -80,7 +80,7 @@ impl RenderPipelineState {
     /// Metal's label for this pipeline, if one was set.
     #[must_use]
     pub fn label(&self) -> Option<String> {
-        unsafe { take_optional_string(ffi::am_object_copy_label(self.ptr)) }
+        unsafe { take_optional_string(ffi::ametal_object_copy_label(self.ptr)) }
     }
 }
 
@@ -99,7 +99,7 @@ impl MetalDevice {
     ) -> Result<RenderPipelineState, String> {
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ptr = unsafe {
-            ffi::am_device_new_render_pipeline_state(
+            ffi::ametal_device_new_render_pipeline_state(
                 self.as_ptr(),
                 vertex.as_ptr(),
                 fragment.as_ptr(),

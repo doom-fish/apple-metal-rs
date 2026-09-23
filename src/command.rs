@@ -189,7 +189,7 @@ impl EncoderCore {
         if !state.active_encoder {
             return Err(CommandBufferError::EncoderEnded);
         }
-        unsafe { ffi::am_command_encoder_end_encoding(self.ptr) };
+        unsafe { ffi::ametal_command_encoder_end_encoding(self.ptr) };
         state.active_encoder = false;
         drop(state);
         self.ended = true;
@@ -211,7 +211,7 @@ impl EncoderCore {
             CommandBufferPhase::Recording | CommandBufferPhase::Enqueued
         ) && state.active_encoder
         {
-            unsafe { ffi::am_command_encoder_end_encoding(self.ptr) };
+            unsafe { ffi::ametal_command_encoder_end_encoding(self.ptr) };
             state.active_encoder = false;
         }
         drop(state);
@@ -235,7 +235,7 @@ impl Drop for EncoderCore {
     fn drop(&mut self) {
         self.finish_on_drop();
         if !self.ptr.is_null() {
-            unsafe { ffi::am_object_release(self.ptr) };
+            unsafe { ffi::ametal_object_release(self.ptr) };
             self.ptr = core::ptr::null_mut();
         }
     }
@@ -298,7 +298,7 @@ impl CommandQueue {
     #[must_use]
     pub unsafe fn new_command_buffer_with_unretained_references(&self) -> Option<CommandBuffer> {
         let ptr =
-            ffi::am_command_queue_new_command_buffer_with_unretained_references(self.as_ptr());
+            ffi::ametal_command_queue_new_command_buffer_with_unretained_references(self.as_ptr());
         if ptr.is_null() {
             None
         } else {
@@ -321,7 +321,7 @@ impl CommandBuffer {
         if state.active_encoder {
             return Err(CommandBufferError::ActiveEncoder);
         }
-        unsafe { ffi::am_command_buffer_enqueue(self.as_ptr()) };
+        unsafe { ffi::ametal_command_buffer_enqueue(self.as_ptr()) };
         state.phase = CommandBufferPhase::Enqueued;
         drop(state);
         Ok(())
@@ -338,7 +338,7 @@ impl CommandBuffer {
         if state.active_encoder {
             return Err(CommandBufferError::ActiveEncoder);
         }
-        unsafe { ffi::am_command_buffer_commit(self.as_ptr()) };
+        unsafe { ffi::ametal_command_buffer_commit(self.as_ptr()) };
         state.phase = CommandBufferPhase::Committed;
         drop(state);
         Ok(())
@@ -358,7 +358,7 @@ impl CommandBuffer {
             phase => return Err(invalid_state("wait_until_scheduled", phase)),
         }
         drop(state);
-        unsafe { ffi::am_command_buffer_wait_until_scheduled(self.as_ptr()) };
+        unsafe { ffi::ametal_command_buffer_wait_until_scheduled(self.as_ptr()) };
         Ok(())
     }
 
@@ -377,8 +377,8 @@ impl CommandBuffer {
                 phase => return Err(invalid_state("wait_until_completed", phase)),
             }
         }
-        unsafe { ffi::am_command_buffer_wait_until_completed(self.as_ptr()) };
-        let status = unsafe { ffi::am_command_buffer_status(self.as_ptr()) };
+        unsafe { ffi::ametal_command_buffer_wait_until_completed(self.as_ptr()) };
+        let status = unsafe { ffi::ametal_command_buffer_status(self.as_ptr()) };
         let mut state = self
             .inner
             .state
@@ -398,7 +398,7 @@ impl CommandBuffer {
     /// Current `MTLCommandBufferStatus` value.
     #[must_use]
     pub fn status(&self) -> usize {
-        let status = unsafe { ffi::am_command_buffer_status(self.as_ptr()) };
+        let status = unsafe { ffi::ametal_command_buffer_status(self.as_ptr()) };
         let mut state = self
             .inner
             .state
@@ -415,13 +415,13 @@ impl CommandBuffer {
     /// Localized Metal error string for a failed command buffer.
     #[must_use]
     pub fn error(&self) -> Option<String> {
-        unsafe { take_optional_string(ffi::am_command_buffer_error_message(self.as_ptr())) }
+        unsafe { take_optional_string(ffi::ametal_command_buffer_error_message(self.as_ptr())) }
     }
 
     /// Create a standalone blit command encoder.
     pub fn new_blit_command_encoder(&self) -> Result<BlitCommandEncoder, CommandBufferError> {
         let core = self.begin_encoder("blit", || unsafe {
-            ffi::am_command_buffer_new_blit_command_encoder(self.as_ptr())
+            ffi::ametal_command_buffer_new_blit_command_encoder(self.as_ptr())
         })?;
         Ok(BlitCommandEncoder::new(core, self.clone()))
     }
@@ -429,7 +429,7 @@ impl CommandBuffer {
     /// Create a standalone compute command encoder.
     pub fn new_compute_command_encoder(&self) -> Result<ComputeCommandEncoder, CommandBufferError> {
         let core = self.begin_encoder("compute", || unsafe {
-            ffi::am_command_buffer_new_compute_command_encoder(self.as_ptr())
+            ffi::ametal_command_buffer_new_compute_command_encoder(self.as_ptr())
         })?;
         Ok(ComputeCommandEncoder::new(core, self.clone()))
     }
@@ -445,7 +445,7 @@ impl CommandBuffer {
         ensure_native_int(load_action, "load_action")?;
         ensure_native_int(store_action, "store_action")?;
         let core = self.begin_encoder("render", || unsafe {
-            ffi::am_command_buffer_new_render_command_encoder(
+            ffi::ametal_command_buffer_new_render_command_encoder(
                 self.as_ptr(),
                 texture.as_ptr(),
                 load_action,
@@ -466,14 +466,14 @@ impl CommandBuffer {
         value: u64,
     ) -> Result<(), CommandBufferError> {
         self.encode_without_encoder("encode_wait_for_event", || unsafe {
-            ffi::am_command_buffer_encode_wait_for_event(self.as_ptr(), event.as_ptr(), value);
+            ffi::ametal_command_buffer_encode_wait_for_event(self.as_ptr(), event.as_ptr(), value);
         })
     }
 
     /// Encode a signal that updates `event` to `value`.
     pub fn encode_signal_event(&self, event: &Event, value: u64) -> Result<(), CommandBufferError> {
         self.encode_without_encoder("encode_signal_event", || unsafe {
-            ffi::am_command_buffer_encode_signal_event(self.as_ptr(), event.as_ptr(), value);
+            ffi::ametal_command_buffer_encode_signal_event(self.as_ptr(), event.as_ptr(), value);
         })
     }
 
@@ -551,11 +551,10 @@ impl CommandBuffer {
     }
 
     fn execution_error(&self) -> CommandBufferError {
-        let message =
-            unsafe { take_optional_string(ffi::am_command_buffer_error_message(self.as_ptr())) }
-                .unwrap_or_else(|| {
-                    "Metal reported an unspecified command-buffer error".to_string()
-                });
+        let message = unsafe {
+            take_optional_string(ffi::ametal_command_buffer_error_message(self.as_ptr()))
+        }
+        .unwrap_or_else(|| "Metal reported an unspecified command-buffer error".to_string());
         CommandBufferError::ExecutionFailed(message)
     }
 }
@@ -576,7 +575,7 @@ impl BlitCommandEncoder {
         ensure_native_int(dst_offset, "destination offset")?;
         ensure_native_int(size, "copy size")?;
         let accepted = self.core.with_active("copy_buffer", |encoder| unsafe {
-            ffi::am_blit_command_encoder_copy_buffer(
+            ffi::ametal_blit_command_encoder_copy_buffer(
                 encoder,
                 src.as_ptr(),
                 src_offset,
@@ -609,7 +608,7 @@ impl BlitCommandEncoder {
         ensure_native_int(range.start, "fill offset")?;
         ensure_native_int(length, "fill length")?;
         let accepted = self.core.with_active("fill_buffer", |encoder| unsafe {
-            ffi::am_blit_command_encoder_fill_buffer(
+            ffi::ametal_blit_command_encoder_fill_buffer(
                 encoder,
                 buffer.as_ptr(),
                 range.start,
@@ -642,7 +641,7 @@ impl BlitCommandEncoder {
         }
         ensure_native_int(sample_index, "sample index")?;
         let accepted = self.core.with_active("sample_counters", |encoder| unsafe {
-            ffi::am_blit_command_encoder_sample_counters(
+            ffi::ametal_blit_command_encoder_sample_counters(
                 encoder,
                 sample_buffer.as_ptr(),
                 sample_index,
@@ -674,7 +673,7 @@ impl BlitCommandEncoder {
     /// Update `fence` with work encoded so far.
     pub fn update_fence(&mut self, fence: &Fence) -> Result<(), CommandBufferError> {
         self.core.with_active("update_fence", |encoder| unsafe {
-            ffi::am_blit_command_encoder_update_fence(encoder, fence.as_ptr());
+            ffi::ametal_blit_command_encoder_update_fence(encoder, fence.as_ptr());
         })?;
         self.core.record_fence_update(fence);
         Ok(())
@@ -684,7 +683,7 @@ impl BlitCommandEncoder {
     pub fn wait_for_fence(&mut self, fence: &Fence) -> Result<(), CommandBufferError> {
         self.core.ensure_fence_wait_allowed(fence)?;
         self.core.with_active("wait_for_fence", |encoder| unsafe {
-            ffi::am_blit_command_encoder_wait_for_fence(encoder, fence.as_ptr());
+            ffi::ametal_blit_command_encoder_wait_for_fence(encoder, fence.as_ptr());
         })
     }
 }
@@ -697,7 +696,7 @@ impl ComputeCommandEncoder {
     ) -> Result<(), CommandBufferError> {
         self.core
             .with_active("set_compute_pipeline_state", |encoder| unsafe {
-                ffi::am_compute_command_encoder_set_pipeline_state(encoder, pipeline.as_ptr());
+                ffi::ametal_compute_command_encoder_set_pipeline_state(encoder, pipeline.as_ptr());
             })
     }
 
@@ -712,7 +711,7 @@ impl ComputeCommandEncoder {
         checked_resource_range("buffer", offset, 0, buffer.length())?;
         ensure_native_int(offset, "buffer offset")?;
         self.core.with_active("set_buffer", |encoder| unsafe {
-            ffi::am_compute_command_encoder_set_buffer(encoder, buffer.as_ptr(), offset, index);
+            ffi::ametal_compute_command_encoder_set_buffer(encoder, buffer.as_ptr(), offset, index);
         })
     }
 
@@ -724,7 +723,7 @@ impl ComputeCommandEncoder {
     ) -> Result<(), CommandBufferError> {
         validate_binding_index("texture", index, MAX_TEXTURE_BINDINGS)?;
         self.core.with_active("set_texture", |encoder| unsafe {
-            ffi::am_compute_command_encoder_set_texture(encoder, texture.as_ptr(), index);
+            ffi::ametal_compute_command_encoder_set_texture(encoder, texture.as_ptr(), index);
         })
     }
 
@@ -737,7 +736,11 @@ impl ComputeCommandEncoder {
         validate_binding_index("sampler", index, MAX_SAMPLER_BINDINGS)?;
         self.core
             .with_active("set_sampler_state", |encoder| unsafe {
-                ffi::am_compute_command_encoder_set_sampler_state(encoder, sampler.as_ptr(), index);
+                ffi::ametal_compute_command_encoder_set_sampler_state(
+                    encoder,
+                    sampler.as_ptr(),
+                    index,
+                );
             })
     }
 
@@ -750,7 +753,7 @@ impl ComputeCommandEncoder {
         validate_binding_index("visible function table", index, MAX_BUFFER_BINDINGS)?;
         self.core
             .with_active("set_visible_function_table", |encoder| unsafe {
-                ffi::am_compute_command_encoder_set_visible_function_table(
+                ffi::ametal_compute_command_encoder_set_visible_function_table(
                     encoder,
                     table.as_ptr(),
                     index,
@@ -767,7 +770,7 @@ impl ComputeCommandEncoder {
         validate_binding_index("intersection function table", index, MAX_BUFFER_BINDINGS)?;
         self.core
             .with_active("set_intersection_function_table", |encoder| unsafe {
-                ffi::am_compute_command_encoder_set_intersection_function_table(
+                ffi::ametal_compute_command_encoder_set_intersection_function_table(
                     encoder,
                     table.as_ptr(),
                     index,
@@ -784,7 +787,7 @@ impl ComputeCommandEncoder {
         validate_binding_index("acceleration structure", index, MAX_BUFFER_BINDINGS)?;
         self.core
             .with_active("set_acceleration_structure", |encoder| unsafe {
-                ffi::am_compute_command_encoder_set_acceleration_structure(
+                ffi::ametal_compute_command_encoder_set_acceleration_structure(
                     encoder,
                     acceleration_structure.as_ptr(),
                     index,
@@ -802,7 +805,7 @@ impl ComputeCommandEncoder {
         validate_size(threads_per_threadgroup, "threads-per-threadgroup")?;
         self.core
             .with_active("dispatch_threadgroups", |encoder| unsafe {
-                ffi::am_compute_command_encoder_dispatch_threadgroups(
+                ffi::ametal_compute_command_encoder_dispatch_threadgroups(
                     encoder,
                     threadgroups.0,
                     threadgroups.1,
@@ -823,7 +826,7 @@ impl ComputeCommandEncoder {
         validate_size(threads, "thread grid")?;
         validate_size(threads_per_threadgroup, "threads-per-threadgroup")?;
         self.core.with_active("dispatch_threads", |encoder| unsafe {
-            ffi::am_compute_command_encoder_dispatch_threads(
+            ffi::ametal_compute_command_encoder_dispatch_threads(
                 encoder,
                 threads.0,
                 threads.1,
@@ -838,7 +841,7 @@ impl ComputeCommandEncoder {
     /// Update `fence` with work encoded so far.
     pub fn update_fence(&mut self, fence: &Fence) -> Result<(), CommandBufferError> {
         self.core.with_active("update_fence", |encoder| unsafe {
-            ffi::am_compute_command_encoder_update_fence(encoder, fence.as_ptr());
+            ffi::ametal_compute_command_encoder_update_fence(encoder, fence.as_ptr());
         })?;
         self.core.record_fence_update(fence);
         Ok(())
@@ -848,7 +851,7 @@ impl ComputeCommandEncoder {
     pub fn wait_for_fence(&mut self, fence: &Fence) -> Result<(), CommandBufferError> {
         self.core.ensure_fence_wait_allowed(fence)?;
         self.core.with_active("wait_for_fence", |encoder| unsafe {
-            ffi::am_compute_command_encoder_wait_for_fence(encoder, fence.as_ptr());
+            ffi::ametal_compute_command_encoder_wait_for_fence(encoder, fence.as_ptr());
         })
     }
 }
@@ -861,7 +864,7 @@ impl RenderCommandEncoder {
     ) -> Result<(), CommandBufferError> {
         self.core
             .with_active("set_render_pipeline_state", |encoder| unsafe {
-                ffi::am_render_command_encoder_set_render_pipeline_state(
+                ffi::ametal_render_command_encoder_set_render_pipeline_state(
                     encoder,
                     pipeline.as_ptr(),
                 );
@@ -880,7 +883,7 @@ impl RenderCommandEncoder {
         ensure_native_int(offset, "vertex buffer offset")?;
         self.core
             .with_active("set_vertex_buffer", |encoder| unsafe {
-                ffi::am_render_command_encoder_set_vertex_buffer(
+                ffi::ametal_render_command_encoder_set_vertex_buffer(
                     encoder,
                     buffer.as_ptr(),
                     offset,
@@ -898,7 +901,7 @@ impl RenderCommandEncoder {
         validate_binding_index("fragment sampler", index, MAX_SAMPLER_BINDINGS)?;
         self.core
             .with_active("set_fragment_sampler_state", |encoder| unsafe {
-                ffi::am_render_command_encoder_set_fragment_sampler_state(
+                ffi::ametal_render_command_encoder_set_fragment_sampler_state(
                     encoder,
                     sampler.as_ptr(),
                     index,
@@ -913,7 +916,7 @@ impl RenderCommandEncoder {
     ) -> Result<(), CommandBufferError> {
         self.core
             .with_active("set_depth_stencil_state", |encoder| unsafe {
-                ffi::am_render_command_encoder_set_depth_stencil_state(encoder, state.as_ptr());
+                ffi::ametal_render_command_encoder_set_depth_stencil_state(encoder, state.as_ptr());
             })
     }
 
@@ -935,7 +938,7 @@ impl RenderCommandEncoder {
                 value: vertex_start.saturating_add(vertex_count),
             })?;
         self.core.with_active("draw_primitives", |encoder| unsafe {
-            ffi::am_render_command_encoder_draw_primitives(
+            ffi::ametal_render_command_encoder_draw_primitives(
                 encoder,
                 primitive_type,
                 vertex_start,
@@ -947,7 +950,7 @@ impl RenderCommandEncoder {
     /// Update `fence` with work encoded so far.
     pub fn update_fence(&mut self, fence: &Fence) -> Result<(), CommandBufferError> {
         self.core.with_active("update_fence", |encoder| unsafe {
-            ffi::am_render_command_encoder_update_fence(encoder, fence.as_ptr());
+            ffi::ametal_render_command_encoder_update_fence(encoder, fence.as_ptr());
         })?;
         self.core.record_fence_update(fence);
         Ok(())
@@ -957,7 +960,7 @@ impl RenderCommandEncoder {
     pub fn wait_for_fence(&mut self, fence: &Fence) -> Result<(), CommandBufferError> {
         self.core.ensure_fence_wait_allowed(fence)?;
         self.core.with_active("wait_for_fence", |encoder| unsafe {
-            ffi::am_render_command_encoder_wait_for_fence(encoder, fence.as_ptr());
+            ffi::ametal_render_command_encoder_wait_for_fence(encoder, fence.as_ptr());
         })
     }
 }
@@ -1063,7 +1066,7 @@ fn synchronize_resource(
         });
     }
     let accepted = core.with_active("synchronize_resource", |encoder| unsafe {
-        ffi::am_blit_command_encoder_synchronize_resource(encoder, resource)
+        ffi::ametal_blit_command_encoder_synchronize_resource(encoder, resource)
     })?;
     if accepted {
         Ok(())

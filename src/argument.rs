@@ -345,7 +345,7 @@ unsafe impl Send for ArgumentEncoder {}
 impl Drop for ArgumentEncoder {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { ffi::am_object_release(self.ptr) };
+            unsafe { ffi::ametal_object_release(self.ptr) };
             self.ptr = core::ptr::null_mut();
         }
     }
@@ -372,7 +372,7 @@ impl MetalDevice {
             words.extend_from_slice(&descriptor.as_words());
         }
         let ptr = unsafe {
-            ffi::am_device_new_argument_encoder_with_descriptors(
+            ffi::ametal_device_new_argument_encoder_with_descriptors(
                 self.as_ptr(),
                 words.as_ptr(),
                 descriptors.len(),
@@ -390,13 +390,13 @@ impl ArgumentEncoder {
     /// Number of bytes required to encode the argument layout.
     #[must_use]
     pub fn encoded_length(&self) -> usize {
-        unsafe { ffi::am_argument_encoder_encoded_length(self.as_ptr()) }
+        unsafe { ffi::ametal_argument_encoder_encoded_length(self.as_ptr()) }
     }
 
     /// Required alignment for the encoded argument data.
     #[must_use]
     pub fn alignment(&self) -> usize {
-        unsafe { ffi::am_argument_encoder_alignment(self.as_ptr()) }
+        unsafe { ffi::ametal_argument_encoder_alignment(self.as_ptr()) }
     }
 
     /// Bind a destination argument buffer for a scoped sequence of setters.
@@ -444,7 +444,7 @@ impl ArgumentEncoder {
             .lock_mapping()
             .map_err(|_| ArgumentEncoderError::MappingLockPoisoned)?;
         let accepted = unsafe {
-            ffi::am_argument_encoder_set_argument_buffer(self.as_ptr(), buffer.as_ptr(), offset)
+            ffi::ametal_argument_encoder_set_argument_buffer(self.as_ptr(), buffer.as_ptr(), offset)
         };
         if !accepted {
             return Err(ArgumentEncoderError::NativeRejected {
@@ -563,7 +563,7 @@ impl ArgumentBufferBinding<'_> {
                 buffer_length: buffer.length(),
             });
         }
-        if ffi::am_argument_encoder_set_buffer(
+        if ffi::ametal_argument_encoder_set_buffer(
             self.encoder.as_ptr(),
             buffer.as_ptr(),
             offset,
@@ -589,7 +589,8 @@ impl ArgumentBufferBinding<'_> {
         index: usize,
     ) -> Result<(), ArgumentEncoderError> {
         validate_index(index)?;
-        if ffi::am_argument_encoder_set_texture(self.encoder.as_ptr(), texture.as_ptr(), index) {
+        if ffi::ametal_argument_encoder_set_texture(self.encoder.as_ptr(), texture.as_ptr(), index)
+        {
             Ok(())
         } else {
             Err(ArgumentEncoderError::NativeRejected {
@@ -610,7 +611,7 @@ impl ArgumentBufferBinding<'_> {
         index: usize,
     ) -> Result<(), ArgumentEncoderError> {
         validate_index(index)?;
-        if ffi::am_argument_encoder_set_sampler_state(
+        if ffi::ametal_argument_encoder_set_sampler_state(
             self.encoder.as_ptr(),
             sampler.as_ptr(),
             index,
@@ -628,7 +629,7 @@ impl Drop for ArgumentBufferBinding<'_> {
     fn drop(&mut self) {
         if self.storage_mode == storage_mode::MANAGED {
             unsafe {
-                ffi::am_buffer_did_modify_range(
+                ffi::ametal_buffer_did_modify_range(
                     self.buffer.as_ptr(),
                     self.offset,
                     self.encoded_length,

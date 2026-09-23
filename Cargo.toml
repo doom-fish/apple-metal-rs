@@ -12,6 +12,7 @@ categories = ["api-bindings", "os::macos-apis", "graphics"]
 rust-version = "1.82"
 readme = "README.md"
 build = "build.rs"
+links = "apple_metal_bridge"
 include = [
     "src/**/*",
     "examples/**/*",

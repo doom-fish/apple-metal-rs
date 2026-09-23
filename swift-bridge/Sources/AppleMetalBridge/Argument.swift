@@ -296,14 +296,14 @@ private func amArgumentBufferReaches(_ start: MTLBuffer, target: MTLBuffer) -> B
     return false
 }
 
-@_cdecl("am_device_argument_buffers_support")
-public func am_device_argument_buffers_support(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_device_argument_buffers_support")
+public func ametal_device_argument_buffers_support(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let device: MTLDevice = am_borrow(handle) else { return 0 }
     return Int(device.argumentBuffersSupport.rawValue)
 }
 
-@_cdecl("am_device_new_argument_encoder_with_descriptors")
-public func am_device_new_argument_encoder_with_descriptors(
+@_cdecl("ametal_device_new_argument_encoder_with_descriptors")
+public func ametal_device_new_argument_encoder_with_descriptors(
     _ handle: UnsafeMutableRawPointer?,
     _ descriptors: UnsafePointer<UInt>?,
     _ descriptorCount: Int
@@ -377,20 +377,20 @@ public func am_device_new_argument_encoder_with_descriptors(
     return am_retain(encoder as AnyObject)
 }
 
-@_cdecl("am_argument_encoder_encoded_length")
-public func am_argument_encoder_encoded_length(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_argument_encoder_encoded_length")
+public func ametal_argument_encoder_encoded_length(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let encoder: MTLArgumentEncoder = am_borrow(handle) else { return 0 }
     return encoder.encodedLength
 }
 
-@_cdecl("am_argument_encoder_alignment")
-public func am_argument_encoder_alignment(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_argument_encoder_alignment")
+public func ametal_argument_encoder_alignment(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let encoder: MTLArgumentEncoder = am_borrow(handle) else { return 0 }
     return encoder.alignment
 }
 
-@_cdecl("am_argument_encoder_set_argument_buffer")
-public func am_argument_encoder_set_argument_buffer(
+@_cdecl("ametal_argument_encoder_set_argument_buffer")
+public func ametal_argument_encoder_set_argument_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ bufferHandle: UnsafeMutableRawPointer?,
     _ offset: Int
@@ -411,8 +411,8 @@ public func am_argument_encoder_set_argument_buffer(
     return true
 }
 
-@_cdecl("am_argument_encoder_set_buffer")
-public func am_argument_encoder_set_buffer(
+@_cdecl("ametal_argument_encoder_set_buffer")
+public func ametal_argument_encoder_set_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ bufferHandle: UnsafeMutableRawPointer?,
     _ offset: Int,
@@ -434,8 +434,8 @@ public func am_argument_encoder_set_buffer(
     return true
 }
 
-@_cdecl("am_argument_encoder_set_texture")
-public func am_argument_encoder_set_texture(
+@_cdecl("ametal_argument_encoder_set_texture")
+public func ametal_argument_encoder_set_texture(
     _ handle: UnsafeMutableRawPointer?,
     _ textureHandle: UnsafeMutableRawPointer?,
     _ index: Int
@@ -454,8 +454,8 @@ public func am_argument_encoder_set_texture(
     return true
 }
 
-@_cdecl("am_argument_encoder_set_sampler_state")
-public func am_argument_encoder_set_sampler_state(
+@_cdecl("ametal_argument_encoder_set_sampler_state")
+public func ametal_argument_encoder_set_sampler_state(
     _ handle: UnsafeMutableRawPointer?,
     _ samplerHandle: UnsafeMutableRawPointer?,
     _ index: Int

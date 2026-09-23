@@ -1,4 +1,4 @@
-// apple-metal build.rs — builds the AppleMetalBridge Swift static
+// apple-metal build.rs — builds the AppleMetalSwiftBridge Swift static
 // library and links it into the Rust crate, the same way every other
 // Swift-bridged doom-fish crate does.
 
@@ -65,7 +65,7 @@ fn main() {
     }
 
     println!("cargo:rustc-link-search=native={swift_build_dir}/release");
-    println!("cargo:rustc-link-lib=static=AppleMetalBridge");
+    println!("cargo:rustc-link-lib=static=AppleMetalSwiftBridge");
     println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift");
 
     if let Ok(output) = Command::new("xcode-select").arg("-p").output() {

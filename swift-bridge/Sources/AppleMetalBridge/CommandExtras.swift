@@ -1,8 +1,8 @@
 import Foundation
 import Metal
 
-@_cdecl("am_command_queue_new_command_buffer_with_unretained_references")
-public func am_command_queue_new_command_buffer_with_unretained_references(
+@_cdecl("ametal_command_queue_new_command_buffer_with_unretained_references")
+public func ametal_command_queue_new_command_buffer_with_unretained_references(
     _ handle: UnsafeMutableRawPointer?
 ) -> UnsafeMutableRawPointer? {
     guard let queue: MTLCommandQueue = am_borrow(handle),
@@ -11,32 +11,32 @@ public func am_command_queue_new_command_buffer_with_unretained_references(
     return am_retain(commandBuffer as AnyObject)
 }
 
-@_cdecl("am_command_buffer_enqueue")
-public func am_command_buffer_enqueue(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_command_buffer_enqueue")
+public func ametal_command_buffer_enqueue(_ handle: UnsafeMutableRawPointer?) {
     guard let commandBuffer: MTLCommandBuffer = am_borrow(handle) else { return }
     commandBuffer.enqueue()
 }
 
-@_cdecl("am_command_buffer_wait_until_scheduled")
-public func am_command_buffer_wait_until_scheduled(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_command_buffer_wait_until_scheduled")
+public func ametal_command_buffer_wait_until_scheduled(_ handle: UnsafeMutableRawPointer?) {
     guard let commandBuffer: MTLCommandBuffer = am_borrow(handle) else { return }
     commandBuffer.waitUntilScheduled()
 }
 
-@_cdecl("am_command_buffer_status")
-public func am_command_buffer_status(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_command_buffer_status")
+public func ametal_command_buffer_status(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let commandBuffer: MTLCommandBuffer = am_borrow(handle) else { return 0 }
     return Int(commandBuffer.status.rawValue)
 }
 
-@_cdecl("am_command_buffer_error_message")
-public func am_command_buffer_error_message(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutablePointer<CChar>? {
+@_cdecl("ametal_command_buffer_error_message")
+public func ametal_command_buffer_error_message(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutablePointer<CChar>? {
     guard let commandBuffer: MTLCommandBuffer = am_borrow(handle) else { return nil }
     return am_copy_string(commandBuffer.error?.localizedDescription)
 }
 
-@_cdecl("am_command_buffer_new_blit_command_encoder")
-public func am_command_buffer_new_blit_command_encoder(
+@_cdecl("ametal_command_buffer_new_blit_command_encoder")
+public func ametal_command_buffer_new_blit_command_encoder(
     _ handle: UnsafeMutableRawPointer?
 ) -> UnsafeMutableRawPointer? {
     guard let commandBuffer: MTLCommandBuffer = am_borrow(handle),
@@ -45,8 +45,8 @@ public func am_command_buffer_new_blit_command_encoder(
     return am_retain(encoder as AnyObject)
 }
 
-@_cdecl("am_command_buffer_new_compute_command_encoder")
-public func am_command_buffer_new_compute_command_encoder(
+@_cdecl("ametal_command_buffer_new_compute_command_encoder")
+public func ametal_command_buffer_new_compute_command_encoder(
     _ handle: UnsafeMutableRawPointer?
 ) -> UnsafeMutableRawPointer? {
     guard let commandBuffer: MTLCommandBuffer = am_borrow(handle),
@@ -55,8 +55,8 @@ public func am_command_buffer_new_compute_command_encoder(
     return am_retain(encoder as AnyObject)
 }
 
-@_cdecl("am_command_buffer_new_render_command_encoder")
-public func am_command_buffer_new_render_command_encoder(
+@_cdecl("ametal_command_buffer_new_render_command_encoder")
+public func ametal_command_buffer_new_render_command_encoder(
     _ handle: UnsafeMutableRawPointer?,
     _ textureHandle: UnsafeMutableRawPointer?,
     _ loadAction: Int,
@@ -83,8 +83,8 @@ public func am_command_buffer_new_render_command_encoder(
     return am_retain(encoder as AnyObject)
 }
 
-@_cdecl("am_command_buffer_encode_wait_for_event")
-public func am_command_buffer_encode_wait_for_event(
+@_cdecl("ametal_command_buffer_encode_wait_for_event")
+public func ametal_command_buffer_encode_wait_for_event(
     _ handle: UnsafeMutableRawPointer?,
     _ eventHandle: UnsafeMutableRawPointer?,
     _ value: UInt64
@@ -95,8 +95,8 @@ public func am_command_buffer_encode_wait_for_event(
     commandBuffer.encodeWaitForEvent(event, value: value)
 }
 
-@_cdecl("am_command_buffer_encode_signal_event")
-public func am_command_buffer_encode_signal_event(
+@_cdecl("ametal_command_buffer_encode_signal_event")
+public func ametal_command_buffer_encode_signal_event(
     _ handle: UnsafeMutableRawPointer?,
     _ eventHandle: UnsafeMutableRawPointer?,
     _ value: UInt64
@@ -107,14 +107,14 @@ public func am_command_buffer_encode_signal_event(
     commandBuffer.encodeSignalEvent(event, value: value)
 }
 
-@_cdecl("am_command_encoder_end_encoding")
-public func am_command_encoder_end_encoding(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_command_encoder_end_encoding")
+public func ametal_command_encoder_end_encoding(_ handle: UnsafeMutableRawPointer?) {
     guard let encoder: MTLCommandEncoder = am_borrow(handle) else { return }
     encoder.endEncoding()
 }
 
-@_cdecl("am_blit_command_encoder_copy_buffer")
-public func am_blit_command_encoder_copy_buffer(
+@_cdecl("ametal_blit_command_encoder_copy_buffer")
+public func ametal_blit_command_encoder_copy_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ srcHandle: UnsafeMutableRawPointer?,
     _ srcOffset: Int,
@@ -130,8 +130,8 @@ public func am_blit_command_encoder_copy_buffer(
     return true
 }
 
-@_cdecl("am_blit_command_encoder_fill_buffer")
-public func am_blit_command_encoder_fill_buffer(
+@_cdecl("ametal_blit_command_encoder_fill_buffer")
+public func ametal_blit_command_encoder_fill_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ bufferHandle: UnsafeMutableRawPointer?,
     _ location: Int,
@@ -145,8 +145,8 @@ public func am_blit_command_encoder_fill_buffer(
     return true
 }
 
-@_cdecl("am_blit_command_encoder_sample_counters")
-public func am_blit_command_encoder_sample_counters(
+@_cdecl("ametal_blit_command_encoder_sample_counters")
+public func ametal_blit_command_encoder_sample_counters(
     _ handle: UnsafeMutableRawPointer?,
     _ sampleBufferHandle: UnsafeMutableRawPointer?,
     _ sampleIndex: Int,
@@ -160,8 +160,8 @@ public func am_blit_command_encoder_sample_counters(
     return true
 }
 
-@_cdecl("am_blit_command_encoder_update_fence")
-public func am_blit_command_encoder_update_fence(
+@_cdecl("ametal_blit_command_encoder_update_fence")
+public func ametal_blit_command_encoder_update_fence(
     _ handle: UnsafeMutableRawPointer?,
     _ fenceHandle: UnsafeMutableRawPointer?
 ) {
@@ -171,8 +171,8 @@ public func am_blit_command_encoder_update_fence(
     encoder.updateFence(fence)
 }
 
-@_cdecl("am_blit_command_encoder_wait_for_fence")
-public func am_blit_command_encoder_wait_for_fence(
+@_cdecl("ametal_blit_command_encoder_wait_for_fence")
+public func ametal_blit_command_encoder_wait_for_fence(
     _ handle: UnsafeMutableRawPointer?,
     _ fenceHandle: UnsafeMutableRawPointer?
 ) {
@@ -182,8 +182,8 @@ public func am_blit_command_encoder_wait_for_fence(
     encoder.waitForFence(fence)
 }
 
-@_cdecl("am_blit_command_encoder_synchronize_resource")
-public func am_blit_command_encoder_synchronize_resource(
+@_cdecl("ametal_blit_command_encoder_synchronize_resource")
+public func ametal_blit_command_encoder_synchronize_resource(
     _ handle: UnsafeMutableRawPointer?,
     _ resourceHandle: UnsafeMutableRawPointer?
 ) -> Bool {
@@ -195,8 +195,8 @@ public func am_blit_command_encoder_synchronize_resource(
     return true
 }
 
-@_cdecl("am_compute_command_encoder_set_pipeline_state")
-public func am_compute_command_encoder_set_pipeline_state(
+@_cdecl("ametal_compute_command_encoder_set_pipeline_state")
+public func ametal_compute_command_encoder_set_pipeline_state(
     _ handle: UnsafeMutableRawPointer?,
     _ pipelineHandle: UnsafeMutableRawPointer?
 ) {
@@ -206,8 +206,8 @@ public func am_compute_command_encoder_set_pipeline_state(
     encoder.setComputePipelineState(pipeline)
 }
 
-@_cdecl("am_compute_command_encoder_set_buffer")
-public func am_compute_command_encoder_set_buffer(
+@_cdecl("ametal_compute_command_encoder_set_buffer")
+public func ametal_compute_command_encoder_set_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ bufferHandle: UnsafeMutableRawPointer?,
     _ offset: Int,
@@ -220,8 +220,8 @@ public func am_compute_command_encoder_set_buffer(
     amTrackArgumentBuffer(encoder, buffer: buffer)
 }
 
-@_cdecl("am_compute_command_encoder_set_texture")
-public func am_compute_command_encoder_set_texture(
+@_cdecl("ametal_compute_command_encoder_set_texture")
+public func ametal_compute_command_encoder_set_texture(
     _ handle: UnsafeMutableRawPointer?,
     _ textureHandle: UnsafeMutableRawPointer?,
     _ index: Int
@@ -232,8 +232,8 @@ public func am_compute_command_encoder_set_texture(
     encoder.setTexture(texture, index: index)
 }
 
-@_cdecl("am_compute_command_encoder_set_visible_function_table")
-public func am_compute_command_encoder_set_visible_function_table(
+@_cdecl("ametal_compute_command_encoder_set_visible_function_table")
+public func ametal_compute_command_encoder_set_visible_function_table(
     _ handle: UnsafeMutableRawPointer?,
     _ tableHandle: UnsafeMutableRawPointer?,
     _ index: Int
@@ -245,8 +245,8 @@ public func am_compute_command_encoder_set_visible_function_table(
     encoder.setVisibleFunctionTable(table, bufferIndex: index)
 }
 
-@_cdecl("am_compute_command_encoder_set_intersection_function_table")
-public func am_compute_command_encoder_set_intersection_function_table(
+@_cdecl("ametal_compute_command_encoder_set_intersection_function_table")
+public func ametal_compute_command_encoder_set_intersection_function_table(
     _ handle: UnsafeMutableRawPointer?,
     _ tableHandle: UnsafeMutableRawPointer?,
     _ index: Int
@@ -258,8 +258,8 @@ public func am_compute_command_encoder_set_intersection_function_table(
     encoder.setIntersectionFunctionTable(table, bufferIndex: index)
 }
 
-@_cdecl("am_compute_command_encoder_set_acceleration_structure")
-public func am_compute_command_encoder_set_acceleration_structure(
+@_cdecl("ametal_compute_command_encoder_set_acceleration_structure")
+public func ametal_compute_command_encoder_set_acceleration_structure(
     _ handle: UnsafeMutableRawPointer?,
     _ accelerationStructureHandle: UnsafeMutableRawPointer?,
     _ index: Int
@@ -271,8 +271,8 @@ public func am_compute_command_encoder_set_acceleration_structure(
     encoder.setAccelerationStructure(accelerationStructure, bufferIndex: index)
 }
 
-@_cdecl("am_compute_command_encoder_dispatch_threadgroups")
-public func am_compute_command_encoder_dispatch_threadgroups(
+@_cdecl("ametal_compute_command_encoder_dispatch_threadgroups")
+public func ametal_compute_command_encoder_dispatch_threadgroups(
     _ handle: UnsafeMutableRawPointer?,
     _ tgW: Int,
     _ tgH: Int,
@@ -289,8 +289,8 @@ public func am_compute_command_encoder_dispatch_threadgroups(
     )
 }
 
-@_cdecl("am_compute_command_encoder_dispatch_threads")
-public func am_compute_command_encoder_dispatch_threads(
+@_cdecl("ametal_compute_command_encoder_dispatch_threads")
+public func ametal_compute_command_encoder_dispatch_threads(
     _ handle: UnsafeMutableRawPointer?,
     _ gridW: Int,
     _ gridH: Int,
@@ -307,8 +307,8 @@ public func am_compute_command_encoder_dispatch_threads(
     )
 }
 
-@_cdecl("am_compute_command_encoder_update_fence")
-public func am_compute_command_encoder_update_fence(
+@_cdecl("ametal_compute_command_encoder_update_fence")
+public func ametal_compute_command_encoder_update_fence(
     _ handle: UnsafeMutableRawPointer?,
     _ fenceHandle: UnsafeMutableRawPointer?
 ) {
@@ -318,8 +318,8 @@ public func am_compute_command_encoder_update_fence(
     encoder.updateFence(fence)
 }
 
-@_cdecl("am_compute_command_encoder_wait_for_fence")
-public func am_compute_command_encoder_wait_for_fence(
+@_cdecl("ametal_compute_command_encoder_wait_for_fence")
+public func ametal_compute_command_encoder_wait_for_fence(
     _ handle: UnsafeMutableRawPointer?,
     _ fenceHandle: UnsafeMutableRawPointer?
 ) {
@@ -329,8 +329,8 @@ public func am_compute_command_encoder_wait_for_fence(
     encoder.waitForFence(fence)
 }
 
-@_cdecl("am_render_command_encoder_set_render_pipeline_state")
-public func am_render_command_encoder_set_render_pipeline_state(
+@_cdecl("ametal_render_command_encoder_set_render_pipeline_state")
+public func ametal_render_command_encoder_set_render_pipeline_state(
     _ handle: UnsafeMutableRawPointer?,
     _ pipelineHandle: UnsafeMutableRawPointer?
 ) {
@@ -340,8 +340,8 @@ public func am_render_command_encoder_set_render_pipeline_state(
     encoder.setRenderPipelineState(pipeline)
 }
 
-@_cdecl("am_render_command_encoder_set_vertex_buffer")
-public func am_render_command_encoder_set_vertex_buffer(
+@_cdecl("ametal_render_command_encoder_set_vertex_buffer")
+public func ametal_render_command_encoder_set_vertex_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ bufferHandle: UnsafeMutableRawPointer?,
     _ offset: Int,
@@ -354,8 +354,8 @@ public func am_render_command_encoder_set_vertex_buffer(
     amTrackArgumentBuffer(encoder, buffer: buffer)
 }
 
-@_cdecl("am_render_command_encoder_draw_primitives")
-public func am_render_command_encoder_draw_primitives(
+@_cdecl("ametal_render_command_encoder_draw_primitives")
+public func ametal_render_command_encoder_draw_primitives(
     _ handle: UnsafeMutableRawPointer?,
     _ primitiveType: Int,
     _ vertexStart: Int,
@@ -370,8 +370,8 @@ public func am_render_command_encoder_draw_primitives(
     )
 }
 
-@_cdecl("am_render_command_encoder_update_fence")
-public func am_render_command_encoder_update_fence(
+@_cdecl("ametal_render_command_encoder_update_fence")
+public func ametal_render_command_encoder_update_fence(
     _ handle: UnsafeMutableRawPointer?,
     _ fenceHandle: UnsafeMutableRawPointer?
 ) {
@@ -383,8 +383,8 @@ public func am_render_command_encoder_update_fence(
     }
 }
 
-@_cdecl("am_render_command_encoder_wait_for_fence")
-public func am_render_command_encoder_wait_for_fence(
+@_cdecl("ametal_render_command_encoder_wait_for_fence")
+public func ametal_render_command_encoder_wait_for_fence(
     _ handle: UnsafeMutableRawPointer?,
     _ fenceHandle: UnsafeMutableRawPointer?
 ) {

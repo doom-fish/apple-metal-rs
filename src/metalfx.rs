@@ -12,7 +12,7 @@ macro_rules! opaque_metalfx_handle {
         impl Drop for $name {
             fn drop(&mut self) {
                 if !self.ptr.is_null() {
-                    unsafe { ffi::am_object_release(self.ptr) };
+                    unsafe { ffi::ametal_object_release(self.ptr) };
                     self.ptr = core::ptr::null_mut();
                 }
             }
@@ -93,7 +93,7 @@ impl SpatialScalerDescriptor {
     /// Query whether the given device supports `MetalFX` spatial scaling.
     #[must_use]
     pub fn supports_device(device: &MetalDevice) -> bool {
-        unsafe { ffi::am_spatial_scaler_supports_device(device.as_ptr()) }
+        unsafe { ffi::ametal_spatial_scaler_supports_device(device.as_ptr()) }
     }
 }
 
@@ -166,19 +166,19 @@ impl TemporalScalerDescriptor {
     /// Query whether the given device supports `MetalFX` temporal scaling.
     #[must_use]
     pub fn supports_device(device: &MetalDevice) -> bool {
-        unsafe { ffi::am_temporal_scaler_supports_device(device.as_ptr()) }
+        unsafe { ffi::ametal_temporal_scaler_supports_device(device.as_ptr()) }
     }
 
     /// Query the smallest supported temporal scale factor for a device.
     #[must_use]
     pub fn supported_input_content_min_scale(device: &MetalDevice) -> f32 {
-        unsafe { ffi::am_temporal_scaler_supported_input_content_min_scale(device.as_ptr()) }
+        unsafe { ffi::ametal_temporal_scaler_supported_input_content_min_scale(device.as_ptr()) }
     }
 
     /// Query the largest supported temporal scale factor for a device.
     #[must_use]
     pub fn supported_input_content_max_scale(device: &MetalDevice) -> f32 {
-        unsafe { ffi::am_temporal_scaler_supported_input_content_max_scale(device.as_ptr()) }
+        unsafe { ffi::ametal_temporal_scaler_supported_input_content_max_scale(device.as_ptr()) }
     }
 }
 
@@ -261,7 +261,7 @@ impl MetalDevice {
         descriptor: &SpatialScalerDescriptor,
     ) -> Option<SpatialScaler> {
         SpatialScaler::wrap(unsafe {
-            ffi::am_device_new_spatial_scaler(
+            ffi::ametal_device_new_spatial_scaler(
                 self.as_ptr(),
                 descriptor.color_texture_format,
                 descriptor.output_texture_format,
@@ -281,7 +281,7 @@ impl MetalDevice {
         descriptor: &TemporalScalerDescriptor,
     ) -> Option<TemporalScaler> {
         TemporalScaler::wrap(unsafe {
-            ffi::am_device_new_temporal_scaler(
+            ffi::ametal_device_new_temporal_scaler(
                 self.as_ptr(),
                 descriptor.color_texture_format,
                 descriptor.depth_texture_format,
@@ -308,13 +308,13 @@ impl SpatialScaler {
     /// Required texture usage bits for the input color texture.
     #[must_use]
     pub fn color_texture_usage(&self) -> usize {
-        unsafe { ffi::am_spatial_scaler_texture_usage(self.as_ptr(), 0) }
+        unsafe { ffi::ametal_spatial_scaler_texture_usage(self.as_ptr(), 0) }
     }
 
     /// Required texture usage bits for the output texture.
     #[must_use]
     pub fn output_texture_usage(&self) -> usize {
-        unsafe { ffi::am_spatial_scaler_texture_usage(self.as_ptr(), 1) }
+        unsafe { ffi::ametal_spatial_scaler_texture_usage(self.as_ptr(), 1) }
     }
 
     /// Configure the textures and content size for one upscaling pass.
@@ -327,7 +327,7 @@ impl SpatialScaler {
         fence: Option<&Fence>,
     ) {
         unsafe {
-            ffi::am_spatial_scaler_configure(
+            ffi::ametal_spatial_scaler_configure(
                 self.as_ptr(),
                 input_content_width,
                 input_content_height,
@@ -344,7 +344,7 @@ impl SpatialScaler {
         command_buffer: &CommandBuffer,
     ) -> Result<(), CommandBufferError> {
         command_buffer.encode_without_encoder("encode spatial scaler", || unsafe {
-            ffi::am_spatial_scaler_encode(self.as_ptr(), command_buffer.as_ptr());
+            ffi::ametal_spatial_scaler_encode(self.as_ptr(), command_buffer.as_ptr());
         })
     }
 }
@@ -352,7 +352,7 @@ impl SpatialScaler {
 #[allow(clippy::missing_errors_doc)]
 impl TemporalScaler {
     fn texture_usage(&self, kind: usize) -> usize {
-        unsafe { ffi::am_temporal_scaler_texture_usage(self.as_ptr(), kind) }
+        unsafe { ffi::ametal_temporal_scaler_texture_usage(self.as_ptr(), kind) }
     }
 
     /// Required texture usage bits for the color input texture.
@@ -388,7 +388,7 @@ impl TemporalScaler {
     /// Bind the textures and optional fence used by this temporal scaler.
     pub fn set_textures(&self, textures: TemporalScalerTextures<'_>) {
         unsafe {
-            ffi::am_temporal_scaler_set_textures(
+            ffi::ametal_temporal_scaler_set_textures(
                 self.as_ptr(),
                 textures.color_texture.as_ptr(),
                 textures.depth_texture.as_ptr(),
@@ -408,7 +408,7 @@ impl TemporalScaler {
     /// Update the temporal scaler's per-frame motion, exposure, and jitter state.
     pub fn set_frame_state(&self, frame_state: TemporalScalerFrameState) {
         unsafe {
-            ffi::am_temporal_scaler_set_frame_state(
+            ffi::ametal_temporal_scaler_set_frame_state(
                 self.as_ptr(),
                 frame_state.input_content_width,
                 frame_state.input_content_height,
@@ -429,7 +429,7 @@ impl TemporalScaler {
         command_buffer: &CommandBuffer,
     ) -> Result<(), CommandBufferError> {
         command_buffer.encode_without_encoder("encode temporal scaler", || unsafe {
-            ffi::am_temporal_scaler_encode(self.as_ptr(), command_buffer.as_ptr());
+            ffi::ametal_temporal_scaler_encode(self.as_ptr(), command_buffer.as_ptr());
         })
     }
 }

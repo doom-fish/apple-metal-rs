@@ -145,7 +145,7 @@ fn argument_encoders_can_encode_function_and_descriptor_layouts() {
         .wait_until_completed()
         .expect("complete retained-resource command");
     let retained_value = unsafe {
-        apple_metal::ffi::am_buffer_contents(retained_storage_pointer)
+        apple_metal::ffi::ametal_buffer_contents(retained_storage_pointer)
             .cast::<u32>()
             .read()
     };

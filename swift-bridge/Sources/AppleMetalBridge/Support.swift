@@ -56,13 +56,13 @@ public func am_make_texture_descriptor(
     return descriptor
 }
 
-@_cdecl("am_object_release")
-public func am_object_release(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_object_release")
+public func ametal_object_release(_ handle: UnsafeMutableRawPointer?) {
     am_release(handle)
 }
 
-@_cdecl("am_object_copy_label")
-public func am_object_copy_label(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutablePointer<CChar>? {
+@_cdecl("ametal_object_copy_label")
+public func ametal_object_copy_label(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutablePointer<CChar>? {
     if let value: MTLRenderPipelineState = am_borrow(handle) {
         return am_copy_string(value.label)
     }

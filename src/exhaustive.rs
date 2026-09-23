@@ -30,7 +30,7 @@ macro_rules! opaque_symbol_handle {
         impl Drop for $name {
             fn drop(&mut self) {
                 if !self.ptr.is_null() {
-                    unsafe { ffi::am_object_release(self.ptr) };
+                    unsafe { ffi::ametal_object_release(self.ptr) };
                     self.ptr = ptr::null_mut();
                 }
             }
@@ -68,7 +68,7 @@ macro_rules! opaque_symbol_handle {
 /// Calls the `Metal` framework counterpart for `label`.
             #[must_use]
             pub fn label(&self) -> Option<String> {
-                unsafe { take_optional_string(ffi::am_object_copy_label(self.ptr)) }
+                unsafe { take_optional_string(ffi::ametal_object_copy_label(self.ptr)) }
             }
         }
     };
@@ -87,7 +87,7 @@ macro_rules! opaque_symbol_class {
             #[must_use]
             pub fn new() -> Option<Self> {
                 Self::wrap(unsafe {
-                    ffi::am_new_class_instance(concat!($objc, "\0").as_ptr().cast())
+                    ffi::ametal_new_class_instance(concat!($objc, "\0").as_ptr().cast())
                 })
             }
         }
@@ -126,7 +126,7 @@ macro_rules! metal_string_constant {
         pub fn $name() -> Option<String> {
             unsafe {
                 take_optional_string(
-                    ffi::am_copy_metal_string_constant(concat!($symbol, "\0").as_ptr().cast()),
+                    ffi::ametal_copy_metal_string_constant(concat!($symbol, "\0").as_ptr().cast()),
                 )
             }
         }
@@ -134,7 +134,7 @@ macro_rules! metal_string_constant {
 }
 
 /// Consume a heap-allocated array of retained device pointers produced by
-/// `am_copy_all_devices`, wrapping each into a [`MetalDevice`] and freeing
+/// `ametal_copy_all_devices`, wrapping each into a [`MetalDevice`] and freeing
 /// the array allocation.
 ///
 /// # Safety
@@ -513,7 +513,7 @@ pub type MetalDeviceObserverCallback = unsafe extern "C" fn(
 impl MetalDeviceObserver {
     /// Calls the `Metal` framework counterpart for `remove`.
     pub fn remove(&self) {
-        unsafe { ffi::am_remove_device_observer(self.as_ptr()) };
+        unsafe { ffi::ametal_remove_device_observer(self.as_ptr()) };
     }
 }
 
@@ -521,7 +521,7 @@ impl MetalDeviceObserver {
 #[must_use]
 pub fn copy_all_devices() -> Vec<MetalDevice> {
     let mut count = 0;
-    let ptr = unsafe { ffi::am_copy_all_devices(&raw mut count) };
+    let ptr = unsafe { ffi::ametal_copy_all_devices(&raw mut count) };
     unsafe { take_device_array(ptr, count) }
 }
 
@@ -540,7 +540,7 @@ pub unsafe fn copy_all_devices_with_observer(
 ) -> (Vec<MetalDevice>, Option<MetalDeviceObserver>) {
     let mut count = 0;
     let mut observer = ptr::null_mut();
-    let ptr = ffi::am_copy_all_devices_with_observer(
+    let ptr = ffi::ametal_copy_all_devices_with_observer(
         &raw mut count,
         &raw mut observer,
         callback,
@@ -565,7 +565,7 @@ pub struct MetalIoCompressionContext {
 impl Drop for MetalIoCompressionContext {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            unsafe { ffi::am_io_flush_and_destroy_compression_context(self.ptr) };
+            unsafe { ffi::ametal_io_flush_and_destroy_compression_context(self.ptr) };
             self.ptr = ptr::null_mut();
         }
     }
@@ -594,14 +594,14 @@ impl MetalIoCompressionContext {
     /// Calls the `Metal` framework counterpart for `append_data`.
     pub fn append_data(&self, data: &[u8]) {
         unsafe {
-            ffi::am_io_compression_context_append_data(self.ptr, data.as_ptr(), data.len());
+            ffi::ametal_io_compression_context_append_data(self.ptr, data.as_ptr(), data.len());
         }
     }
 
     /// Calls the `Metal` framework counterpart for `flush_and_destroy`.
     #[must_use]
     pub fn flush_and_destroy(mut self) -> MetalIoCompressionStatus {
-        let status = unsafe { ffi::am_io_flush_and_destroy_compression_context(self.ptr) };
+        let status = unsafe { ffi::ametal_io_flush_and_destroy_compression_context(self.ptr) };
         self.ptr = ptr::null_mut();
         MetalIoCompressionStatus::from_raw(status)
     }
@@ -610,7 +610,7 @@ impl MetalIoCompressionContext {
 /// Calls the `Metal` framework counterpart for `io_compression_context_default_chunk_size`.
 #[must_use]
 pub fn io_compression_context_default_chunk_size() -> usize {
-    unsafe { ffi::am_io_compression_context_default_chunk_size() }
+    unsafe { ffi::ametal_io_compression_context_default_chunk_size() }
 }
 
 /// Calls the `Metal` framework counterpart for `create_io_compression_context`.
@@ -623,7 +623,7 @@ pub fn create_io_compression_context(
     let path = c_string(path.to_string_lossy().as_ref()).ok()?;
     let chunk_size = chunk_size.unwrap_or_else(io_compression_context_default_chunk_size);
     let ptr = unsafe {
-        ffi::am_io_create_compression_context(path.as_ptr(), method.as_raw(), chunk_size)
+        ffi::ametal_io_create_compression_context(path.as_ptr(), method.as_raw(), chunk_size)
     };
     if ptr.is_null() {
         None

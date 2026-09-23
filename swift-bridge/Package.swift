@@ -2,19 +2,19 @@
 import PackageDescription
 
 let package = Package(
-    name: "AppleMetalBridge",
+    name: "AppleMetalSwiftBridge",
     platforms: [
         .macOS(.v11)
     ],
     products: [
         .library(
-            name: "AppleMetalBridge",
+            name: "AppleMetalSwiftBridge",
             type: .static,
-            targets: ["AppleMetalBridge"])
+            targets: ["AppleMetalSwiftBridge"])
     ],
     targets: [
         .target(
-            name: "AppleMetalBridge",
+            name: "AppleMetalSwiftBridge",
             path: "Sources/AppleMetalBridge")
     ]
 )

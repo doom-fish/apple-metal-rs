@@ -3,8 +3,8 @@
 import Foundation
 import Metal
 
-@_cdecl("am_device_new_library_with_source")
-public func am_device_new_library_with_source(
+@_cdecl("ametal_device_new_library_with_source")
+public func ametal_device_new_library_with_source(
     _ device_handle: UnsafeMutableRawPointer?,
     _ source: UnsafePointer<CChar>?,
     _ out_error_message: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
@@ -22,11 +22,11 @@ public func am_device_new_library_with_source(
     }
 }
 
-@_cdecl("am_library_release")
-public func am_library_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
+@_cdecl("ametal_library_release")
+public func ametal_library_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
 
-@_cdecl("am_library_new_function")
-public func am_library_new_function(
+@_cdecl("ametal_library_new_function")
+public func ametal_library_new_function(
     _ lib_handle: UnsafeMutableRawPointer?,
     _ name: UnsafePointer<CChar>?
 ) -> UnsafeMutableRawPointer? {
@@ -36,11 +36,11 @@ public func am_library_new_function(
     return am_retain(fn as AnyObject)
 }
 
-@_cdecl("am_function_release")
-public func am_function_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
+@_cdecl("ametal_function_release")
+public func ametal_function_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
 
-@_cdecl("am_device_new_compute_pipeline_state")
-public func am_device_new_compute_pipeline_state(
+@_cdecl("ametal_device_new_compute_pipeline_state")
+public func ametal_device_new_compute_pipeline_state(
     _ device_handle: UnsafeMutableRawPointer?,
     _ fn_handle: UnsafeMutableRawPointer?,
     _ out_error_message: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
@@ -59,13 +59,13 @@ public func am_device_new_compute_pipeline_state(
     }
 }
 
-@_cdecl("am_compute_pipeline_state_release")
-public func am_compute_pipeline_state_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
+@_cdecl("ametal_compute_pipeline_state_release")
+public func ametal_compute_pipeline_state_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
 
 /// Dispatch a 1-D compute kernel: bind `pso`, set up to N buffers,
 /// dispatch `threadgroups`x1x1 of `threads_per_group`x1x1 threads.
-@_cdecl("am_command_buffer_dispatch_compute_1d")
-public func am_command_buffer_dispatch_compute_1d(
+@_cdecl("ametal_command_buffer_dispatch_compute_1d")
+public func ametal_command_buffer_dispatch_compute_1d(
     _ cb_handle: UnsafeMutableRawPointer?,
     _ pso_handle: UnsafeMutableRawPointer?,
     _ buffers: UnsafePointer<UnsafeMutableRawPointer?>?,

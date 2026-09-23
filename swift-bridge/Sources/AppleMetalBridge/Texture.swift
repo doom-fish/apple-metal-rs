@@ -6,8 +6,8 @@ import Metal
 import IOSurface
 #endif
 
-@_cdecl("am_device_new_texture_2d")
-public func am_device_new_texture_2d(
+@_cdecl("ametal_device_new_texture_2d")
+public func ametal_device_new_texture_2d(
     _ device_handle: UnsafeMutableRawPointer?,
     _ pixel_format: Int,
     _ width: Int,
@@ -38,36 +38,36 @@ public func am_device_new_texture_2d(
     return am_retain(tex as AnyObject)
 }
 
-@_cdecl("am_texture_release")
-public func am_texture_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
+@_cdecl("ametal_texture_release")
+public func ametal_texture_release(_ handle: UnsafeMutableRawPointer?) { am_release(handle) }
 
-@_cdecl("am_texture_width")
-public func am_texture_width(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_texture_width")
+public func ametal_texture_width(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let t: MTLTexture = am_borrow(handle) else { return 0 }
     return t.width
 }
 
-@_cdecl("am_texture_height")
-public func am_texture_height(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_texture_height")
+public func ametal_texture_height(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let t: MTLTexture = am_borrow(handle) else { return 0 }
     return t.height
 }
 
-@_cdecl("am_texture_pixel_format")
-public func am_texture_pixel_format(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_texture_pixel_format")
+public func ametal_texture_pixel_format(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let t: MTLTexture = am_borrow(handle) else { return 0 }
     return Int(t.pixelFormat.rawValue)
 }
 
-@_cdecl("am_texture_type")
-public func am_texture_type(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_texture_type")
+public func ametal_texture_type(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let t: MTLTexture = am_borrow(handle) else { return 0 }
     return Int(t.textureType.rawValue)
 }
 
 #if canImport(IOSurface)
-@_cdecl("am_device_new_texture_from_iosurface")
-public func am_device_new_texture_from_iosurface(
+@_cdecl("ametal_device_new_texture_from_iosurface")
+public func ametal_device_new_texture_from_iosurface(
     _ device_handle: UnsafeMutableRawPointer?,
     _ iosurface_ptr: UnsafeMutableRawPointer?,
     _ plane_index: Int,

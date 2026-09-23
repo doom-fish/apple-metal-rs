@@ -24,8 +24,8 @@ private func am_make_stencil_descriptor(
     return descriptor
 }
 
-@_cdecl("am_device_new_depth_stencil_state")
-public func am_device_new_depth_stencil_state(
+@_cdecl("ametal_device_new_depth_stencil_state")
+public func ametal_device_new_depth_stencil_state(
     _ deviceHandle: UnsafeMutableRawPointer?,
     _ depthCompareFunction: UInt,
     _ depthWriteEnabled: Bool,
@@ -82,8 +82,8 @@ public func am_device_new_depth_stencil_state(
     return am_retain(state as AnyObject)
 }
 
-@_cdecl("am_device_new_sampler_state")
-public func am_device_new_sampler_state(
+@_cdecl("ametal_device_new_sampler_state")
+public func ametal_device_new_sampler_state(
     _ deviceHandle: UnsafeMutableRawPointer?,
     _ minFilter: UInt,
     _ magFilter: UInt,
@@ -135,8 +135,8 @@ public func am_device_new_sampler_state(
     return am_retain(sampler as AnyObject)
 }
 
-@_cdecl("am_compute_command_encoder_set_sampler_state")
-public func am_compute_command_encoder_set_sampler_state(
+@_cdecl("ametal_compute_command_encoder_set_sampler_state")
+public func ametal_compute_command_encoder_set_sampler_state(
     _ handle: UnsafeMutableRawPointer?,
     _ samplerHandle: UnsafeMutableRawPointer?,
     _ index: Int
@@ -147,8 +147,8 @@ public func am_compute_command_encoder_set_sampler_state(
     encoder.setSamplerState(sampler, index: index)
 }
 
-@_cdecl("am_render_command_encoder_set_fragment_sampler_state")
-public func am_render_command_encoder_set_fragment_sampler_state(
+@_cdecl("ametal_render_command_encoder_set_fragment_sampler_state")
+public func ametal_render_command_encoder_set_fragment_sampler_state(
     _ handle: UnsafeMutableRawPointer?,
     _ samplerHandle: UnsafeMutableRawPointer?,
     _ index: Int
@@ -159,8 +159,8 @@ public func am_render_command_encoder_set_fragment_sampler_state(
     encoder.setFragmentSamplerState(sampler, index: index)
 }
 
-@_cdecl("am_render_command_encoder_set_depth_stencil_state")
-public func am_render_command_encoder_set_depth_stencil_state(
+@_cdecl("ametal_render_command_encoder_set_depth_stencil_state")
+public func ametal_render_command_encoder_set_depth_stencil_state(
     _ handle: UnsafeMutableRawPointer?,
     _ depthStencilStateHandle: UnsafeMutableRawPointer?
 ) {

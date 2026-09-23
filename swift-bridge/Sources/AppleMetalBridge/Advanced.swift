@@ -1,44 +1,44 @@
 import Foundation
 import Metal
 
-@_cdecl("am_device_name")
-public func am_device_name(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutablePointer<CChar>? {
+@_cdecl("ametal_device_name")
+public func ametal_device_name(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutablePointer<CChar>? {
     guard let device: MTLDevice = am_borrow(handle) else { return nil }
     return am_copy_string(device.name)
 }
 
-@_cdecl("am_device_registry_id")
-public func am_device_registry_id(_ handle: UnsafeMutableRawPointer?) -> UInt64 {
+@_cdecl("ametal_device_registry_id")
+public func ametal_device_registry_id(_ handle: UnsafeMutableRawPointer?) -> UInt64 {
     guard let device: MTLDevice = am_borrow(handle) else { return 0 }
     return device.registryID
 }
 
-@_cdecl("am_device_supports_dynamic_libraries")
-public func am_device_supports_dynamic_libraries(_ handle: UnsafeMutableRawPointer?) -> Bool {
+@_cdecl("ametal_device_supports_dynamic_libraries")
+public func ametal_device_supports_dynamic_libraries(_ handle: UnsafeMutableRawPointer?) -> Bool {
     guard #available(macOS 11.0, *),
           let device: MTLDevice = am_borrow(handle)
     else { return false }
     return device.supportsDynamicLibraries
 }
 
-@_cdecl("am_device_supports_render_dynamic_libraries")
-public func am_device_supports_render_dynamic_libraries(_ handle: UnsafeMutableRawPointer?) -> Bool {
+@_cdecl("ametal_device_supports_render_dynamic_libraries")
+public func ametal_device_supports_render_dynamic_libraries(_ handle: UnsafeMutableRawPointer?) -> Bool {
     guard #available(macOS 12.0, *),
           let device: MTLDevice = am_borrow(handle)
     else { return false }
     return device.supportsRenderDynamicLibraries
 }
 
-@_cdecl("am_device_supports_raytracing")
-public func am_device_supports_raytracing(_ handle: UnsafeMutableRawPointer?) -> Bool {
+@_cdecl("ametal_device_supports_raytracing")
+public func ametal_device_supports_raytracing(_ handle: UnsafeMutableRawPointer?) -> Bool {
     guard #available(macOS 11.0, *),
           let device: MTLDevice = am_borrow(handle)
     else { return false }
     return device.supportsRaytracing
 }
 
-@_cdecl("am_device_supports_counter_sampling")
-public func am_device_supports_counter_sampling(
+@_cdecl("ametal_device_supports_counter_sampling")
+public func ametal_device_supports_counter_sampling(
     _ handle: UnsafeMutableRawPointer?,
     _ samplingPoint: Int
 ) -> Bool {
@@ -49,8 +49,8 @@ public func am_device_supports_counter_sampling(
     return device.supportsCounterSampling(point)
 }
 
-@_cdecl("am_device_counter_set_count")
-public func am_device_counter_set_count(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_device_counter_set_count")
+public func ametal_device_counter_set_count(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard #available(macOS 10.15, *),
           let device: MTLDevice = am_borrow(handle),
           let counterSets = device.counterSets
@@ -58,8 +58,8 @@ public func am_device_counter_set_count(_ handle: UnsafeMutableRawPointer?) -> I
     return counterSets.count
 }
 
-@_cdecl("am_device_counter_set_name_at")
-public func am_device_counter_set_name_at(
+@_cdecl("ametal_device_counter_set_name_at")
+public func ametal_device_counter_set_name_at(
     _ handle: UnsafeMutableRawPointer?,
     _ index: Int
 ) -> UnsafeMutablePointer<CChar>? {
@@ -72,8 +72,8 @@ public func am_device_counter_set_name_at(
     return am_copy_string(counterSets[index].name)
 }
 
-@_cdecl("am_device_new_command_queue_with_max_command_buffer_count")
-public func am_device_new_command_queue_with_max_command_buffer_count(
+@_cdecl("ametal_device_new_command_queue_with_max_command_buffer_count")
+public func ametal_device_new_command_queue_with_max_command_buffer_count(
     _ handle: UnsafeMutableRawPointer?,
     _ maxCommandBufferCount: Int
 ) -> UnsafeMutableRawPointer? {
@@ -84,8 +84,8 @@ public func am_device_new_command_queue_with_max_command_buffer_count(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_device_new_command_queue_with_log_state")
-public func am_device_new_command_queue_with_log_state(
+@_cdecl("ametal_device_new_command_queue_with_log_state")
+public func ametal_device_new_command_queue_with_log_state(
     _ handle: UnsafeMutableRawPointer?,
     _ maxCommandBufferCount: Int,
     _ logStateHandle: UnsafeMutableRawPointer?
@@ -104,8 +104,8 @@ public func am_device_new_command_queue_with_log_state(
     return am_retain(queue as AnyObject)
 }
 
-@_cdecl("am_device_new_heap")
-public func am_device_new_heap(
+@_cdecl("ametal_device_new_heap")
+public func ametal_device_new_heap(
     _ handle: UnsafeMutableRawPointer?,
     _ size: Int,
     _ storageMode: Int
@@ -118,24 +118,24 @@ public func am_device_new_heap(
     return am_retain(heap as AnyObject)
 }
 
-@_cdecl("am_device_new_fence")
-public func am_device_new_fence(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+@_cdecl("ametal_device_new_fence")
+public func ametal_device_new_fence(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
     guard let device: MTLDevice = am_borrow(handle),
           let fence = device.makeFence()
     else { return nil }
     return am_retain(fence as AnyObject)
 }
 
-@_cdecl("am_device_new_shared_event")
-public func am_device_new_shared_event(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+@_cdecl("ametal_device_new_shared_event")
+public func ametal_device_new_shared_event(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
     guard let device: MTLDevice = am_borrow(handle),
           let event = device.makeSharedEvent()
     else { return nil }
     return am_retain(event as AnyObject)
 }
 
-@_cdecl("am_device_new_dynamic_library_with_source")
-public func am_device_new_dynamic_library_with_source(
+@_cdecl("ametal_device_new_dynamic_library_with_source")
+public func ametal_device_new_dynamic_library_with_source(
     _ handle: UnsafeMutableRawPointer?,
     _ source: UnsafePointer<CChar>?,
     _ installName: UnsafePointer<CChar>?,
@@ -161,8 +161,8 @@ public func am_device_new_dynamic_library_with_source(
     }
 }
 
-@_cdecl("am_device_new_dynamic_library_with_url")
-public func am_device_new_dynamic_library_with_url(
+@_cdecl("ametal_device_new_dynamic_library_with_url")
+public func ametal_device_new_dynamic_library_with_url(
     _ handle: UnsafeMutableRawPointer?,
     _ path: UnsafePointer<CChar>?,
     _ outErrorMessage: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
@@ -181,8 +181,8 @@ public func am_device_new_dynamic_library_with_url(
     }
 }
 
-@_cdecl("am_device_new_binary_archive")
-public func am_device_new_binary_archive(
+@_cdecl("ametal_device_new_binary_archive")
+public func ametal_device_new_binary_archive(
     _ handle: UnsafeMutableRawPointer?,
     _ path: UnsafePointer<CChar>?,
     _ outErrorMessage: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
@@ -203,8 +203,8 @@ public func am_device_new_binary_archive(
     }
 }
 
-@_cdecl("am_device_new_indirect_command_buffer")
-public func am_device_new_indirect_command_buffer(
+@_cdecl("ametal_device_new_indirect_command_buffer")
+public func ametal_device_new_indirect_command_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ commandTypes: UInt,
     _ maxCommandCount: Int,
@@ -237,8 +237,8 @@ public func am_device_new_indirect_command_buffer(
     return am_retain(buffer as AnyObject)
 }
 
-@_cdecl("am_device_new_acceleration_structure_with_size")
-public func am_device_new_acceleration_structure_with_size(
+@_cdecl("ametal_device_new_acceleration_structure_with_size")
+public func ametal_device_new_acceleration_structure_with_size(
     _ handle: UnsafeMutableRawPointer?,
     _ size: Int
 ) -> UnsafeMutableRawPointer? {
@@ -249,8 +249,8 @@ public func am_device_new_acceleration_structure_with_size(
     return am_retain(accelerationStructure as AnyObject)
 }
 
-@_cdecl("am_device_new_counter_sample_buffer")
-public func am_device_new_counter_sample_buffer(
+@_cdecl("ametal_device_new_counter_sample_buffer")
+public func ametal_device_new_counter_sample_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ counterSetName: UnsafePointer<CChar>?,
     _ sampleCount: Int,
@@ -288,8 +288,8 @@ public func am_device_new_counter_sample_buffer(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_device_new_log_state")
-public func am_device_new_log_state(
+@_cdecl("ametal_device_new_log_state")
+public func ametal_device_new_log_state(
     _ handle: UnsafeMutableRawPointer?,
     _ level: UInt,
     _ bufferSize: Int,
@@ -313,8 +313,8 @@ public func am_device_new_log_state(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_device_new_residency_set")
-public func am_device_new_residency_set(
+@_cdecl("ametal_device_new_residency_set")
+public func ametal_device_new_residency_set(
     _ handle: UnsafeMutableRawPointer?,
     _ label: UnsafePointer<CChar>?,
     _ initialCapacity: Int,
@@ -340,8 +340,8 @@ public func am_device_new_residency_set(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_command_queue_add_residency_set")
-public func am_command_queue_add_residency_set(
+@_cdecl("ametal_command_queue_add_residency_set")
+public func ametal_command_queue_add_residency_set(
     _ handle: UnsafeMutableRawPointer?,
     _ residencySetHandle: UnsafeMutableRawPointer?
 ) {
@@ -353,8 +353,8 @@ public func am_command_queue_add_residency_set(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_command_queue_remove_residency_set")
-public func am_command_queue_remove_residency_set(
+@_cdecl("ametal_command_queue_remove_residency_set")
+public func ametal_command_queue_remove_residency_set(
     _ handle: UnsafeMutableRawPointer?,
     _ residencySetHandle: UnsafeMutableRawPointer?
 ) {
@@ -365,8 +365,8 @@ public func am_command_queue_remove_residency_set(
     queue.removeResidencySet(residencySet)
 }
 
-@_cdecl("am_buffer_did_modify_range")
-public func am_buffer_did_modify_range(
+@_cdecl("ametal_buffer_did_modify_range")
+public func ametal_buffer_did_modify_range(
     _ handle: UnsafeMutableRawPointer?,
     _ location: Int,
     _ length: Int
@@ -375,8 +375,8 @@ public func am_buffer_did_modify_range(
     buffer.didModifyRange(location..<(location + length))
 }
 
-@_cdecl("am_buffer_new_texture_view_2d")
-public func am_buffer_new_texture_view_2d(
+@_cdecl("ametal_buffer_new_texture_view_2d")
+public func ametal_buffer_new_texture_view_2d(
     _ handle: UnsafeMutableRawPointer?,
     _ pixelFormat: Int,
     _ width: Int,
@@ -399,32 +399,32 @@ public func am_buffer_new_texture_view_2d(
     return am_retain(texture as AnyObject)
 }
 
-@_cdecl("am_texture_depth")
-public func am_texture_depth(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_texture_depth")
+public func ametal_texture_depth(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let texture: MTLTexture = am_borrow(handle) else { return 0 }
     return texture.depth
 }
 
-@_cdecl("am_texture_mipmap_level_count")
-public func am_texture_mipmap_level_count(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_texture_mipmap_level_count")
+public func ametal_texture_mipmap_level_count(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let texture: MTLTexture = am_borrow(handle) else { return 0 }
     return texture.mipmapLevelCount
 }
 
-@_cdecl("am_texture_array_length")
-public func am_texture_array_length(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_texture_array_length")
+public func ametal_texture_array_length(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let texture: MTLTexture = am_borrow(handle) else { return 0 }
     return texture.arrayLength
 }
 
-@_cdecl("am_texture_usage")
-public func am_texture_usage(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_texture_usage")
+public func ametal_texture_usage(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let texture: MTLTexture = am_borrow(handle) else { return 0 }
     return Int(texture.usage.rawValue)
 }
 
-@_cdecl("am_texture_storage_mode")
-public func am_texture_storage_mode(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_texture_storage_mode")
+public func ametal_texture_storage_mode(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let texture: MTLTexture = am_borrow(handle) else { return 0 }
     return Int(texture.storageMode.rawValue)
 }
@@ -514,8 +514,8 @@ private func amTextureTransferLengths(
     return (requiredSpan, bytesPerImage)
 }
 
-@_cdecl("am_texture_replace_region_2d")
-public func am_texture_replace_region_2d(
+@_cdecl("ametal_texture_replace_region_2d")
+public func ametal_texture_replace_region_2d(
     _ handle: UnsafeMutableRawPointer?,
     _ x: Int,
     _ y: Int,
@@ -554,8 +554,8 @@ public func am_texture_replace_region_2d(
     return true
 }
 
-@_cdecl("am_texture_get_bytes_2d")
-public func am_texture_get_bytes_2d(
+@_cdecl("ametal_texture_get_bytes_2d")
+public func ametal_texture_get_bytes_2d(
     _ handle: UnsafeMutableRawPointer?,
     _ outBytes: UnsafeMutablePointer<UInt8>?,
     _ outLen: Int,
@@ -594,8 +594,8 @@ public func am_texture_get_bytes_2d(
     return true
 }
 
-@_cdecl("am_texture_new_view")
-public func am_texture_new_view(
+@_cdecl("ametal_texture_new_view")
+public func ametal_texture_new_view(
     _ handle: UnsafeMutableRawPointer?,
     _ pixelFormat: Int
 ) -> UnsafeMutableRawPointer? {
@@ -605,22 +605,22 @@ public func am_texture_new_view(
     return am_retain(view as AnyObject)
 }
 
-@_cdecl("am_compute_pipeline_state_thread_execution_width")
-public func am_compute_pipeline_state_thread_execution_width(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_compute_pipeline_state_thread_execution_width")
+public func ametal_compute_pipeline_state_thread_execution_width(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let pipeline: MTLComputePipelineState = am_borrow(handle) else { return 0 }
     return pipeline.threadExecutionWidth
 }
 
-@_cdecl("am_compute_pipeline_state_max_total_threads_per_threadgroup")
-public func am_compute_pipeline_state_max_total_threads_per_threadgroup(
+@_cdecl("ametal_compute_pipeline_state_max_total_threads_per_threadgroup")
+public func ametal_compute_pipeline_state_max_total_threads_per_threadgroup(
     _ handle: UnsafeMutableRawPointer?
 ) -> Int {
     guard let pipeline: MTLComputePipelineState = am_borrow(handle) else { return 0 }
     return pipeline.maxTotalThreadsPerThreadgroup
 }
 
-@_cdecl("am_compute_pipeline_state_new_visible_function_table")
-public func am_compute_pipeline_state_new_visible_function_table(
+@_cdecl("ametal_compute_pipeline_state_new_visible_function_table")
+public func ametal_compute_pipeline_state_new_visible_function_table(
     _ handle: UnsafeMutableRawPointer?,
     _ functionCount: Int
 ) -> UnsafeMutableRawPointer? {
@@ -633,8 +633,8 @@ public func am_compute_pipeline_state_new_visible_function_table(
     return am_retain(table as AnyObject)
 }
 
-@_cdecl("am_compute_pipeline_state_new_intersection_function_table")
-public func am_compute_pipeline_state_new_intersection_function_table(
+@_cdecl("ametal_compute_pipeline_state_new_intersection_function_table")
+public func ametal_compute_pipeline_state_new_intersection_function_table(
     _ handle: UnsafeMutableRawPointer?,
     _ functionCount: Int
 ) -> UnsafeMutableRawPointer? {
@@ -647,8 +647,8 @@ public func am_compute_pipeline_state_new_intersection_function_table(
     return am_retain(table as AnyObject)
 }
 
-@_cdecl("am_function_new_argument_encoder")
-public func am_function_new_argument_encoder(
+@_cdecl("ametal_function_new_argument_encoder")
+public func ametal_function_new_argument_encoder(
     _ handle: UnsafeMutableRawPointer?,
     _ bufferIndex: Int
 ) -> UnsafeMutableRawPointer? {
@@ -660,32 +660,32 @@ public func am_function_new_argument_encoder(
     return am_retain(encoder as AnyObject)
 }
 
-@_cdecl("am_heap_size")
-public func am_heap_size(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_heap_size")
+public func ametal_heap_size(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let heap: MTLHeap = am_borrow(handle) else { return 0 }
     return heap.size
 }
 
-@_cdecl("am_heap_used_size")
-public func am_heap_used_size(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_heap_used_size")
+public func ametal_heap_used_size(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let heap: MTLHeap = am_borrow(handle) else { return 0 }
     return heap.usedSize
 }
 
-@_cdecl("am_heap_current_allocated_size")
-public func am_heap_current_allocated_size(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_heap_current_allocated_size")
+public func ametal_heap_current_allocated_size(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let heap: MTLHeap = am_borrow(handle) else { return 0 }
     return heap.currentAllocatedSize
 }
 
-@_cdecl("am_heap_max_available_size")
-public func am_heap_max_available_size(_ handle: UnsafeMutableRawPointer?, _ alignment: Int) -> Int {
+@_cdecl("ametal_heap_max_available_size")
+public func ametal_heap_max_available_size(_ handle: UnsafeMutableRawPointer?, _ alignment: Int) -> Int {
     guard let heap: MTLHeap = am_borrow(handle) else { return 0 }
     return heap.maxAvailableSize(alignment: alignment)
 }
 
-@_cdecl("am_heap_new_buffer")
-public func am_heap_new_buffer(
+@_cdecl("ametal_heap_new_buffer")
+public func ametal_heap_new_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ length: Int,
     _ options: UInt
@@ -696,8 +696,8 @@ public func am_heap_new_buffer(
     return am_retain(buffer as AnyObject)
 }
 
-@_cdecl("am_heap_new_texture_2d")
-public func am_heap_new_texture_2d(
+@_cdecl("ametal_heap_new_texture_2d")
+public func ametal_heap_new_texture_2d(
     _ handle: UnsafeMutableRawPointer?,
     _ pixelFormat: Int,
     _ width: Int,
@@ -719,8 +719,8 @@ public func am_heap_new_texture_2d(
     return am_retain(texture as AnyObject)
 }
 
-@_cdecl("am_heap_new_acceleration_structure_with_size")
-public func am_heap_new_acceleration_structure_with_size(
+@_cdecl("ametal_heap_new_acceleration_structure_with_size")
+public func ametal_heap_new_acceleration_structure_with_size(
     _ handle: UnsafeMutableRawPointer?,
     _ size: Int
 ) -> UnsafeMutableRawPointer? {
@@ -731,26 +731,26 @@ public func am_heap_new_acceleration_structure_with_size(
     return am_retain(accelerationStructure as AnyObject)
 }
 
-@_cdecl("am_heap_set_purgeable_state")
-public func am_heap_set_purgeable_state(_ handle: UnsafeMutableRawPointer?, _ state: UInt) -> UInt {
+@_cdecl("ametal_heap_set_purgeable_state")
+public func ametal_heap_set_purgeable_state(_ handle: UnsafeMutableRawPointer?, _ state: UInt) -> UInt {
     guard let heap: MTLHeap = am_borrow(handle) else { return 0 }
     return heap.setPurgeableState(MTLPurgeableState(rawValue: state) ?? .keepCurrent).rawValue
 }
 
-@_cdecl("am_event_signaled_value")
-public func am_event_signaled_value(_ handle: UnsafeMutableRawPointer?) -> UInt64 {
+@_cdecl("ametal_event_signaled_value")
+public func ametal_event_signaled_value(_ handle: UnsafeMutableRawPointer?) -> UInt64 {
     guard let event: MTLSharedEvent = am_borrow(handle) else { return 0 }
     return event.signaledValue
 }
 
-@_cdecl("am_event_set_signaled_value")
-public func am_event_set_signaled_value(_ handle: UnsafeMutableRawPointer?, _ value: UInt64) {
+@_cdecl("ametal_event_set_signaled_value")
+public func ametal_event_set_signaled_value(_ handle: UnsafeMutableRawPointer?, _ value: UInt64) {
     guard let event: MTLSharedEvent = am_borrow(handle) else { return }
     event.signaledValue = value
 }
 
-@_cdecl("am_event_wait_until_signaled_value")
-public func am_event_wait_until_signaled_value(
+@_cdecl("ametal_event_wait_until_signaled_value")
+public func ametal_event_wait_until_signaled_value(
     _ handle: UnsafeMutableRawPointer?,
     _ value: UInt64,
     _ timeoutMs: UInt64
@@ -761,16 +761,16 @@ public func am_event_wait_until_signaled_value(
     return event.wait(untilSignaledValue: value, timeoutMS: timeoutMs)
 }
 
-@_cdecl("am_dynamic_library_install_name")
-public func am_dynamic_library_install_name(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutablePointer<CChar>? {
+@_cdecl("ametal_dynamic_library_install_name")
+public func ametal_dynamic_library_install_name(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutablePointer<CChar>? {
     guard #available(macOS 11.0, *),
           let dynamicLibrary: MTLDynamicLibrary = am_borrow(handle)
     else { return nil }
     return am_copy_string(dynamicLibrary.installName)
 }
 
-@_cdecl("am_dynamic_library_serialize_to_url")
-public func am_dynamic_library_serialize_to_url(
+@_cdecl("ametal_dynamic_library_serialize_to_url")
+public func ametal_dynamic_library_serialize_to_url(
     _ handle: UnsafeMutableRawPointer?,
     _ path: UnsafePointer<CChar>?,
     _ outErrorMessage: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
@@ -788,8 +788,8 @@ public func am_dynamic_library_serialize_to_url(
     }
 }
 
-@_cdecl("am_binary_archive_add_compute_function")
-public func am_binary_archive_add_compute_function(
+@_cdecl("ametal_binary_archive_add_compute_function")
+public func ametal_binary_archive_add_compute_function(
     _ handle: UnsafeMutableRawPointer?,
     _ functionHandle: UnsafeMutableRawPointer?,
     _ outErrorMessage: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
@@ -810,8 +810,8 @@ public func am_binary_archive_add_compute_function(
     }
 }
 
-@_cdecl("am_binary_archive_add_render_functions")
-public func am_binary_archive_add_render_functions(
+@_cdecl("ametal_binary_archive_add_render_functions")
+public func ametal_binary_archive_add_render_functions(
     _ handle: UnsafeMutableRawPointer?,
     _ vertexHandle: UnsafeMutableRawPointer?,
     _ fragmentHandle: UnsafeMutableRawPointer?,
@@ -840,8 +840,8 @@ public func am_binary_archive_add_render_functions(
     }
 }
 
-@_cdecl("am_binary_archive_serialize_to_url")
-public func am_binary_archive_serialize_to_url(
+@_cdecl("ametal_binary_archive_serialize_to_url")
+public func ametal_binary_archive_serialize_to_url(
     _ handle: UnsafeMutableRawPointer?,
     _ path: UnsafePointer<CChar>?,
     _ outErrorMessage: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
@@ -859,14 +859,14 @@ public func am_binary_archive_serialize_to_url(
     }
 }
 
-@_cdecl("am_indirect_command_buffer_size")
-public func am_indirect_command_buffer_size(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_indirect_command_buffer_size")
+public func ametal_indirect_command_buffer_size(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let buffer: MTLIndirectCommandBuffer = am_borrow(handle) else { return 0 }
     return buffer.size
 }
 
-@_cdecl("am_indirect_command_buffer_reset_range")
-public func am_indirect_command_buffer_reset_range(
+@_cdecl("ametal_indirect_command_buffer_reset_range")
+public func ametal_indirect_command_buffer_reset_range(
     _ handle: UnsafeMutableRawPointer?,
     _ location: Int,
     _ length: Int
@@ -875,14 +875,14 @@ public func am_indirect_command_buffer_reset_range(
     buffer.reset(location..<(location + length))
 }
 
-@_cdecl("am_acceleration_structure_size")
-public func am_acceleration_structure_size(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_acceleration_structure_size")
+public func ametal_acceleration_structure_size(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let accelerationStructure: MTLAccelerationStructure = am_borrow(handle) else { return 0 }
     return accelerationStructure.size
 }
 
-@_cdecl("am_intersection_function_table_set_opaque_triangle")
-public func am_intersection_function_table_set_opaque_triangle(
+@_cdecl("ametal_intersection_function_table_set_opaque_triangle")
+public func ametal_intersection_function_table_set_opaque_triangle(
     _ handle: UnsafeMutableRawPointer?,
     _ signature: UInt,
     _ index: Int
@@ -896,14 +896,14 @@ public func am_intersection_function_table_set_opaque_triangle(
     )
 }
 
-@_cdecl("am_counter_sample_buffer_sample_count")
-public func am_counter_sample_buffer_sample_count(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_counter_sample_buffer_sample_count")
+public func ametal_counter_sample_buffer_sample_count(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let sampleBuffer: MTLCounterSampleBuffer = am_borrow(handle) else { return 0 }
     return sampleBuffer.sampleCount
 }
 
-@_cdecl("am_counter_sample_buffer_resolve_range")
-public func am_counter_sample_buffer_resolve_range(
+@_cdecl("ametal_counter_sample_buffer_resolve_range")
+public func ametal_counter_sample_buffer_resolve_range(
     _ handle: UnsafeMutableRawPointer?,
     _ location: Int,
     _ length: Int,
@@ -924,8 +924,8 @@ public func am_counter_sample_buffer_resolve_range(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_add_buffer")
-public func am_residency_set_add_buffer(
+@_cdecl("ametal_residency_set_add_buffer")
+public func ametal_residency_set_add_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ bufferHandle: UnsafeMutableRawPointer?
 ) {
@@ -937,8 +937,8 @@ public func am_residency_set_add_buffer(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_add_texture")
-public func am_residency_set_add_texture(
+@_cdecl("ametal_residency_set_add_texture")
+public func ametal_residency_set_add_texture(
     _ handle: UnsafeMutableRawPointer?,
     _ textureHandle: UnsafeMutableRawPointer?
 ) {
@@ -950,8 +950,8 @@ public func am_residency_set_add_texture(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_add_heap")
-public func am_residency_set_add_heap(
+@_cdecl("ametal_residency_set_add_heap")
+public func ametal_residency_set_add_heap(
     _ handle: UnsafeMutableRawPointer?,
     _ heapHandle: UnsafeMutableRawPointer?
 ) {
@@ -963,8 +963,8 @@ public func am_residency_set_add_heap(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_remove_buffer")
-public func am_residency_set_remove_buffer(
+@_cdecl("ametal_residency_set_remove_buffer")
+public func ametal_residency_set_remove_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ bufferHandle: UnsafeMutableRawPointer?
 ) {
@@ -976,8 +976,8 @@ public func am_residency_set_remove_buffer(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_remove_texture")
-public func am_residency_set_remove_texture(
+@_cdecl("ametal_residency_set_remove_texture")
+public func ametal_residency_set_remove_texture(
     _ handle: UnsafeMutableRawPointer?,
     _ textureHandle: UnsafeMutableRawPointer?
 ) {
@@ -989,8 +989,8 @@ public func am_residency_set_remove_texture(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_remove_heap")
-public func am_residency_set_remove_heap(
+@_cdecl("ametal_residency_set_remove_heap")
+public func ametal_residency_set_remove_heap(
     _ handle: UnsafeMutableRawPointer?,
     _ heapHandle: UnsafeMutableRawPointer?
 ) {
@@ -1002,8 +1002,8 @@ public func am_residency_set_remove_heap(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_remove_all_allocations")
-public func am_residency_set_remove_all_allocations(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_residency_set_remove_all_allocations")
+public func ametal_residency_set_remove_all_allocations(_ handle: UnsafeMutableRawPointer?) {
     guard #available(macOS 15.0, *),
           let residencySet: MTLResidencySet = am_borrow(handle)
     else { return }
@@ -1011,8 +1011,8 @@ public func am_residency_set_remove_all_allocations(_ handle: UnsafeMutableRawPo
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_contains_buffer")
-public func am_residency_set_contains_buffer(
+@_cdecl("ametal_residency_set_contains_buffer")
+public func ametal_residency_set_contains_buffer(
     _ handle: UnsafeMutableRawPointer?,
     _ bufferHandle: UnsafeMutableRawPointer?
 ) -> Bool {
@@ -1024,8 +1024,8 @@ public func am_residency_set_contains_buffer(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_contains_texture")
-public func am_residency_set_contains_texture(
+@_cdecl("ametal_residency_set_contains_texture")
+public func ametal_residency_set_contains_texture(
     _ handle: UnsafeMutableRawPointer?,
     _ textureHandle: UnsafeMutableRawPointer?
 ) -> Bool {
@@ -1037,8 +1037,8 @@ public func am_residency_set_contains_texture(
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_allocation_count")
-public func am_residency_set_allocation_count(_ handle: UnsafeMutableRawPointer?) -> Int {
+@_cdecl("ametal_residency_set_allocation_count")
+public func ametal_residency_set_allocation_count(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard #available(macOS 15.0, *),
           let residencySet: MTLResidencySet = am_borrow(handle)
     else { return 0 }
@@ -1046,8 +1046,8 @@ public func am_residency_set_allocation_count(_ handle: UnsafeMutableRawPointer?
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_commit")
-public func am_residency_set_commit(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_residency_set_commit")
+public func ametal_residency_set_commit(_ handle: UnsafeMutableRawPointer?) {
     guard #available(macOS 15.0, *),
           let residencySet: MTLResidencySet = am_borrow(handle)
     else { return }
@@ -1055,8 +1055,8 @@ public func am_residency_set_commit(_ handle: UnsafeMutableRawPointer?) {
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_request_residency")
-public func am_residency_set_request_residency(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_residency_set_request_residency")
+public func ametal_residency_set_request_residency(_ handle: UnsafeMutableRawPointer?) {
     guard #available(macOS 15.0, *),
           let residencySet: MTLResidencySet = am_borrow(handle)
     else { return }
@@ -1064,21 +1064,21 @@ public func am_residency_set_request_residency(_ handle: UnsafeMutableRawPointer
 }
 
 @available(macOS 15.0, *)
-@_cdecl("am_residency_set_end_residency")
-public func am_residency_set_end_residency(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_residency_set_end_residency")
+public func ametal_residency_set_end_residency(_ handle: UnsafeMutableRawPointer?) {
     guard #available(macOS 15.0, *),
           let residencySet: MTLResidencySet = am_borrow(handle)
     else { return }
     residencySet.endResidency()
 }
 
-@_cdecl("am_capture_manager_shared")
-public func am_capture_manager_shared() -> UnsafeMutableRawPointer? {
+@_cdecl("ametal_capture_manager_shared")
+public func ametal_capture_manager_shared() -> UnsafeMutableRawPointer? {
     return am_retain(MTLCaptureManager.shared() as AnyObject)
 }
 
-@_cdecl("am_capture_manager_supports_destination")
-public func am_capture_manager_supports_destination(
+@_cdecl("ametal_capture_manager_supports_destination")
+public func ametal_capture_manager_supports_destination(
     _ handle: UnsafeMutableRawPointer?,
     _ destination: UInt
 ) -> Bool {
@@ -1089,14 +1089,14 @@ public func am_capture_manager_supports_destination(
     return manager.supportsDestination(destination)
 }
 
-@_cdecl("am_capture_manager_is_capturing")
-public func am_capture_manager_is_capturing(_ handle: UnsafeMutableRawPointer?) -> Bool {
+@_cdecl("ametal_capture_manager_is_capturing")
+public func ametal_capture_manager_is_capturing(_ handle: UnsafeMutableRawPointer?) -> Bool {
     guard let manager: MTLCaptureManager = am_borrow(handle) else { return false }
     return manager.isCapturing
 }
 
-@_cdecl("am_capture_manager_new_scope_with_device")
-public func am_capture_manager_new_scope_with_device(
+@_cdecl("ametal_capture_manager_new_scope_with_device")
+public func ametal_capture_manager_new_scope_with_device(
     _ handle: UnsafeMutableRawPointer?,
     _ deviceHandle: UnsafeMutableRawPointer?
 ) -> UnsafeMutableRawPointer? {
@@ -1106,8 +1106,8 @@ public func am_capture_manager_new_scope_with_device(
     return am_retain(manager.makeCaptureScope(device: device) as AnyObject)
 }
 
-@_cdecl("am_capture_manager_new_scope_with_command_queue")
-public func am_capture_manager_new_scope_with_command_queue(
+@_cdecl("ametal_capture_manager_new_scope_with_command_queue")
+public func ametal_capture_manager_new_scope_with_command_queue(
     _ handle: UnsafeMutableRawPointer?,
     _ queueHandle: UnsafeMutableRawPointer?
 ) -> UnsafeMutableRawPointer? {
@@ -1117,14 +1117,14 @@ public func am_capture_manager_new_scope_with_command_queue(
     return am_retain(manager.makeCaptureScope(commandQueue: queue) as AnyObject)
 }
 
-@_cdecl("am_capture_scope_begin")
-public func am_capture_scope_begin(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_capture_scope_begin")
+public func ametal_capture_scope_begin(_ handle: UnsafeMutableRawPointer?) {
     guard let scope: MTLCaptureScope = am_borrow(handle) else { return }
     scope.begin()
 }
 
-@_cdecl("am_capture_scope_end")
-public func am_capture_scope_end(_ handle: UnsafeMutableRawPointer?) {
+@_cdecl("ametal_capture_scope_end")
+public func ametal_capture_scope_end(_ handle: UnsafeMutableRawPointer?) {
     guard let scope: MTLCaptureScope = am_borrow(handle) else { return }
     scope.end()
 }
