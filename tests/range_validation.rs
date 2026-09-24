@@ -1,3 +1,5 @@
+mod common;
+
 use apple_metal::{
     indirect_command_type, pixel_format, resource_options, storage_mode, texture_usage,
     CommandBufferError, MetalDevice, MetalRasterizationRateLayerDescriptor, TextureDescriptor,
@@ -92,9 +94,11 @@ fn heap_buffers_respect_native_int_and_heap_modes() {
         eprintln!("skipping: no shared heap");
         return;
     };
-    assert!(heap
-        .new_buffer(256, resource_options::STORAGE_MODE_SHARED)
-        .is_some());
+    if common::heap_resources_work(&device) {
+        assert!(heap
+            .new_buffer(256, resource_options::STORAGE_MODE_SHARED)
+            .is_some());
+    }
     assert!(heap
         .new_buffer(usize::MAX, resource_options::STORAGE_MODE_SHARED)
         .is_none());

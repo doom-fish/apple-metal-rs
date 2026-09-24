@@ -1,5 +1,6 @@
 use apple_metal::{
-    storage_mode, MetalDevice, MetalTensorDataType, MetalTensorUsage, TensorDescriptor, TensorError,
+    gpu_family, storage_mode, MetalDevice, MetalTensorDataType, MetalTensorUsage, TensorDescriptor,
+    TensorError,
 };
 
 fn device() -> Option<MetalDevice> {
@@ -17,6 +18,13 @@ fn tensors_are_created_from_checked_descriptors() {
     let tensor = match device.new_tensor(&descriptor) {
         Err(TensorError::Unsupported) => {
             eprintln!("skipping: MTLTensor needs macOS 26");
+            return;
+        }
+        Err(TensorError::Native(message)) if !device.supports_family(gpu_family::METAL4) => {
+            eprintln!(
+                "skipping: {} has no Metal 4 support: {message}",
+                device.name()
+            );
             return;
         }
         other => other.expect("tensor"),

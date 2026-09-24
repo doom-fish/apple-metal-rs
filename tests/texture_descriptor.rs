@@ -1,3 +1,5 @@
+mod common;
+
 use apple_metal::{
     pixel_format, resource_options, storage_mode, texture_type, texture_usage, MetalDevice,
     TextureDescriptor,
@@ -258,15 +260,17 @@ fn heap_textures_accept_every_descriptor_shape_matching_the_heap() {
         eprintln!("skipping: no private heap");
         return;
     };
-    let layers = heap
-        .new_texture(private(
-            TextureDescriptor::new_2d(8, 8, pixel_format::RGBA8UNORM)
-                .with_texture_type(texture_type::TYPE_2D_ARRAY)
-                .with_array_length(2),
-        ))
-        .expect("heap array texture");
-    assert_eq!(layers.array_length(), 2);
-    assert_eq!(layers.storage_mode(), storage_mode::PRIVATE);
+    if common::heap_resources_work(&device) {
+        let layers = heap
+            .new_texture(private(
+                TextureDescriptor::new_2d(8, 8, pixel_format::RGBA8UNORM)
+                    .with_texture_type(texture_type::TYPE_2D_ARRAY)
+                    .with_array_length(2),
+            ))
+            .expect("heap array texture");
+        assert_eq!(layers.array_length(), 2);
+        assert_eq!(layers.storage_mode(), storage_mode::PRIVATE);
+    }
 
     let shared = TextureDescriptor::new_2d(8, 8, pixel_format::RGBA8UNORM);
     assert!(heap.new_texture(shared).is_none());

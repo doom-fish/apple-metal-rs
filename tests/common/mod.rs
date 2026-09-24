@@ -59,6 +59,15 @@ pub fn device() -> MetalDevice {
     MetalDevice::system_default().expect("Metal device available")
 }
 
+pub fn heap_resources_work(device: &MetalDevice) -> bool {
+    let name = device.name();
+    if name.contains("Paravirtual") {
+        eprintln!("skipping heap-placed resources: the {name} faults on them");
+        return false;
+    }
+    true
+}
+
 pub fn write_u32_words(buffer: &MetalBuffer, data: &[u32]) {
     let mut mapping = unsafe { buffer.map_write().expect("shared buffer mapping") };
     assert!(mapping.len() >= core::mem::size_of_val(data));

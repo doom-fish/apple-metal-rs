@@ -20,6 +20,9 @@ fn heap_can_allocate_buffers_and_textures() {
     assert!(HeapAlignment::new(0).is_some());
     assert!(heap.used_size() <= heap.size());
     assert!(heap.current_allocated_size() <= heap.size());
+    if !common::heap_resources_work(&device) {
+        return;
+    }
 
     let buffer = heap
         .new_buffer(256, resource_options::STORAGE_MODE_SHARED)

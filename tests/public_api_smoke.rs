@@ -4,6 +4,8 @@
     clippy::too_many_lines
 )]
 
+mod common;
+
 use apple_metal::{
     argument_buffers_tier, binding_access, blend_factor, blend_operation, capture_destination,
     color_write_mask, command_buffer_status, compare_function, copy_all_devices,
@@ -813,7 +815,10 @@ fn public_api_smoke() {
         }
     }
 
-    if let Some(heap) = device.new_heap(1 << 20, storage_mode::SHARED) {
+    if let Some(heap) = device
+        .new_heap(1 << 20, storage_mode::SHARED)
+        .filter(|_| common::heap_resources_work(&device))
+    {
         assert!(heap.size() >= (1 << 20));
         let _ = heap.used_size();
         let _ = heap.current_allocated_size();
