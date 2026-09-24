@@ -110,6 +110,44 @@ texture alignment. `MetalDevice::new_texture` returns `None` for descriptors
 Metal would abort on (unknown formats or usage bits, extents beyond 16384, or
 2048 for 3D textures and array layers, unsupported sample counts or formats).
 
+Render passes take an optional depth and stencil attachment, and encoders
+refuse what Metal would reject or crash on: drawing or dispatching without a
+pipeline, a pipeline whose attachment formats or sample count differ from the
+pass, a depth- or stencil-testing `DepthStencilState` without that attachment,
+threadgroups above the pipeline maximum (or not a multiple of the execution
+width when the pipeline requires it), and samplers without
+`support_argument_buffers` in argument buffers. Buffer resource options,
+state descriptors and `MetalFX` scaler descriptors are checked before Metal sees
+them. `MetalDevice::new_tensor` creates `MTLTensor`s (macOS 26+) from a checked
+`TensorDescriptor`.
+
+### Encoding from other frameworks
+
+`CommandBuffer::encode_foreign(|foreign| ..)` lets code outside this crate (MPS,
+`SceneKit`, `SpriteKit`, `VideoToolbox`, your own Objective-C) encode into a command
+buffer that apple-metal manages. It returns `ActiveEncoder` if an apple-metal
+encoder is open and `InvalidState` if the buffer is no longer recording
+(checked against both the tracked and the native status), and runs the closure
+otherwise. While the closure runs, the buffer's encoder slot is taken: commit,
+enqueue, event encoding, new apple-metal encoders and nested `encode_foreign`
+calls on any clone, from any thread, fail with `ActiveEncoder` instead of
+racing or deadlocking. The closure's result is returned in `Ok`.
+
+`ForeignEncoding::command_buffer()` is a borrowed (+0) `id<MTLCommandBuffer>`.
+Using it needs `unsafe`, and the caller's unsafe code must:
+
+- only encode work into it, ending every encoder it creates before the closure
+  returns;
+- not commit, enqueue, wait on or release it, or keep using it after the
+  closure returns;
+- keep every resource the encoded commands use alive as the command buffer's
+  retention mode requires (unretained-reference buffers retain nothing).
+
+If the closure panics, the slot stays taken, so apple-metal refuses to encode
+into or commit that buffer again; drop it. If foreign code commits the buffer
+anyway, apple-metal notices from the native status and refuses to commit it a
+second time.
+
 Command-buffer handlers, shared-event notifications and the device observer
 take `Send + 'static` Rust closures. Metal owns them until it releases its
 block, so they may run after the Rust wrapper is dropped; panics are contained.

@@ -26,14 +26,16 @@ properties or methods are wrapped:
   and `MTLTensor`, `MTLTensorDescriptor`, `MTLTensorExtents` and
   `MTLTensorBinding` are opaque handles without constructors or methods (the
   descriptor classes only have `new()`). `MetalTensor` exists so sibling crates
-  can pass tensor handles through FFI. The Metal 4 method surface is out of
-  scope for this release.
+  can pass tensor handles through FFI, and `MetalDevice::new_tensor` creates
+  one from a checked `TensorDescriptor`; the tensor itself still has no
+  methods. The Metal 4 method surface is out of scope for this release.
 
 The working surface is the hand-written API: devices, buffers (including
 buffers created from bytes), textures (1D, 2D, 3D, array, cube and multisample
 descriptors, buffer-backed views, checked CPU transfers, IOSurface interop),
-command queues and buffers with scheduled/completed handlers, blit, compute and
-render encoders, compute/render/tile pipelines, depth/stencil and sampler
+command queues and buffers with scheduled/completed handlers and encoding by
+foreign code under the lifecycle lock, blit, compute and render encoders
+(render passes with depth and stencil attachments), compute/render/tile pipelines, depth/stencil and sampler
 state, argument encoders, heaps, events and shared-event notifications, fences,
 dynamic libraries, binary archives, indirect command buffers,
 acceleration-structure handles, function tables, counter sample buffers, log
@@ -99,6 +101,9 @@ The wrapped surface is validated by:
 - `tests/range_validation.rs`
 - `tests/os_availability.rs`
 - `tests/safety_contracts.rs`
+- `tests/foreign_encoding.rs`
+- `tests/dispatch_validation.rs`
+- `tests/tensor.rs`
 - `cargo clippy --all-targets -- -D warnings`
 - `cargo test`
 - `for ex in examples/*.rs; do cargo run --example "$(basename "$ex" .rs)"; done`

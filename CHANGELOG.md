@@ -26,6 +26,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   both failed with duplicate symbols or bound one version's calls to the
   other's code. See Changed for the new bridge names.
 
+- Drawing with no render pipeline bound, or dispatching with no compute
+  pipeline bound, crashed the process inside Metal (SIGSEGV).
+  `draw_primitives`, `dispatch_threadgroups` and `dispatch_threads` now return
+  `MissingPipelineState`.
+- `new_buffer`, `new_buffer_with_bytes`, `Heap::new_buffer` and
+  `new_indirect_command_buffer` passed resource options straight to Metal, and
+  an unknown CPU cache mode, a memoryless or an unknown storage mode crashed
+  the driver. Options must now name a real cache mode, a shared, managed or
+  private storage mode, and a real hazard-tracking mode.
+- `Heap::max_available_size` crashed for an alignment that is not zero or a
+  power of two, and `set_opaque_triangle_intersection_function` wrote past the
+  end of the table for an index beyond its function count.
+- Metal assertions abort the process even without the debug layer, and safe
+  code reached them through: unknown compare functions or stencil operations
+  in `new_depth_stencil_state`; unknown filters in `new_sampler_state`; unknown
+  pixel formats, or a colour format as the depth format, in render pipeline
+  creation; a depth output format or extents above 16384 in the MetalFX
+  scalers; and tensors larger than `maxBufferLength` or with memoryless
+  storage. All of these are now validated before Metal sees them.
+
 ### Fixed
 
 - The 18 macOS 15 bridge exports (residency sets, shader log state, command
@@ -59,31 +79,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   constructors or methods.
 - The README states the macOS 11 minimum and which features need macOS 13 or 15.
 
+- Metal debug-layer violations reachable from safe code are refused. Each one
+  was reproduced with `MTL_DEBUG_LAYER=1`, and the tests that tripped it now
+  pass with the layer on:
+  - samplers bound into argument buffers must have `support_argument_buffers`;
+  - a depth-testing or stencil-testing `DepthStencilState` needs a render pass
+    with that attachment;
+  - a render pipeline must match the pass's colour, depth and stencil formats
+    and its sample count;
+  - a threadgroup may not exceed the pipeline's maximum and, for pipelines
+    created with `thread_group_size_is_multiple_of_thread_execution_width`,
+    must be a multiple of the execution width;
+  - acceleration structures can only come from private heaps;
+  - colour attachments need render-target usage and a colour format.
+- `Event::wait_until_signaled_value` reported macOS 11, which has no CPU wait
+  API, as a timeout.
+- Every operation that checks the recording state also reads the native
+  command-buffer status, so a buffer that foreign code committed is refused
+  instead of being committed twice, which aborts.
+
 ### Changed
 
-- **BREAKING:** the package declares `links = "apple_metal_bridge"`, so a
+- **Breaking:** the package declares `links = "apple_metal_bridge"`, so a
   build can contain only one apple-metal release from 0.10 on. The Swift
   module and static library are now `AppleMetalSwiftBridge` and every bridge
   export, including the raw `apple_metal::ffi` functions, is named `ametal_*`
   (was `am_*`), so this release shares no symbol with 0.8 or 0.9.
-- **BREAKING:** `copy_all_devices_with_observer` is safe and takes a
+- **Breaking:** `copy_all_devices_with_observer` is safe and takes a
   `FnMut(MetalDevice, &str) + Send + 'static` closure instead of an
   `extern "C"` callback and user-data pointer. The closure receives an owned
   device and the notification name, and panics are contained.
   `MetalDeviceObserver::remove` is idempotent; the type no longer has
   `from_raw` or `label`.
-- **BREAKING:** `MetalBuffer::new_texture_view_2d` returns
+- **Breaking:** `MetalBuffer::new_texture_view_2d` returns
   `Result<MetalTexture, TextureViewError>`, and the view takes the buffer's
   storage, CPU cache and hazard tracking modes instead of always being shared.
-- **BREAKING:** `TextureDescriptor` has new public fields `texture_type`,
+- **Breaking:** `TextureDescriptor` has new public fields `texture_type`,
   `depth`, `array_length` and `sample_count`, so struct literals need them
   (for example `..TextureDescriptor::new_2d(width, height, format)`). It now
   derives `PartialEq`, `Eq` and `Hash`.
-- **BREAKING:** `IndirectCommandBuffer::reset_range` returns
+- **Breaking:** `IndirectCommandBuffer::reset_range` returns
   `Result<(), CommandBufferError>` and checks the range against the command
   count.
-- **BREAKING:** `CommandBufferError` has a `NotExecuted { status }` variant.
-- **BREAKING:** `MetalRasterizationRateLayerDescriptor::new` is replaced by
+- **Breaking:** `CommandBufferError` has a `NotExecuted { status }` variant.
+- **Breaking:** `MetalRasterizationRateLayerDescriptor::new` is replaced by
   `with_sample_count(horizontal, vertical)`.
 - `CounterSampleBuffer::resolve_range` returns `None` for empty, reversed or
   out-of-range ranges.
@@ -93,6 +132,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stencil view of a depth/stencil format.
 - Requires `apple-cf >=0.11, <0.12` and `doom-fish-utils >=0.4.1, <0.5`, and
   `rust-version` is 1.82 (was 1.76).
+
+- **Breaking:** `CommandBuffer::new_render_command_encoder` takes optional
+  `RenderPassDepthAttachment` and `RenderPassStencilAttachment` arguments, and
+  checks every attachment: render-target usage, format class, the colour
+  texture's sample count, the same texture for combined depth/stencil formats,
+  load and store actions (no multisample resolve), and a clear depth in 0...1.
+- **Breaking:** `set_render_pipeline_state` returns
+  `IncompatiblePipelineState` when the pipeline's formats or sample count
+  differ from the pass, and for tile pipelines. `set_depth_stencil_state`
+  returns `MissingAttachment`, and `draw_primitives` returns
+  `MissingPipelineState` or `InvalidPrimitiveType`.
+- **Breaking:** `dispatch_threadgroups` and `dispatch_threads` return
+  `MissingPipelineState`, `ThreadgroupTooLarge` and
+  `ThreadgroupNotMultipleOfExecutionWidth`.
+- **Breaking:** `ArgumentBufferBinding::set_sampler_state` and
+  `set_sampler_state_unchecked` return `SamplerWithoutArgumentBufferSupport`
+  for samplers created without `support_argument_buffers`.
+- **Breaking:** `Heap::set_purgeable_state` takes a `PurgeableState` and
+  returns the previous one (`None` only for a value Metal never documents).
+  `Heap::max_available_size` takes a `HeapAlignment`, which is zero or a power
+  of two.
+- **Breaking:** `IntersectionFunctionTable::set_opaque_triangle_intersection_function`
+  returns `Result<(), FunctionTableError>`, and checks the index against the
+  table's function count and the signature against the SDK bits.
+- **Breaking:** `Event::wait_until_signaled_value` returns
+  `Result<(), EventWaitError>`, with `TimedOut`, and `Unsupported` on macOS 11,
+  instead of `bool`.
+- **Breaking:** `new_depth_stencil_state` and `new_sampler_state` return `None`,
+  and `new_render_pipeline_state*`, `new_tile_render_pipeline_state` and
+  `BinaryArchive::add_render_functions` return `Err`, for unknown raw values,
+  unrenderable attachment formats, sample counts other than 1, 2, 4 or 8, and
+  unknown blend factors or operations. `new_spatial_scaler`/
+  `new_temporal_scaler`, `new_buffer`/`new_buffer_with_bytes`,
+  `Heap::new_buffer`, `new_indirect_command_buffer` and
+  `Heap::new_acceleration_structure_with_size` return `None` for the values
+  listed under Security, and for shared heaps.
+- **Breaking:** `CommandBufferError` gains `MissingPipelineState`,
+  `IncompatiblePipelineState`, `MissingAttachment`, `InvalidAttachment`,
+  `InvalidPrimitiveType`, `ThreadgroupTooLarge` and
+  `ThreadgroupNotMultipleOfExecutionWidth`; `ArgumentEncoderError` gains
+  `SamplerWithoutArgumentBufferSupport`.
 
 ### Added
 
@@ -116,8 +196,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   textures on devices and heaps.
 - `TextureViewError`.
 
+- `CommandBuffer::encode_foreign(|foreign| ..)` runs foreign encoding (MPS,
+  SceneKit, SpriteKit, VideoToolbox, or your own Objective-C) under the
+  command buffer's lifecycle lock. See the README for the exact contract.
+- `RenderPassDepthAttachment`, `RenderPassStencilAttachment` and
+  `MetalTexture::sample_count`.
+- `DepthStencilState::tests_depth` and `tests_stencil`, and
+  `SamplerState::supports_argument_buffers`.
+- `MetalDevice::new_tensor(&TensorDescriptor) -> Result<MetalTensor, TensorError>`,
+  with `TensorDescriptor`, `MetalTensorDataType` and `MetalTensorUsage`
+  constants, and `MetalDevice::max_buffer_length`. It returns
+  `TensorError::Unsupported` before macOS 26.
+- `PurgeableState`, `HeapAlignment`, `FunctionTableError`, `EventWaitError`,
+  `IntersectionFunctionTable::function_count`, and the macOS 12, 14 and 26
+  `intersection_function_signature` bits.
+- Owning `MetalDevice::from_raw`, `MetalBuffer::from_raw` and
+  `ResidencySet::from_raw` for objects other frameworks return.
+
 ### Removed
 
+- **Breaking:** the `purgeable_state` constants, replaced by `PurgeableState`.
 - `MetalDeviceObserverCallback` and the raw-callback form of
   `copy_all_devices_with_observer`.
 - `MetalRasterizationRateLayerDescriptor::new`.
