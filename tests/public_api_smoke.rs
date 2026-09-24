@@ -9,20 +9,20 @@ mod common;
 use apple_metal::{
     argument_buffers_tier, binding_access, blend_factor, blend_operation, capture_destination,
     color_write_mask, command_buffer_status, compare_function, copy_all_devices,
-    counter_sampling_point, gpu_family, indirect_command_type, intersection_function_signature,
-    load_action, log_level, metal_library_error_domain, pixel_format, primitive_type,
-    resource_options, sampler_address_mode, sampler_border_color, sampler_min_mag_filter,
-    sampler_mip_filter, sampler_reduction_mode, spatial_scaler_color_processing_mode,
-    stencil_operation, storage_mode, store_action, texture_type, texture_usage, ArgumentDescriptor,
-    ArgumentEncoder, BinaryArchive, BlitCommandEncoder, CaptureManager, CommandBuffer,
-    CommandQueue, ComputeCommandEncoder, ComputePipelineDescriptor, ComputePipelineState,
-    DepthStencilDescriptor, DynamicLibrary, Event, Fence, HeapAlignment, IndirectCommandBuffer,
-    MetalBuffer, MetalCommandQueueDescriptor, MetalDevice, MetalFunction, MetalHeapDescriptor,
-    MetalLibrary, MetalTexture, PurgeableState, RenderCommandEncoder, RenderPassDepthAttachment,
-    RenderPassStencilAttachment, RenderPipelineColorAttachmentDescriptor, RenderPipelineDescriptor,
-    RenderPipelineState, ResidencySet, SamplerDescriptor, SpatialScalerDescriptor,
-    StencilDescriptor, TemporalScalerDescriptor, TemporalScalerFrameState, TemporalScalerTextures,
-    TextureDescriptor, TileRenderPipelineColorAttachmentDescriptor, TileRenderPipelineDescriptor,
+    counter_sampling_point, indirect_command_type, intersection_function_signature, load_action,
+    log_level, metal_library_error_domain, pixel_format, primitive_type, resource_options,
+    sampler_address_mode, sampler_border_color, sampler_min_mag_filter, sampler_mip_filter,
+    sampler_reduction_mode, spatial_scaler_color_processing_mode, stencil_operation, storage_mode,
+    store_action, texture_type, texture_usage, ArgumentDescriptor, ArgumentEncoder, BinaryArchive,
+    BlitCommandEncoder, CaptureManager, CommandBuffer, CommandQueue, ComputeCommandEncoder,
+    ComputePipelineDescriptor, ComputePipelineState, DepthStencilDescriptor, DynamicLibrary, Event,
+    Fence, HeapAlignment, IndirectCommandBuffer, MetalBuffer, MetalCommandQueueDescriptor,
+    MetalDevice, MetalFunction, MetalHeapDescriptor, MetalLibrary, MetalTexture, PurgeableState,
+    RenderCommandEncoder, RenderPassDepthAttachment, RenderPassStencilAttachment,
+    RenderPipelineColorAttachmentDescriptor, RenderPipelineDescriptor, RenderPipelineState,
+    ResidencySet, SamplerDescriptor, SpatialScalerDescriptor, StencilDescriptor,
+    TemporalScalerDescriptor, TemporalScalerFrameState, TemporalScalerTextures, TextureDescriptor,
+    TileRenderPipelineColorAttachmentDescriptor, TileRenderPipelineDescriptor,
 };
 use std::fs;
 use std::path::PathBuf;
@@ -614,12 +614,8 @@ fn public_api_smoke() {
         .expect("complete compute");
     assert_eq!(read_u32_words(&explicit_buffer, 4), vec![1, 2, 3, 4]);
 
-    let visible_table =
-        if device.supports_family(gpu_family::APPLE6) || device.supports_family(gpu_family::MAC2) {
-            pipeline.new_visible_function_table(1)
-        } else {
-            None
-        };
+    let visible_table = pipeline.new_visible_function_table(1);
+    assert_eq!(visible_table.is_some(), device.supports_function_pointers());
     let intersection_table = if device.supports_raytracing() {
         pipeline.new_intersection_function_table(1)
     } else {

@@ -321,6 +321,11 @@ impl MetalDevice {
         unsafe { ffi::ametal_device_supports_raytracing(self.as_ptr()) }
     }
 
+    #[must_use]
+    pub fn supports_function_pointers(&self) -> bool {
+        unsafe { ffi::ametal_device_supports_function_pointers(self.as_ptr()) }
+    }
+
     /// Query support for a hardware counter sampling point.
     #[must_use]
     pub fn supports_counter_sampling(&self, sampling_point: usize) -> bool {

@@ -37,6 +37,12 @@ public func ametal_device_supports_raytracing(_ handle: UnsafeMutableRawPointer?
     return device.supportsRaytracing
 }
 
+@_cdecl("ametal_device_supports_function_pointers")
+public func ametal_device_supports_function_pointers(_ handle: UnsafeMutableRawPointer?) -> Bool {
+    guard let device: MTLDevice = am_borrow(handle) else { return false }
+    return device.supportsFunctionPointers
+}
+
 @_cdecl("ametal_device_supports_counter_sampling")
 public func ametal_device_supports_counter_sampling(
     _ handle: UnsafeMutableRawPointer?,
@@ -253,6 +259,7 @@ public func ametal_device_new_acceleration_structure_with_size(
 ) -> UnsafeMutableRawPointer? {
     guard size > 0,
           let device: MTLDevice = am_borrow(handle),
+          device.supportsRaytracing,
           let accelerationStructure = device.makeAccelerationStructure(size: size)
     else { return nil }
     return am_retain(accelerationStructure as AnyObject)
@@ -693,7 +700,8 @@ public func ametal_compute_pipeline_state_new_visible_function_table(
     _ functionCount: Int
 ) -> UnsafeMutableRawPointer? {
     guard functionCount >= 0,
-          let pipeline: MTLComputePipelineState = am_borrow(handle)
+          let pipeline: MTLComputePipelineState = am_borrow(handle),
+          pipeline.device.supportsFunctionPointers
     else { return nil }
     let descriptor = MTLVisibleFunctionTableDescriptor()
     descriptor.functionCount = functionCount
@@ -707,7 +715,8 @@ public func ametal_compute_pipeline_state_new_intersection_function_table(
     _ functionCount: Int
 ) -> UnsafeMutableRawPointer? {
     guard functionCount >= 0,
-          let pipeline: MTLComputePipelineState = am_borrow(handle)
+          let pipeline: MTLComputePipelineState = am_borrow(handle),
+          pipeline.device.supportsRaytracing
     else { return nil }
     let descriptor = MTLIntersectionFunctionTableDescriptor()
     descriptor.functionCount = functionCount
@@ -814,6 +823,7 @@ public func ametal_heap_new_acceleration_structure_with_size(
           size > 0,
           let heap: MTLHeap = am_borrow(handle),
           heap.storageMode == .private,
+          heap.device.supportsRaytracing,
           let accelerationStructure = heap.makeAccelerationStructure(size: size)
     else { return nil }
     return am_retain(accelerationStructure as AnyObject)

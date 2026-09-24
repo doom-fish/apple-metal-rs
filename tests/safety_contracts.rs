@@ -71,6 +71,31 @@ fn command_lifecycle_is_shared_across_clones() {
 }
 
 #[test]
+fn function_tables_and_acceleration_structures_follow_device_support() {
+    let device = common::device();
+    let (_library, _increment, _args, pipeline) = common::compile_compute(&device);
+    assert_eq!(
+        pipeline.new_visible_function_table(1).is_some(),
+        device.supports_function_pointers()
+    );
+    assert_eq!(
+        pipeline.new_intersection_function_table(1).is_some(),
+        device.supports_raytracing()
+    );
+    assert_eq!(
+        device.new_acceleration_structure_with_size(256).is_some(),
+        device.supports_raytracing()
+    );
+    if let Some(heap) = device.new_heap(1 << 20, storage_mode::PRIVATE) {
+        if !device.supports_raytracing() {
+            assert!(heap.new_acceleration_structure_with_size(256).is_none());
+        } else if common::heap_resources_work(&device) {
+            assert!(heap.new_acceleration_structure_with_size(256).is_some());
+        }
+    }
+}
+
+#[test]
 fn encoder_rejects_wait_after_updating_the_same_fence() {
     let device = common::device();
     let Some(fence) = device.new_fence() else {

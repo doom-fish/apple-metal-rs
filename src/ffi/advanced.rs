@@ -14,6 +14,7 @@ extern "C" {
     pub fn ametal_device_supports_render_dynamic_libraries(handle: *mut c_void) -> bool;
     /// Calls the `Metal` framework counterpart for `ametal_device_supports_raytracing`.
     pub fn ametal_device_supports_raytracing(handle: *mut c_void) -> bool;
+    pub fn ametal_device_supports_function_pointers(handle: *mut c_void) -> bool;
     /// Calls the `Metal` framework counterpart for `ametal_device_supports_counter_sampling`.
     pub fn ametal_device_supports_counter_sampling(
         handle: *mut c_void,

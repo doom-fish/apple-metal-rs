@@ -97,6 +97,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Every operation that checks the recording state also reads the native
   command-buffer status, so a buffer that foreign code committed is refused
   instead of being committed twice, which aborts.
+- `ComputePipelineState::new_visible_function_table` on a device without
+  function pointers, and `new_intersection_function_table` and the device and
+  heap `new_acceleration_structure_with_size` on a device without ray tracing,
+  reached Metal methods that such a device answers with
+  `doesNotRecognizeSelector:`. The Apple Paravirtual GPU of macOS virtual
+  machines does this, and the Objective-C exception aborted the process. They
+  now return `None` unless `supports_function_pointers` or
+  `supports_raytracing` reports the feature.
 
 ### Changed
 
@@ -214,6 +222,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ResidencySet::from_raw` for objects other frameworks return.
 - `gpu_family::APPLE10` and `gpu_family::METAL4`, the macOS 26 `MTLGPUFamily`
   cases. A device without `METAL4` cannot create an `MTLTensor`.
+- `MetalDevice::supports_function_pointers`.
 
 ### Removed
 
