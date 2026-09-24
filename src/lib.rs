@@ -480,6 +480,7 @@ pub mod gpu_family {
     pub const APPLE8: i64 = 1008;
     /// Mirrors the `Metal` framework constant `APPLE9`.
     pub const APPLE9: i64 = 1009;
+    pub const APPLE10: i64 = 1010;
     /// Mirrors the `Metal` framework constant `MAC1`.
     pub const MAC1: i64 = 2001;
     /// Mirrors the `Metal` framework constant `MAC2`.
@@ -492,6 +493,7 @@ pub mod gpu_family {
     pub const COMMON3: i64 = 3003;
     /// Mirrors the `Metal` framework constant `METAL3`.
     pub const METAL3: i64 = 5001;
+    pub const METAL4: i64 = 5002;
 }
 
 // ---- Device ----

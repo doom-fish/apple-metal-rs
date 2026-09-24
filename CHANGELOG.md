@@ -212,6 +212,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `intersection_function_signature` bits.
 - Owning `MetalDevice::from_raw`, `MetalBuffer::from_raw` and
   `ResidencySet::from_raw` for objects other frameworks return.
+- `gpu_family::APPLE10` and `gpu_family::METAL4`, the macOS 26 `MTLGPUFamily`
+  cases. A device without `METAL4` cannot create an `MTLTensor`.
 
 ### Removed
 
