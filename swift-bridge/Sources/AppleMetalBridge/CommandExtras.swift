@@ -90,20 +90,60 @@ public func ametal_command_buffer_new_render_command_encoder(
     _ clearR: Double,
     _ clearG: Double,
     _ clearB: Double,
-    _ clearA: Double
+    _ clearA: Double,
+    _ depthTextureHandle: UnsafeMutableRawPointer?,
+    _ depthLoadAction: Int,
+    _ depthStoreAction: Int,
+    _ clearDepth: Double,
+    _ stencilTextureHandle: UnsafeMutableRawPointer?,
+    _ stencilLoadAction: Int,
+    _ stencilStoreAction: Int,
+    _ clearStencil: UInt32
 ) -> UnsafeMutableRawPointer? {
     let descriptor = MTLRenderPassDescriptor()
     guard let commandBuffer: MTLCommandBuffer = am_borrow(handle),
           let texture: MTLTexture = am_borrow(textureHandle),
+          texture.usage.contains(.renderTarget),
           let attachment = descriptor.colorAttachments[0],
           let rawLoadAction = UInt(exactly: loadAction),
-          let rawStoreAction = UInt(exactly: storeAction)
+          let rawStoreAction = UInt(exactly: storeAction),
+          rawLoadAction <= MTLLoadAction.clear.rawValue,
+          rawStoreAction <= MTLStoreAction.store.rawValue
     else { return nil }
 
     attachment.texture = texture
     attachment.loadAction = MTLLoadAction(rawValue: rawLoadAction) ?? .dontCare
     attachment.storeAction = MTLStoreAction(rawValue: rawStoreAction) ?? .dontCare
     attachment.clearColor = MTLClearColor(red: clearR, green: clearG, blue: clearB, alpha: clearA)
+    if let depthTextureHandle {
+        guard let depthTexture: MTLTexture = am_borrow(depthTextureHandle),
+              depthTexture.usage.contains(.renderTarget),
+              depthTexture.sampleCount == texture.sampleCount,
+              let rawDepthLoad = UInt(exactly: depthLoadAction),
+              let rawDepthStore = UInt(exactly: depthStoreAction),
+              rawDepthLoad <= MTLLoadAction.clear.rawValue,
+              rawDepthStore <= MTLStoreAction.store.rawValue,
+              clearDepth.isFinite, (0...1).contains(clearDepth)
+        else { return nil }
+        descriptor.depthAttachment.texture = depthTexture
+        descriptor.depthAttachment.loadAction = MTLLoadAction(rawValue: rawDepthLoad) ?? .dontCare
+        descriptor.depthAttachment.storeAction = MTLStoreAction(rawValue: rawDepthStore) ?? .dontCare
+        descriptor.depthAttachment.clearDepth = clearDepth
+    }
+    if let stencilTextureHandle {
+        guard let stencilTexture: MTLTexture = am_borrow(stencilTextureHandle),
+              stencilTexture.usage.contains(.renderTarget),
+              stencilTexture.sampleCount == texture.sampleCount,
+              let rawStencilLoad = UInt(exactly: stencilLoadAction),
+              let rawStencilStore = UInt(exactly: stencilStoreAction),
+              rawStencilLoad <= MTLLoadAction.clear.rawValue,
+              rawStencilStore <= MTLStoreAction.store.rawValue
+        else { return nil }
+        descriptor.stencilAttachment.texture = stencilTexture
+        descriptor.stencilAttachment.loadAction = MTLLoadAction(rawValue: rawStencilLoad) ?? .dontCare
+        descriptor.stencilAttachment.storeAction = MTLStoreAction(rawValue: rawStencilStore) ?? .dontCare
+        descriptor.stencilAttachment.clearStencil = clearStencil
+    }
 
     guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
         return nil

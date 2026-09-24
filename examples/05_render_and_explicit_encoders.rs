@@ -107,6 +107,8 @@ fn main() {
             load_action::CLEAR,
             store_action::STORE,
             [0.0, 0.0, 0.0, 1.0],
+            None,
+            None,
         )
         .expect("render command encoder");
     render

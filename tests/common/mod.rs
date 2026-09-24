@@ -189,6 +189,8 @@ pub fn render_and_readback(
             apple_metal::load_action::CLEAR,
             apple_metal::store_action::STORE,
             [0.0, 0.0, 0.0, 1.0],
+            None,
+            None,
         )
         .expect("render encoder");
     encoder

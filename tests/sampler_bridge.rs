@@ -69,3 +69,29 @@ fn sampler_state_can_be_created_and_bound_to_compute_and_render_encoders() {
     });
     assert!(rendered.chunks_exact(4).any(|pixel| pixel[3] != 0));
 }
+
+#[test]
+fn sampler_descriptors_with_unknown_values_are_refused() {
+    let device = common::device();
+    let refused = |configure: fn(&mut SamplerDescriptor)| {
+        let mut descriptor = SamplerDescriptor::new();
+        configure(&mut descriptor);
+        device.new_sampler_state(&descriptor).is_none()
+    };
+    assert!(refused(|descriptor| descriptor.min_filter = 99));
+    assert!(refused(|descriptor| descriptor.mag_filter = 2));
+    assert!(refused(|descriptor| descriptor.mip_filter = 3));
+    assert!(refused(|descriptor| descriptor.max_anisotropy = 0));
+    assert!(refused(|descriptor| descriptor.max_anisotropy = 17));
+    assert!(refused(|descriptor| descriptor.s_address_mode = 99));
+    assert!(refused(|descriptor| descriptor.border_color = 3));
+    assert!(refused(|descriptor| descriptor.reduction_mode = 3));
+    assert!(refused(|descriptor| descriptor.compare_function = 8));
+    assert!(refused(|descriptor| descriptor.lod_min_clamp = f32::NAN));
+    assert!(refused(|descriptor| {
+        descriptor.lod_min_clamp = 4.0;
+        descriptor.lod_max_clamp = 1.0;
+    }));
+    assert!(refused(|descriptor| descriptor.lod_bias = f32::INFINITY));
+    assert!(!refused(|descriptor| descriptor.max_anisotropy = 16));
+}

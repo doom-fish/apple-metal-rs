@@ -277,6 +277,28 @@ pub mod pixel_format {
         })
     }
 
+    pub(crate) const fn color_bytes_per_pixel(pixel_format: usize) -> Option<usize> {
+        if matches!(pixel_format, DEPTH16UNORM | DEPTH32FLOAT | STENCIL8) {
+            None
+        } else {
+            bytes_per_pixel(pixel_format)
+        }
+    }
+
+    pub(crate) const fn is_depth_attachment_format(pixel_format: usize) -> bool {
+        matches!(
+            pixel_format,
+            DEPTH16UNORM | DEPTH32FLOAT | DEPTH24UNORM_STENCIL8 | DEPTH32FLOAT_STENCIL8
+        )
+    }
+
+    pub(crate) const fn is_stencil_attachment_format(pixel_format: usize) -> bool {
+        matches!(
+            pixel_format,
+            STENCIL8 | DEPTH24UNORM_STENCIL8 | DEPTH32FLOAT_STENCIL8
+        )
+    }
+
     pub(crate) const fn is_texture_format(pixel_format: usize) -> bool {
         bytes_per_pixel(pixel_format).is_some()
             || matches!(
@@ -415,6 +437,16 @@ pub mod resource_options {
     pub const HAZARD_TRACKING_MODE_UNTRACKED: usize = 1 << 8;
     /// Mirrors the `Metal` framework constant `HAZARD_TRACKING_MODE_TRACKED`.
     pub const HAZARD_TRACKING_MODE_TRACKED: usize = 2 << 8;
+
+    pub(crate) const fn is_valid_buffer(options: usize) -> bool {
+        let cpu_cache_mode = options & 0xF;
+        let storage_mode = (options >> 4) & 0xF;
+        let hazard_tracking_mode = (options >> 8) & 0x3;
+        options & !0x3FF == 0
+            && cpu_cache_mode <= CPU_CACHE_MODE_WRITE_COMBINED
+            && storage_mode <= 2
+            && hazard_tracking_mode <= 2
+    }
 }
 
 /// `MTLTextureUsage` bitmask.
@@ -492,7 +524,7 @@ impl MetalDevice {
         if p.is_null() {
             None
         } else {
-            Some(unsafe { Self::from_retained_ptr(p) })
+            Some(unsafe { Self::from_raw(p) })
         }
     }
 
@@ -526,14 +558,14 @@ impl MetalDevice {
     /// [`resource_options`]).
     #[must_use]
     pub fn new_buffer(&self, length: usize, options: usize) -> Option<MetalBuffer> {
-        if length > isize::MAX as usize {
+        if length > isize::MAX as usize || !resource_options::is_valid_buffer(options) {
             return None;
         }
         let p = unsafe { ffi::ametal_device_new_buffer(self.ptr, length, options) };
         if p.is_null() {
             None
         } else {
-            Some(unsafe { MetalBuffer::from_retained_ptr(p) })
+            Some(unsafe { MetalBuffer::from_raw(p) })
         }
     }
 
@@ -541,7 +573,7 @@ impl MetalDevice {
     pub fn new_buffer_with_bytes(&self, bytes: &[u8], options: usize) -> Option<MetalBuffer> {
         let storage = options & (0xF << 4);
         if bytes.is_empty()
-            || isize::try_from(options).is_err()
+            || !resource_options::is_valid_buffer(options)
             || !matches!(
                 storage,
                 resource_options::STORAGE_MODE_SHARED | resource_options::STORAGE_MODE_MANAGED
@@ -560,7 +592,7 @@ impl MetalDevice {
         if p.is_null() {
             None
         } else {
-            Some(unsafe { MetalBuffer::from_retained_ptr(p) })
+            Some(unsafe { MetalBuffer::from_raw(p) })
         }
     }
 
@@ -659,7 +691,7 @@ impl MetalDevice {
             };
             Err(msg)
         } else {
-            Ok(ComputePipelineState { ptr: p })
+            Ok(unsafe { ComputePipelineState::from_retained_ptr(p, false) })
         }
     }
 
@@ -856,6 +888,7 @@ impl MetalFunction {
 /// Apple's `id<MTLComputePipelineState>` — a compiled compute kernel.
 pub struct ComputePipelineState {
     ptr: *mut c_void,
+    threadgroup_multiple_of_execution_width: bool,
 }
 
 // SAFETY: `id<MTLComputePipelineState>` is immutable after creation and
@@ -879,8 +912,18 @@ impl ComputePipelineState {
         self.ptr
     }
 
-    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
-        Self { ptr }
+    pub(crate) const unsafe fn from_retained_ptr(
+        ptr: *mut c_void,
+        threadgroup_multiple_of_execution_width: bool,
+    ) -> Self {
+        Self {
+            ptr,
+            threadgroup_multiple_of_execution_width,
+        }
+    }
+
+    pub(crate) const fn threadgroup_multiple_of_execution_width(&self) -> bool {
+        self.threadgroup_multiple_of_execution_width
     }
 }
 
@@ -1046,7 +1089,7 @@ impl MetalBuffer {
         if pointer.is_null() {
             None
         } else {
-            Some(unsafe { Self::from_retained_ptr(pointer) })
+            Some(unsafe { Self::from_raw(pointer) })
         }
     }
 
@@ -1391,7 +1434,9 @@ impl MetalTexture {
 }
 
 impl MetalDevice {
-    pub(crate) const unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
+    #[allow(clippy::missing_safety_doc)]
+    #[must_use]
+    pub const unsafe fn from_raw(ptr: *mut c_void) -> Self {
         Self {
             ptr,
             drop_on_release: true,
@@ -1420,7 +1465,9 @@ impl CommandBuffer {
 }
 
 impl MetalBuffer {
-    pub(crate) unsafe fn from_retained_ptr(ptr: *mut c_void) -> Self {
+    #[allow(clippy::missing_safety_doc)]
+    #[must_use]
+    pub unsafe fn from_raw(ptr: *mut c_void) -> Self {
         Self {
             inner: Arc::new(MetalBufferInner {
                 ptr,

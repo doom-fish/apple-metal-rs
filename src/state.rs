@@ -3,11 +3,12 @@ use core::ffi::c_void;
 use std::ffi::CString;
 
 macro_rules! opaque_state {
-    ($(#[$meta:meta])* pub struct $name:ident;) => {
+    ($(#[$meta:meta])* pub struct $name:ident { $($field:ident: $ty:ty),* $(,)? }) => {
         $(#[$meta])*
 /// Mirrors the `Metal` framework counterpart for this type.
         pub struct $name {
             ptr: *mut c_void,
+            $($field: $ty,)*
         }
 
         impl Drop for $name {
@@ -25,15 +26,6 @@ macro_rules! opaque_state {
             pub const fn as_ptr(&self) -> *mut c_void {
                 self.ptr
             }
-
-            fn wrap(ptr: *mut c_void) -> Option<Self> {
-                if ptr.is_null() {
-                    None
-                } else {
-                    Some(Self { ptr })
-                }
-            }
-
         }
     };
 }
@@ -279,18 +271,72 @@ impl SamplerDescriptor {
 
 opaque_state!(
     /// Apple's `id<MTLDepthStencilState>` — compiled depth/stencil test state.
-    pub struct DepthStencilState;
+    pub struct DepthStencilState {
+        tests_depth: bool,
+        tests_stencil: bool,
+    }
 );
 opaque_state!(
     /// Apple's `id<MTLSamplerState>` — immutable texture-sampling state.
-    pub struct SamplerState;
+    pub struct SamplerState {
+        supports_argument_buffers: bool,
+    }
 );
+
+impl StencilDescriptor {
+    const fn is_valid(&self) -> bool {
+        self.stencil_compare_function <= compare_function::ALWAYS
+            && self.stencil_failure_operation <= stencil_operation::DECREMENT_WRAP
+            && self.depth_failure_operation <= stencil_operation::DECREMENT_WRAP
+            && self.depth_stencil_pass_operation <= stencil_operation::DECREMENT_WRAP
+    }
+
+    const fn tests_stencil(&self) -> bool {
+        self.stencil_compare_function != compare_function::ALWAYS
+            || self.stencil_failure_operation != stencil_operation::KEEP
+            || self.depth_failure_operation != stencil_operation::KEEP
+            || self.depth_stencil_pass_operation != stencil_operation::KEEP
+    }
+}
+
+impl SamplerDescriptor {
+    fn is_valid(&self) -> bool {
+        self.min_filter <= sampler_min_mag_filter::LINEAR
+            && self.mag_filter <= sampler_min_mag_filter::LINEAR
+            && self.mip_filter <= sampler_mip_filter::LINEAR
+            && (1..=16).contains(&self.max_anisotropy)
+            && [
+                self.s_address_mode,
+                self.t_address_mode,
+                self.r_address_mode,
+            ]
+            .iter()
+            .all(|mode| *mode <= sampler_address_mode::CLAMP_TO_BORDER_COLOR)
+            && self.border_color <= sampler_border_color::OPAQUE_WHITE
+            && self.reduction_mode <= sampler_reduction_mode::MAXIMUM
+            && self.compare_function <= compare_function::ALWAYS
+            && self.lod_min_clamp.is_finite()
+            && !self.lod_max_clamp.is_nan()
+            && self.lod_min_clamp <= self.lod_max_clamp
+            && self.lod_bias.is_finite()
+    }
+}
 
 impl DepthStencilState {
     /// Metal's label for this state object, if one was set.
     #[must_use]
     pub fn label(&self) -> Option<String> {
         unsafe { take_optional_string(ffi::ametal_object_copy_label(self.as_ptr())) }
+    }
+
+    #[must_use]
+    pub const fn tests_depth(&self) -> bool {
+        self.tests_depth
+    }
+
+    #[must_use]
+    pub const fn tests_stencil(&self) -> bool {
+        self.tests_stencil
     }
 }
 
@@ -299,6 +345,11 @@ impl SamplerState {
     #[must_use]
     pub fn label(&self) -> Option<String> {
         unsafe { take_optional_string(ffi::ametal_object_copy_label(self.as_ptr())) }
+    }
+
+    #[must_use]
+    pub const fn supports_argument_buffers(&self) -> bool {
+        self.supports_argument_buffers
     }
 }
 
@@ -324,7 +375,19 @@ impl MetalDevice {
             .map_or(core::ptr::null(), core::ffi::CStr::as_ptr);
         let front = descriptor.front_face_stencil.unwrap_or_default();
         let back = descriptor.back_face_stencil.unwrap_or_default();
-        DepthStencilState::wrap(unsafe {
+        if descriptor.depth_compare_function > compare_function::ALWAYS
+            || !front.is_valid()
+            || !back.is_valid()
+        {
+            return None;
+        }
+        let tests_depth = descriptor.depth_compare_function != compare_function::ALWAYS
+            || descriptor.depth_write_enabled;
+        let tests_stencil = [descriptor.front_face_stencil, descriptor.back_face_stencil]
+            .iter()
+            .flatten()
+            .any(StencilDescriptor::tests_stencil);
+        let ptr = unsafe {
             ffi::ametal_device_new_depth_stencil_state(
                 self.as_ptr(),
                 descriptor.depth_compare_function,
@@ -345,6 +408,11 @@ impl MetalDevice {
                 back.write_mask,
                 label_ptr,
             )
+        };
+        (!ptr.is_null()).then(|| DepthStencilState {
+            ptr,
+            tests_depth,
+            tests_stencil,
         })
     }
 
@@ -358,7 +426,10 @@ impl MetalDevice {
         let label_ptr = label
             .as_deref()
             .map_or(core::ptr::null(), core::ffi::CStr::as_ptr);
-        SamplerState::wrap(unsafe {
+        if !descriptor.is_valid() {
+            return None;
+        }
+        let ptr = unsafe {
             ffi::ametal_device_new_sampler_state(
                 self.as_ptr(),
                 descriptor.min_filter,
@@ -379,6 +450,10 @@ impl MetalDevice {
                 descriptor.support_argument_buffers,
                 label_ptr,
             )
+        };
+        (!ptr.is_null()).then(|| SamplerState {
+            ptr,
+            supports_argument_buffers: descriptor.support_argument_buffers,
         })
     }
 }

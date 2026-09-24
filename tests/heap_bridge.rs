@@ -1,6 +1,8 @@
 mod common;
 
-use apple_metal::{pixel_format, resource_options, storage_mode, TextureDescriptor};
+use apple_metal::{
+    pixel_format, resource_options, storage_mode, HeapAlignment, PurgeableState, TextureDescriptor,
+};
 
 #[test]
 fn heap_can_allocate_buffers_and_textures() {
@@ -10,7 +12,12 @@ fn heap_can_allocate_buffers_and_textures() {
     };
 
     assert!(heap.size() >= (1 << 20));
-    assert!(heap.max_available_size(256) > 0);
+    let alignment = HeapAlignment::new(256).expect("power of two");
+    assert_eq!(alignment.bytes(), 256);
+    assert!(heap.max_available_size(alignment) > 0);
+    assert!(heap.max_available_size(HeapAlignment::NONE) > 0);
+    assert!(HeapAlignment::new(3).is_none());
+    assert!(HeapAlignment::new(0).is_some());
     assert!(heap.used_size() <= heap.size());
     assert!(heap.current_allocated_size() <= heap.size());
 
@@ -39,4 +46,28 @@ fn heap_can_allocate_buffers_and_textures() {
     assert_eq!(texture.height(), 4);
     assert_eq!(texture.pixel_format(), pixel_format::BGRA8UNORM);
     assert_eq!(texture.storage_mode(), storage_mode::SHARED);
+}
+
+#[test]
+fn heap_purgeable_state_is_typed() {
+    let device = common::device();
+    let Some(heap) = device.new_heap(1 << 20, storage_mode::PRIVATE) else {
+        return;
+    };
+    assert_eq!(
+        heap.set_purgeable_state(PurgeableState::KeepCurrent),
+        Some(PurgeableState::NonVolatile)
+    );
+    assert_eq!(
+        heap.set_purgeable_state(PurgeableState::Volatile),
+        Some(PurgeableState::NonVolatile)
+    );
+    assert_eq!(
+        heap.set_purgeable_state(PurgeableState::KeepCurrent),
+        Some(PurgeableState::Volatile)
+    );
+    assert_eq!(
+        heap.set_purgeable_state(PurgeableState::NonVolatile),
+        Some(PurgeableState::Volatile)
+    );
 }

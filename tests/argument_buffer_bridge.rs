@@ -2,7 +2,7 @@ mod common;
 
 use apple_metal::{
     argument_buffers_tier, binding_access, pixel_format, resource_options, texture_type,
-    ArgumentDescriptor, SamplerDescriptor, TextureDescriptor,
+    ArgumentDescriptor, ArgumentEncoderError, SamplerDescriptor, TextureDescriptor,
 };
 
 #[test]
@@ -96,9 +96,16 @@ fn argument_encoders_can_encode_function_and_descriptor_layouts() {
             resource_options::STORAGE_MODE_SHARED,
         )
         .expect("descriptor argument buffer");
-    let sampler = device
+    let unsupported_sampler = device
         .new_sampler_state(&SamplerDescriptor::new())
+        .expect("sampler without argument-buffer support");
+    assert!(!unsupported_sampler.supports_argument_buffers());
+    let mut sampler_descriptor = SamplerDescriptor::new();
+    sampler_descriptor.support_argument_buffers = true;
+    let sampler = device
+        .new_sampler_state(&sampler_descriptor)
         .expect("descriptor sampler state");
+    assert!(sampler.supports_argument_buffers());
     unsafe {
         let mut binding = descriptor_encoder
             .bind_argument_buffer(&descriptor_argument_buffer, 0)
@@ -109,6 +116,14 @@ fn argument_encoders_can_encode_function_and_descriptor_layouts() {
         binding
             .set_texture(&texture, 1)
             .expect("bind descriptor texture");
+        assert_eq!(
+            binding.set_sampler_state(&unsupported_sampler, 2),
+            Err(ArgumentEncoderError::SamplerWithoutArgumentBufferSupport)
+        );
+        assert_eq!(
+            binding.set_sampler_state_unchecked(&unsupported_sampler, 2),
+            Err(ArgumentEncoderError::SamplerWithoutArgumentBufferSupport)
+        );
         binding
             .set_sampler_state(&sampler, 2)
             .expect("bind descriptor sampler");

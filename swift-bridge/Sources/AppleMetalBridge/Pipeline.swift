@@ -120,6 +120,12 @@ public func ametal_device_new_render_pipeline_state_with_descriptor(
     descriptor.depthAttachmentPixelFormat = UInt(exactly: depthAttachmentPixelFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
     descriptor.stencilAttachmentPixelFormat = UInt(exactly: stencilAttachmentPixelFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
     am_apply_render_color_attachments(colorAttachments, count: colorAttachmentCount, to: descriptor.colorAttachments)
+    let formats = [descriptor.depthAttachmentPixelFormat, descriptor.stencilAttachmentPixelFormat]
+        + (0..<max(0, min(colorAttachmentCount, 8))).map { descriptor.colorAttachments[$0].pixelFormat }
+    guard formats.allSatisfy({ amDeviceSupportsPixelFormat(device, $0) }) else {
+        am_store_error_message(outErrorMessage, "the device does not support an attachment pixel format")
+        return nil
+    }
 
     do {
         let pipeline = try device.makeRenderPipelineState(descriptor: descriptor)
@@ -157,6 +163,11 @@ public func ametal_device_new_tile_render_pipeline_state(
         descriptor.maxTotalThreadsPerThreadgroup = maxTotalThreadsPerThreadgroup
     }
     am_apply_tile_color_attachments(colorAttachments, count: colorAttachmentCount, to: descriptor.colorAttachments)
+    let tileFormats = (0..<max(0, min(colorAttachmentCount, 8))).map { descriptor.colorAttachments[$0].pixelFormat }
+    guard tileFormats.allSatisfy({ amDeviceSupportsPixelFormat(device, $0) }) else {
+        am_store_error_message(outErrorMessage, "the device does not support an attachment pixel format")
+        return nil
+    }
 
     do {
         var reflection: MTLAutoreleasedRenderPipelineReflection?

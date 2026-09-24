@@ -1,5 +1,7 @@
 mod common;
 
+use apple_metal::EventWaitError;
+
 #[test]
 fn shared_events_can_be_signaled_waited_and_encoded_on_command_buffers() {
     let device = common::device();
@@ -9,7 +11,11 @@ fn shared_events_can_be_signaled_waited_and_encoded_on_command_buffers() {
 
     event.set_signaled_value(1);
     assert_eq!(event.signaled_value(), 1);
-    assert!(event.wait_until_signaled_value(1, 1_000));
+    assert_eq!(event.wait_until_signaled_value(1, 1_000), Ok(()));
+    assert_eq!(
+        event.wait_until_signaled_value(5, 10),
+        Err(EventWaitError::TimedOut)
+    );
 
     let queue = device.new_command_queue().expect("command queue");
 
@@ -21,7 +27,7 @@ fn shared_events_can_be_signaled_waited_and_encoded_on_command_buffers() {
     signal_buffer
         .wait_until_completed()
         .expect("complete event signal");
-    assert!(event.wait_until_signaled_value(2, 1_000));
+    assert_eq!(event.wait_until_signaled_value(2, 1_000), Ok(()));
 
     let wait_buffer = queue.new_command_buffer().expect("wait command buffer");
     wait_buffer

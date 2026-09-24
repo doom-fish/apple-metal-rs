@@ -28,7 +28,7 @@ fn main() {
             .wait_until_completed()
             .expect("complete event signal");
         println!(
-            "event reached value 2: {}",
+            "event reached value 2: {:?}",
             event.wait_until_signaled_value(2, 1_000),
         );
 
@@ -116,7 +116,9 @@ fn main() {
         None
     };
     if let Some(table) = intersection_table.as_ref() {
-        table.set_opaque_triangle_intersection_function(intersection_function_signature::NONE, 0);
+        table
+            .set_opaque_triangle_intersection_function(intersection_function_signature::NONE, 0)
+            .expect("opaque triangle intersection function");
     }
     let acceleration_structure = if device.supports_raytracing() {
         device.new_acceleration_structure_with_size(256)

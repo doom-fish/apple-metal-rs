@@ -98,15 +98,54 @@ pub mod log_level {
 }
 
 /// `MTLPurgeableState` enum values.
-pub mod purgeable_state {
-    /// Mirrors the `Metal` framework constant `KEEP_CURRENT`.
-    pub const KEEP_CURRENT: usize = 1;
-    /// Mirrors the `Metal` framework constant `NON_VOLATILE`.
-    pub const NON_VOLATILE: usize = 2;
-    /// Mirrors the `Metal` framework constant `VOLATILE`.
-    pub const VOLATILE: usize = 3;
-    /// Mirrors the `Metal` framework constant `EMPTY`.
-    pub const EMPTY: usize = 4;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PurgeableState {
+    KeepCurrent,
+    NonVolatile,
+    Volatile,
+    Empty,
+}
+
+impl PurgeableState {
+    const fn raw(self) -> usize {
+        match self {
+            Self::KeepCurrent => 1,
+            Self::NonVolatile => 2,
+            Self::Volatile => 3,
+            Self::Empty => 4,
+        }
+    }
+
+    const fn from_raw(raw: usize) -> Option<Self> {
+        match raw {
+            1 => Some(Self::KeepCurrent),
+            2 => Some(Self::NonVolatile),
+            3 => Some(Self::Volatile),
+            4 => Some(Self::Empty),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct HeapAlignment(usize);
+
+impl HeapAlignment {
+    pub const NONE: Self = Self(0);
+
+    #[must_use]
+    pub const fn new(bytes: usize) -> Option<Self> {
+        if bytes == 0 || bytes.is_power_of_two() {
+            Some(Self(bytes))
+        } else {
+            None
+        }
+    }
+
+    #[must_use]
+    pub const fn bytes(self) -> usize {
+        self.0
+    }
 }
 
 /// `MTLCaptureDestination` enum values.
@@ -127,6 +166,75 @@ pub mod intersection_function_signature {
     pub const TRIANGLE_DATA: usize = 1 << 1;
     /// Mirrors the `Metal` framework constant `WORLD_SPACE_DATA`.
     pub const WORLD_SPACE_DATA: usize = 1 << 2;
+    pub const INSTANCE_MOTION: usize = 1 << 3;
+    pub const PRIMITIVE_MOTION: usize = 1 << 4;
+    pub const EXTENDED_LIMITS: usize = 1 << 5;
+    pub const MAX_LEVELS: usize = 1 << 6;
+    pub const CURVE_DATA: usize = 1 << 7;
+    pub const INTERSECTION_FUNCTION_BUFFER: usize = 1 << 8;
+    pub const USER_DATA: usize = 1 << 9;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FunctionTableError {
+    IndexOutOfRange { index: usize, function_count: usize },
+    UnknownSignature { signature: usize },
+}
+
+impl core::fmt::Display for FunctionTableError {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::IndexOutOfRange {
+                index,
+                function_count,
+            } => write!(
+                formatter,
+                "function table index {index} is outside 0..{function_count}"
+            ),
+            Self::UnknownSignature { signature } => write!(
+                formatter,
+                "intersection function signature {signature:#x} has unknown bits"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for FunctionTableError {}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventWaitError {
+    TimedOut,
+    Unsupported,
+}
+
+impl core::fmt::Display for EventWaitError {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::TimedOut => formatter.write_str("the shared event wait timed out"),
+            Self::Unsupported => formatter
+                .write_str("waiting on a shared event from the CPU requires macOS 12 or later"),
+        }
+    }
+}
+
+impl std::error::Error for EventWaitError {}
+
+/// Apple's `id<MTLIntersectionFunctionTable>` — table of ray intersection functions.
+pub struct IntersectionFunctionTable {
+    ptr: *mut c_void,
+    function_count: usize,
+}
+
+unsafe impl Send for IntersectionFunctionTable {}
+unsafe impl Sync for IntersectionFunctionTable {}
+
+impl Drop for IntersectionFunctionTable {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            unsafe { ffi::ametal_object_release(self.ptr) };
+            self.ptr = core::ptr::null_mut();
+        }
+    }
 }
 
 opaque_handle!(
@@ -156,10 +264,6 @@ opaque_handle!(
 opaque_handle!(
     /// Apple's `id<MTLAccelerationStructure>` — storage for ray tracing data.
     pub struct AccelerationStructure;
-);
-opaque_handle!(
-    /// Apple's `id<MTLIntersectionFunctionTable>` — table of ray intersection functions.
-    pub struct IntersectionFunctionTable;
 );
 opaque_handle!(
     /// Apple's `id<MTLVisibleFunctionTable>` — table of callable function handles.
@@ -372,6 +476,9 @@ impl MetalDevice {
         max_kernel_buffer_bind_count: usize,
         options: usize,
     ) -> Option<IndirectCommandBuffer> {
+        if !crate::resource_options::is_valid_buffer(options) {
+            return None;
+        }
         IndirectCommandBuffer::wrap(unsafe {
             ffi::ametal_device_new_indirect_command_buffer(
                 self.as_ptr(),
@@ -524,7 +631,7 @@ impl MetalBuffer {
         bytes_per_row: usize,
         offset: usize,
     ) -> Result<MetalTexture, TextureViewError> {
-        let bytes_per_pixel = color_bytes_per_pixel(pixel_format)
+        let bytes_per_pixel = crate::pixel_format::color_bytes_per_pixel(pixel_format)
             .ok_or(TextureViewError::UnsupportedPixelFormat { pixel_format })?;
         if width == 0 || height == 0 {
             return Err(TextureViewError::EmptyRegion);
@@ -865,6 +972,11 @@ impl MetalTexture {
         unsafe { ffi::ametal_texture_array_length(self.as_ptr()) }
     }
 
+    #[must_use]
+    pub fn sample_count(&self) -> usize {
+        unsafe { ffi::ametal_texture_sample_count(self.as_ptr()) }
+    }
+
     /// `MTLTextureUsage` bitmask.
     #[must_use]
     pub fn usage(&self) -> usize {
@@ -1018,7 +1130,7 @@ impl MetalTexture {
             (DEPTH32FLOAT_STENCIL8, X32_STENCIL8) | (DEPTH24UNORM_STENCIL8, X24_STENCIL8)
         );
         let same_size = matches!(
-            (color_bytes_per_pixel(original), color_bytes_per_pixel(pixel_format)),
+            (crate::pixel_format::color_bytes_per_pixel(original), crate::pixel_format::color_bytes_per_pixel(pixel_format)),
             (Some(original), Some(view)) if original == view
         );
         let reinterpreting = self.usage() & crate::texture_usage::PIXEL_FORMAT_VIEW != 0;
@@ -1177,23 +1289,13 @@ fn validate_texture_transfer(
     Ok(layout)
 }
 
-fn color_bytes_per_pixel(pixel_format: usize) -> Option<usize> {
-    use crate::pixel_format;
-
-    if matches!(
-        pixel_format,
-        pixel_format::DEPTH16UNORM | pixel_format::DEPTH32FLOAT | pixel_format::STENCIL8
-    ) {
-        return None;
-    }
-    pixel_format::bytes_per_pixel(pixel_format)
-}
-
 fn pixel_format_layout(pixel_format: usize) -> Option<PixelFormatLayout> {
-    color_bytes_per_pixel(pixel_format).map(|bytes_per_block| PixelFormatLayout {
-        block_width: 1,
-        block_height: 1,
-        bytes_per_block,
+    crate::pixel_format::color_bytes_per_pixel(pixel_format).map(|bytes_per_block| {
+        PixelFormatLayout {
+            block_width: 1,
+            block_height: 1,
+            bytes_per_block,
+        }
     })
 }
 
@@ -1286,11 +1388,18 @@ impl ComputePipelineState {
         &self,
         function_count: usize,
     ) -> Option<IntersectionFunctionTable> {
-        IntersectionFunctionTable::wrap(unsafe {
+        if isize::try_from(function_count).is_err() {
+            return None;
+        }
+        let ptr = unsafe {
             ffi::ametal_compute_pipeline_state_new_intersection_function_table(
                 self.as_ptr(),
                 function_count,
             )
+        };
+        (!ptr.is_null()).then(|| IntersectionFunctionTable {
+            ptr,
+            function_count,
         })
     }
 }
@@ -1329,21 +1438,21 @@ impl Heap {
 
     /// Largest allocatable block in the heap for the given alignment.
     #[must_use]
-    pub fn max_available_size(&self, alignment: usize) -> usize {
-        unsafe { ffi::ametal_heap_max_available_size(self.as_ptr(), alignment) }
+    pub fn max_available_size(&self, alignment: HeapAlignment) -> usize {
+        unsafe { ffi::ametal_heap_max_available_size(self.as_ptr(), alignment.bytes()) }
     }
 
     /// Allocate a buffer from this heap.
     #[must_use]
     pub fn new_buffer(&self, length: usize, options: usize) -> Option<MetalBuffer> {
-        if isize::try_from(length).is_err() || isize::try_from(options).is_err() {
+        if isize::try_from(length).is_err() || !crate::resource_options::is_valid_buffer(options) {
             return None;
         }
         let ptr = unsafe { ffi::ametal_heap_new_buffer(self.as_ptr(), length, options) };
         if ptr.is_null() {
             None
         } else {
-            Some(unsafe { MetalBuffer::from_retained_ptr(ptr) })
+            Some(unsafe { MetalBuffer::from_raw(ptr) })
         }
     }
 
@@ -1388,8 +1497,10 @@ impl Heap {
 
     /// Set the heap purgeable state.
     #[must_use]
-    pub fn set_purgeable_state(&self, state: usize) -> usize {
-        unsafe { ffi::ametal_heap_set_purgeable_state(self.as_ptr(), state) }
+    pub fn set_purgeable_state(&self, state: PurgeableState) -> Option<PurgeableState> {
+        PurgeableState::from_raw(unsafe {
+            ffi::ametal_heap_set_purgeable_state(self.as_ptr(), state.raw())
+        })
     }
 }
 
@@ -1406,9 +1517,19 @@ impl Event {
     }
 
     /// Wait until the event reaches at least `value`.
-    #[must_use]
-    pub fn wait_until_signaled_value(&self, value: u64, timeout_ms: u64) -> bool {
-        unsafe { ffi::ametal_event_wait_until_signaled_value(self.as_ptr(), value, timeout_ms) }
+    #[allow(clippy::missing_errors_doc)]
+    pub fn wait_until_signaled_value(
+        &self,
+        value: u64,
+        timeout_ms: u64,
+    ) -> Result<(), EventWaitError> {
+        match unsafe {
+            ffi::ametal_event_wait_until_signaled_value(self.as_ptr(), value, timeout_ms)
+        } {
+            1 => Ok(()),
+            0 => Err(EventWaitError::TimedOut),
+            _ => Err(EventWaitError::Unsupported),
+        }
     }
 
     #[must_use]
@@ -1521,6 +1642,18 @@ impl BinaryArchive {
         color_pixel_format: usize,
         sample_count: usize,
     ) -> Result<(), String> {
+        let mut colors = [crate::pixel_format::INVALID; 8];
+        colors[0] = color_pixel_format;
+        crate::render::RenderTargetFormats {
+            colors,
+            depth: crate::pixel_format::INVALID,
+            stencil: crate::pixel_format::INVALID,
+            sample_count,
+        }
+        .validate_pipeline()?;
+        if color_pixel_format == crate::pixel_format::INVALID {
+            return Err("a render pipeline needs a color attachment format".to_string());
+        }
         let mut err: *mut core::ffi::c_char = core::ptr::null_mut();
         let ok = unsafe {
             ffi::ametal_binary_archive_add_render_functions(
@@ -1610,8 +1743,32 @@ impl AccelerationStructure {
 }
 
 impl IntersectionFunctionTable {
+    #[must_use]
+    pub const fn as_ptr(&self) -> *mut c_void {
+        self.ptr
+    }
+
+    #[must_use]
+    pub const fn function_count(&self) -> usize {
+        self.function_count
+    }
+
     /// Populate `index` with the built-in opaque triangle intersection function.
-    pub fn set_opaque_triangle_intersection_function(&self, signature: usize, index: usize) {
+    #[allow(clippy::missing_errors_doc)]
+    pub fn set_opaque_triangle_intersection_function(
+        &self,
+        signature: usize,
+        index: usize,
+    ) -> Result<(), FunctionTableError> {
+        if index >= self.function_count {
+            return Err(FunctionTableError::IndexOutOfRange {
+                index,
+                function_count: self.function_count,
+            });
+        }
+        if signature & !((intersection_function_signature::USER_DATA << 1) - 1) != 0 {
+            return Err(FunctionTableError::UnknownSignature { signature });
+        }
         unsafe {
             ffi::ametal_intersection_function_table_set_opaque_triangle(
                 self.as_ptr(),
@@ -1619,6 +1776,7 @@ impl IntersectionFunctionTable {
                 index,
             );
         };
+        Ok(())
     }
 }
 
@@ -1655,6 +1813,12 @@ impl CounterSampleBuffer {
 }
 
 impl ResidencySet {
+    #[allow(clippy::missing_safety_doc)]
+    #[must_use]
+    pub const unsafe fn from_raw(ptr: *mut c_void) -> Self {
+        Self { ptr }
+    }
+
     /// Add `buffer` to the set.
     pub fn add_buffer(&self, buffer: &MetalBuffer) {
         unsafe { ffi::ametal_residency_set_add_buffer(self.as_ptr(), buffer.as_ptr()) };

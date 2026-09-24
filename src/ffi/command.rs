@@ -28,6 +28,14 @@ extern "C" {
         clear_g: f64,
         clear_b: f64,
         clear_a: f64,
+        depth_texture_handle: *mut c_void,
+        depth_load_action: usize,
+        depth_store_action: usize,
+        clear_depth: f64,
+        stencil_texture_handle: *mut c_void,
+        stencil_load_action: usize,
+        stencil_store_action: usize,
+        clear_stencil: u32,
     ) -> *mut c_void;
     /// Calls the `Metal` framework counterpart for `ametal_command_buffer_encode_wait_for_event`.
     pub fn ametal_command_buffer_encode_wait_for_event(

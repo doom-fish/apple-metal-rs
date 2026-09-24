@@ -80,14 +80,16 @@ fn main() {
             heap.size(),
             heap.used_size(),
             heap.current_allocated_size(),
-            heap.max_available_size(256),
+            heap.max_available_size(
+                apple_metal::HeapAlignment::new(256).expect("power-of-two alignment")
+            ),
         );
         println!(
-            "heap buffer len={} heap texture {}x{} purgeable={}",
+            "heap buffer len={} heap texture {}x{} purgeable={:?}",
             heap_buffer.length(),
             heap_texture.width(),
             heap_texture.height(),
-            heap.set_purgeable_state(apple_metal::purgeable_state::KEEP_CURRENT),
+            heap.set_purgeable_state(apple_metal::PurgeableState::KeepCurrent),
         );
     } else {
         println!("heaps are unavailable on this device");

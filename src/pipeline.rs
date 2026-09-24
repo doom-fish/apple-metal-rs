@@ -1,6 +1,6 @@
 use crate::{
-    ffi, util::take_optional_string, ComputePipelineState, MetalDevice, MetalFunction,
-    RenderPipelineState,
+    ffi, render::RenderTargetFormats, util::take_optional_string, ComputePipelineState,
+    MetalDevice, MetalFunction, RenderPipelineState,
 };
 
 /// `MTLBlendFactor` enum values.
@@ -292,6 +292,21 @@ fn flatten_render_color_attachments(
 
     let mut flat = Vec::with_capacity(color_attachments.len().saturating_mul(9));
     for attachment in color_attachments {
+        let factors = [
+            attachment.source_rgb_blend_factor,
+            attachment.destination_rgb_blend_factor,
+            attachment.source_alpha_blend_factor,
+            attachment.destination_alpha_blend_factor,
+        ];
+        if factors
+            .iter()
+            .any(|factor| *factor > blend_factor::ONE_MINUS_SOURCE1_ALPHA)
+            || attachment.rgb_blend_operation > blend_operation::MAX
+            || attachment.alpha_blend_operation > blend_operation::MAX
+            || attachment.write_mask & !color_write_mask::ALL != 0
+        {
+            return Err("render pipeline color attachment has an unknown blend value".to_string());
+        }
         flat.extend_from_slice(&attachment.as_words());
     }
     Ok(flat)
@@ -346,7 +361,12 @@ impl MetalDevice {
                 })
             })
         } else {
-            Ok(unsafe { ComputePipelineState::from_retained_ptr(ptr) })
+            Ok(unsafe {
+                ComputePipelineState::from_retained_ptr(
+                    ptr,
+                    descriptor.thread_group_size_is_multiple_of_thread_execution_width,
+                )
+            })
         }
     }
 
@@ -360,6 +380,17 @@ impl MetalDevice {
         descriptor: &RenderPipelineDescriptor<'_>,
     ) -> Result<RenderPipelineState, String> {
         let color_attachments = flatten_render_color_attachments(descriptor.color_attachments)?;
+        let mut colors = [crate::pixel_format::INVALID; 8];
+        for (slot, attachment) in colors.iter_mut().zip(descriptor.color_attachments) {
+            *slot = attachment.pixel_format;
+        }
+        let targets = RenderTargetFormats {
+            colors,
+            depth: descriptor.depth_attachment_pixel_format,
+            stencil: descriptor.stencil_attachment_pixel_format,
+            sample_count: descriptor.raster_sample_count,
+        }
+        .validate_pipeline()?;
         let label = descriptor
             .label
             .and_then(|value| std::ffi::CString::new(value).ok());
@@ -394,7 +425,7 @@ impl MetalDevice {
                 })
             })
         } else {
-            Ok(unsafe { RenderPipelineState::from_retained_ptr(ptr) })
+            Ok(unsafe { RenderPipelineState::from_retained_ptr(ptr, targets, true) })
         }
     }
 
@@ -408,6 +439,17 @@ impl MetalDevice {
         descriptor: &TileRenderPipelineDescriptor<'_>,
     ) -> Result<RenderPipelineState, String> {
         let color_attachments = flatten_tile_color_attachments(descriptor.color_attachments)?;
+        let mut colors = [crate::pixel_format::INVALID; 8];
+        for (slot, attachment) in colors.iter_mut().zip(descriptor.color_attachments) {
+            *slot = attachment.pixel_format;
+        }
+        let targets = RenderTargetFormats {
+            colors,
+            depth: crate::pixel_format::INVALID,
+            stencil: crate::pixel_format::INVALID,
+            sample_count: descriptor.raster_sample_count,
+        }
+        .validate_pipeline()?;
         let label = descriptor
             .label
             .and_then(|value| std::ffi::CString::new(value).ok());
@@ -435,7 +477,7 @@ impl MetalDevice {
                 })
             })
         } else {
-            Ok(unsafe { RenderPipelineState::from_retained_ptr(ptr) })
+            Ok(unsafe { RenderPipelineState::from_retained_ptr(ptr, targets, false) })
         }
     }
 }

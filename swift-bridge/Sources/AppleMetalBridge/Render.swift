@@ -20,6 +20,10 @@ public func ametal_device_new_render_pipeline_state(
     descriptor.fragmentFunction = fragment
     descriptor.colorAttachments[0].pixelFormat = UInt(exactly: colorPixelFormat).flatMap(MTLPixelFormat.init(rawValue:)) ?? .invalid
     descriptor.sampleCount = sampleCount
+    guard amDeviceSupportsPixelFormat(device, descriptor.colorAttachments[0].pixelFormat) else {
+        am_store_error_message(outErrorMessage, "the device does not support the color pixel format")
+        return nil
+    }
 
     do {
         let pipeline = try device.makeRenderPipelineState(descriptor: descriptor)

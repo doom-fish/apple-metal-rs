@@ -183,3 +183,91 @@ fn rasterization_rate_layers_use_the_sample_count_initializer() {
     assert!(MetalRasterizationRateLayerDescriptor::with_sample_count(usize::MAX, 1).is_none());
     assert!(MetalRasterizationRateLayerDescriptor::with_sample_count(16_385, 1).is_none());
 }
+
+#[test]
+fn intersection_function_tables_check_index_and_signature() {
+    let Some(device) = device() else { return };
+    if !device.supports_raytracing() {
+        eprintln!("skipping: no ray tracing");
+        return;
+    }
+    let library = device
+        .new_library_with_source(
+            "#include <metal_stdlib>\nusing namespace metal;\nkernel void k(device uint *o [[buffer(0)]], uint i [[thread_position_in_grid]]) { o[i] = i; }",
+        )
+        .expect("compute MSL");
+    let function = library.new_function("k").expect("kernel");
+    let pipeline = device
+        .new_compute_pipeline_state(&function)
+        .expect("compute pipeline");
+    let table = pipeline
+        .new_intersection_function_table(2)
+        .expect("intersection function table");
+    assert_eq!(table.function_count(), 2);
+    table
+        .set_opaque_triangle_intersection_function(
+            apple_metal::intersection_function_signature::TRIANGLE_DATA,
+            1,
+        )
+        .expect("index inside the table");
+    assert_eq!(
+        table.set_opaque_triangle_intersection_function(0, 2),
+        Err(apple_metal::FunctionTableError::IndexOutOfRange {
+            index: 2,
+            function_count: 2,
+        })
+    );
+    assert_eq!(
+        table.set_opaque_triangle_intersection_function(1 << 10, 0),
+        Err(apple_metal::FunctionTableError::UnknownSignature { signature: 1 << 10 })
+    );
+}
+
+#[test]
+fn metalfx_scalers_refuse_formats_and_sizes_that_abort() {
+    let Some(device) = device() else { return };
+    if !apple_metal::SpatialScalerDescriptor::supports_device(&device) {
+        eprintln!("skipping: no MetalFX spatial scaler");
+        return;
+    }
+    let valid = apple_metal::SpatialScalerDescriptor::new(
+        pixel_format::BGRA8UNORM,
+        pixel_format::BGRA8UNORM,
+        64,
+        64,
+        128,
+        128,
+    );
+    assert!(device.new_spatial_scaler(&valid).is_some());
+    let mut depth_output = valid;
+    depth_output.output_texture_format = pixel_format::DEPTH32FLOAT;
+    assert!(device.new_spatial_scaler(&depth_output).is_none());
+    let mut unknown = valid;
+    unknown.color_texture_format = 9_999;
+    assert!(device.new_spatial_scaler(&unknown).is_none());
+    let mut huge = valid;
+    huge.output_width = 1 << 20;
+    assert!(device.new_spatial_scaler(&huge).is_none());
+    let mut empty = valid;
+    empty.input_width = 0;
+    assert!(device.new_spatial_scaler(&empty).is_none());
+
+    if !apple_metal::TemporalScalerDescriptor::supports_device(&device) {
+        return;
+    }
+    let temporal = apple_metal::TemporalScalerDescriptor::new(
+        pixel_format::BGRA8UNORM,
+        pixel_format::DEPTH32FLOAT,
+        pixel_format::RG16FLOAT,
+        pixel_format::BGRA8UNORM,
+        (64, 64),
+        (128, 128),
+    );
+    assert!(device.new_temporal_scaler(&temporal).is_some());
+    let mut depth_as_color = temporal;
+    depth_as_color.color_texture_format = pixel_format::DEPTH32FLOAT;
+    assert!(device.new_temporal_scaler(&depth_as_color).is_none());
+    let mut compressed_motion = temporal;
+    compressed_motion.motion_texture_format = pixel_format::BC1_RGBA;
+    assert!(device.new_temporal_scaler(&compressed_motion).is_none());
+}

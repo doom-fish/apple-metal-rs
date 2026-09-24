@@ -78,19 +78,34 @@ pub enum ArgumentEncoderError {
     /// At least one argument descriptor is required.
     EmptyDescriptorSet,
     /// The raw data type is not valid for descriptor-based argument encoding.
-    UnsupportedDataType { data_type: usize },
+    UnsupportedDataType {
+        data_type: usize,
+    },
     /// The raw binding-access value is invalid for this descriptor.
-    InvalidAccess { access: usize },
+    InvalidAccess {
+        access: usize,
+    },
     /// The raw texture-type value is invalid.
-    InvalidTextureType { texture_type: usize },
+    InvalidTextureType {
+        texture_type: usize,
+    },
     /// Buffer-pointer descriptors cannot declare an array length.
-    BufferArrayUnsupported { array_length: usize },
+    BufferArrayUnsupported {
+        array_length: usize,
+    },
     /// Constant-block alignment is invalid for this descriptor.
-    InvalidConstantBlockAlignment { alignment: usize },
+    InvalidConstantBlockAlignment {
+        alignment: usize,
+    },
     /// A descriptor's binding range exceeds the supported index space.
-    BindingRangeOutOfBounds { index: usize, array_length: usize },
+    BindingRangeOutOfBounds {
+        index: usize,
+        array_length: usize,
+    },
     /// Two descriptors claim the same binding index.
-    DuplicateBinding { index: usize },
+    DuplicateBinding {
+        index: usize,
+    },
     /// Metal could not create an argument encoder.
     NativeCreationFailed,
     /// Another CPU mapping panicked while holding the argument buffer lock.
@@ -98,7 +113,9 @@ pub enum ArgumentEncoderError {
     /// The function-derived encoder does not expose type metadata.
     LayoutUnavailable,
     /// The binding index is not present in the encoder layout.
-    InvalidBindingIndex { index: usize },
+    InvalidBindingIndex {
+        index: usize,
+    },
     /// The setter does not match the descriptor's resource type.
     BindingTypeMismatch {
         index: usize,
@@ -106,7 +123,10 @@ pub enum ArgumentEncoderError {
         actual: ArgumentBindingType,
     },
     /// The destination argument-buffer offset is not suitably aligned.
-    MisalignedArgumentBufferOffset { offset: usize, alignment: usize },
+    MisalignedArgumentBufferOffset {
+        offset: usize,
+        alignment: usize,
+    },
     /// The encoded argument range exceeds the destination buffer.
     ArgumentBufferRangeOutOfBounds {
         offset: usize,
@@ -114,13 +134,24 @@ pub enum ArgumentEncoderError {
         buffer_length: usize,
     },
     /// The destination argument buffer is not CPU-addressable.
-    CpuInaccessibleArgumentBuffer { storage_mode: usize },
+    CpuInaccessibleArgumentBuffer {
+        storage_mode: usize,
+    },
     /// A referenced buffer offset exceeds that buffer's length.
-    BufferOffsetOutOfBounds { offset: usize, buffer_length: usize },
+    BufferOffsetOutOfBounds {
+        offset: usize,
+        buffer_length: usize,
+    },
     /// A value cannot be represented by the native API.
-    IntegerOutOfRange { field: &'static str, value: usize },
+    IntegerOutOfRange {
+        field: &'static str,
+        value: usize,
+    },
     /// The native bridge rejected a validated setter.
-    NativeRejected { operation: &'static str },
+    NativeRejected {
+        operation: &'static str,
+    },
+    SamplerWithoutArgumentBufferSupport,
 }
 
 impl core::fmt::Display for ArgumentEncoderError {
@@ -210,6 +241,9 @@ impl core::fmt::Display for ArgumentEncoderError {
                 write!(formatter, "{field} value {value} exceeds native Int")
             }
             Self::NativeRejected { operation } => write!(formatter, "Metal rejected {operation}"),
+            Self::SamplerWithoutArgumentBufferSupport => {
+                formatter.write_str("the sampler was not created with support_argument_buffers")
+            }
         }
     }
 }
@@ -611,6 +645,9 @@ impl ArgumentBufferBinding<'_> {
         index: usize,
     ) -> Result<(), ArgumentEncoderError> {
         validate_index(index)?;
+        if !sampler.supports_argument_buffers() {
+            return Err(ArgumentEncoderError::SamplerWithoutArgumentBufferSupport);
+        }
         if ffi::ametal_argument_encoder_set_sampler_state(
             self.encoder.as_ptr(),
             sampler.as_ptr(),

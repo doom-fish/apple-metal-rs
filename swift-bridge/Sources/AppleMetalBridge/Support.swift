@@ -150,7 +150,11 @@ func amDeviceSupportsTexture(_ device: MTLDevice, _ descriptor: MTLTextureDescri
     if descriptor.sampleCount > 1, !device.supportsTextureSampleCount(descriptor.sampleCount) {
         return false
     }
-    switch descriptor.pixelFormat.rawValue {
+    return amDeviceSupportsPixelFormat(device, descriptor.pixelFormat)
+}
+
+func amDeviceSupportsPixelFormat(_ device: MTLDevice, _ format: MTLPixelFormat) -> Bool {
+    switch format.rawValue {
     case 255, 262:
         return device.isDepth24Stencil8PixelFormatSupported
     case 130...135, 140...143, 150...153:

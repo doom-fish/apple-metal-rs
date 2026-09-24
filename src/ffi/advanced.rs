@@ -139,6 +139,7 @@ extern "C" {
     pub fn ametal_texture_mipmap_level_count(handle: *mut c_void) -> usize;
     /// Calls the `Metal` framework counterpart for `ametal_texture_array_length`.
     pub fn ametal_texture_array_length(handle: *mut c_void) -> usize;
+    pub fn ametal_texture_sample_count(handle: *mut c_void) -> usize;
     /// Calls the `Metal` framework counterpart for `ametal_texture_usage`.
     pub fn ametal_texture_usage(handle: *mut c_void) -> usize;
     /// Calls the `Metal` framework counterpart for `ametal_texture_storage_mode`.
@@ -241,7 +242,7 @@ extern "C" {
         handle: *mut c_void,
         value: u64,
         timeout_ms: u64,
-    ) -> bool;
+    ) -> isize;
     pub fn ametal_shared_event_notify_listener(
         handle: *mut c_void,
         listener_handle: *mut c_void,

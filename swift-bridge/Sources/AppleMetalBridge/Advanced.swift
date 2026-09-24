@@ -488,6 +488,12 @@ public func ametal_texture_array_length(_ handle: UnsafeMutableRawPointer?) -> I
     return texture.arrayLength
 }
 
+@_cdecl("ametal_texture_sample_count")
+public func ametal_texture_sample_count(_ handle: UnsafeMutableRawPointer?) -> Int {
+    guard let texture: MTLTexture = am_borrow(handle) else { return 0 }
+    return texture.sampleCount
+}
+
 @_cdecl("ametal_texture_usage")
 public func ametal_texture_usage(_ handle: UnsafeMutableRawPointer?) -> Int {
     guard let texture: MTLTexture = am_borrow(handle) else { return 0 }
@@ -742,7 +748,9 @@ public func ametal_heap_current_allocated_size(_ handle: UnsafeMutableRawPointer
 
 @_cdecl("ametal_heap_max_available_size")
 public func ametal_heap_max_available_size(_ handle: UnsafeMutableRawPointer?, _ alignment: Int) -> Int {
-    guard let heap: MTLHeap = am_borrow(handle) else { return 0 }
+    guard alignment == 0 || (alignment > 0 && alignment.nonzeroBitCount == 1),
+          let heap: MTLHeap = am_borrow(handle)
+    else { return 0 }
     return heap.maxAvailableSize(alignment: alignment)
 }
 
@@ -805,6 +813,7 @@ public func ametal_heap_new_acceleration_structure_with_size(
     guard #available(macOS 13.0, *),
           size > 0,
           let heap: MTLHeap = am_borrow(handle),
+          heap.storageMode == .private,
           let accelerationStructure = heap.makeAccelerationStructure(size: size)
     else { return nil }
     return am_retain(accelerationStructure as AnyObject)
@@ -812,8 +821,11 @@ public func ametal_heap_new_acceleration_structure_with_size(
 
 @_cdecl("ametal_heap_set_purgeable_state")
 public func ametal_heap_set_purgeable_state(_ handle: UnsafeMutableRawPointer?, _ state: UInt) -> UInt {
-    guard let heap: MTLHeap = am_borrow(handle) else { return 0 }
-    return heap.setPurgeableState(MTLPurgeableState(rawValue: state) ?? .keepCurrent).rawValue
+    guard (1...4).contains(state),
+          let heap: MTLHeap = am_borrow(handle),
+          let purgeableState = MTLPurgeableState(rawValue: state)
+    else { return 0 }
+    return heap.setPurgeableState(purgeableState).rawValue
 }
 
 @_cdecl("ametal_event_signaled_value")
@@ -833,11 +845,10 @@ public func ametal_event_wait_until_signaled_value(
     _ handle: UnsafeMutableRawPointer?,
     _ value: UInt64,
     _ timeoutMs: UInt64
-) -> Bool {
-    guard #available(macOS 12.0, *),
-          let event: MTLSharedEvent = am_borrow(handle)
-    else { return false }
-    return event.wait(untilSignaledValue: value, timeoutMS: timeoutMs)
+) -> Int {
+    guard #available(macOS 12.0, *) else { return -1 }
+    guard let event: MTLSharedEvent = am_borrow(handle) else { return 0 }
+    return event.wait(untilSignaledValue: value, timeoutMS: timeoutMs) ? 1 : 0
 }
 
 @_cdecl("ametal_shared_event_notify_listener")
@@ -931,6 +942,10 @@ public func ametal_binary_archive_add_render_functions(
     descriptor.fragmentFunction = fragment
     descriptor.colorAttachments[0].pixelFormat = colorFormat
     descriptor.sampleCount = sampleCount
+    guard amDeviceSupportsPixelFormat(archive.device, colorFormat) else {
+        am_store_error_message(outErrorMessage, "the device does not support the color pixel format")
+        return false
+    }
 
     do {
         try archive.addRenderPipelineFunctions(descriptor: descriptor)
@@ -995,7 +1010,8 @@ public func ametal_intersection_function_table_set_opaque_triangle(
     _ signature: UInt,
     _ index: Int
 ) {
-    guard #available(macOS 11.0, *),
+    guard signature < (1 << 10),
+          index >= 0,
           let table: MTLIntersectionFunctionTable = am_borrow(handle)
     else { return }
     table.setOpaqueTriangleIntersectionFunction(

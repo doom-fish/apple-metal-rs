@@ -260,6 +260,17 @@ impl MetalDevice {
         &self,
         descriptor: &SpatialScalerDescriptor,
     ) -> Option<SpatialScaler> {
+        if !scaler_formats_valid(&[
+            descriptor.color_texture_format,
+            descriptor.output_texture_format,
+        ]) || !scaler_extents_valid(&[
+            descriptor.input_width,
+            descriptor.input_height,
+            descriptor.output_width,
+            descriptor.output_height,
+        ]) {
+            return None;
+        }
         SpatialScaler::wrap(unsafe {
             ffi::ametal_device_new_spatial_scaler(
                 self.as_ptr(),
@@ -280,6 +291,29 @@ impl MetalDevice {
         &self,
         descriptor: &TemporalScalerDescriptor,
     ) -> Option<TemporalScaler> {
+        let depth_format = descriptor.depth_texture_format;
+        let mut color_formats = vec![
+            descriptor.color_texture_format,
+            descriptor.motion_texture_format,
+            descriptor.output_texture_format,
+        ];
+        if descriptor.reactive_mask_texture_enabled {
+            color_formats.push(descriptor.reactive_mask_texture_format);
+        }
+        if !scaler_formats_valid(&color_formats)
+            || !(crate::pixel_format::is_depth_attachment_format(depth_format)
+                || scaler_formats_valid(&[depth_format]))
+            || !scaler_extents_valid(&[
+                descriptor.input_width,
+                descriptor.input_height,
+                descriptor.output_width,
+                descriptor.output_height,
+            ])
+            || !descriptor.input_content_min_scale.is_finite()
+            || !descriptor.input_content_max_scale.is_finite()
+        {
+            return None;
+        }
         TemporalScaler::wrap(unsafe {
             ffi::ametal_device_new_temporal_scaler(
                 self.as_ptr(),
@@ -301,6 +335,16 @@ impl MetalDevice {
             )
         })
     }
+}
+
+fn scaler_formats_valid(formats: &[usize]) -> bool {
+    formats
+        .iter()
+        .all(|format| crate::pixel_format::color_bytes_per_pixel(*format).is_some())
+}
+
+fn scaler_extents_valid(extents: &[usize]) -> bool {
+    extents.iter().all(|extent| (1..=16_384).contains(extent))
 }
 
 #[allow(clippy::missing_errors_doc)]

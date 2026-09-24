@@ -156,7 +156,7 @@ unsafe fn take_device_array(ptr: *mut *mut c_void, count: usize) -> Vec<MetalDev
     let values = slice
         .iter()
         .copied()
-        .map(|device| unsafe { MetalDevice::from_retained_ptr(device) })
+        .map(|device| unsafe { MetalDevice::from_raw(device) })
         .collect();
     libc::free(ptr.cast());
     values
@@ -541,7 +541,7 @@ unsafe extern "C" fn device_observer_trampoline(
     notification_name: *const c_char,
     context: *mut c_void,
 ) {
-    let device = (!device.is_null()).then(|| unsafe { MetalDevice::from_retained_ptr(device) });
+    let device = (!device.is_null()).then(|| unsafe { MetalDevice::from_raw(device) });
     let notification_name = if notification_name.is_null() {
         String::new()
     } else {

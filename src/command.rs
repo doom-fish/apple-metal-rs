@@ -1,9 +1,9 @@
 #![allow(clippy::missing_errors_doc)]
 
 use crate::{
-    ffi, storage_mode, util::take_optional_string, CommandBuffer, CommandBufferPhase, CommandQueue,
-    ComputePipelineState, CounterSampleBuffer, DepthStencilState, Event, Fence, MetalBuffer,
-    MetalTexture, RenderPipelineState, SamplerState,
+    ffi, render::RenderTargetFormats, storage_mode, util::take_optional_string, CommandBuffer,
+    CommandBufferPhase, CommandQueue, ComputePipelineState, CounterSampleBuffer, DepthStencilState,
+    Event, Fence, MetalBuffer, MetalTexture, RenderPipelineState, SamplerState,
 };
 use core::ffi::{c_char, c_void, CStr};
 use core::mem::ManuallyDrop;
@@ -91,6 +91,25 @@ pub enum CommandBufferError {
     NotExecuted {
         status: usize,
     },
+    MissingPipelineState,
+    IncompatiblePipelineState,
+    MissingAttachment {
+        attachment: &'static str,
+    },
+    InvalidAttachment {
+        attachment: &'static str,
+    },
+    InvalidPrimitiveType {
+        primitive_type: usize,
+    },
+    ThreadgroupTooLarge {
+        threads: usize,
+        maximum: usize,
+    },
+    ThreadgroupNotMultipleOfExecutionWidth {
+        threads: usize,
+        execution_width: usize,
+    },
 }
 
 impl core::fmt::Display for CommandBufferError {
@@ -152,6 +171,33 @@ impl core::fmt::Display for CommandBufferError {
             Self::NotExecuted { status } => write!(
                 formatter,
                 "the command buffer was released without running (status {status})"
+            ),
+            Self::MissingPipelineState => {
+                formatter.write_str("no pipeline state is bound to the encoder")
+            }
+            Self::IncompatiblePipelineState => formatter.write_str(
+                "the pipeline's attachment formats or sample count differ from the render pass",
+            ),
+            Self::MissingAttachment { attachment } => write!(
+                formatter,
+                "the state uses the {attachment} attachment, which the render pass lacks"
+            ),
+            Self::InvalidAttachment { attachment } => {
+                write!(formatter, "the {attachment} attachment cannot be rendered to")
+            }
+            Self::InvalidPrimitiveType { primitive_type } => {
+                write!(formatter, "primitive type {primitive_type} is unknown")
+            }
+            Self::ThreadgroupTooLarge { threads, maximum } => write!(
+                formatter,
+                "{threads} threads per threadgroup exceed the pipeline maximum {maximum}"
+            ),
+            Self::ThreadgroupNotMultipleOfExecutionWidth {
+                threads,
+                execution_width,
+            } => write!(
+                formatter,
+                "{threads} threads per threadgroup is not a multiple of the execution width {execution_width}"
             ),
         }
     }
@@ -265,16 +311,18 @@ impl Drop for EncoderCore {
 }
 
 macro_rules! command_encoder {
-    ($(#[$meta:meta])* pub struct $name:ident;) => {
+    ($(#[$meta:meta])* pub struct $name:ident { $($field:ident: $ty:ty = $init:expr),* $(,)? }) => {
         $(#[$meta])*
         pub struct $name {
             core: EncoderCore,
+            $($field: $ty,)*
         }
 
         impl $name {
             fn new(ptr: *mut c_void, command_buffer: CommandBuffer) -> Self {
                 Self {
                     core: EncoderCore::new(ptr, command_buffer),
+                    $($field: $init,)*
                 }
             }
 
@@ -298,16 +346,44 @@ macro_rules! command_encoder {
 
 command_encoder!(
     /// Apple's `id<MTLBlitCommandEncoder>` — encodes buffer and texture copy work.
-    pub struct BlitCommandEncoder;
+    pub struct BlitCommandEncoder {}
 );
 command_encoder!(
     /// Apple's `id<MTLComputeCommandEncoder>` — encodes compute dispatches.
-    pub struct ComputeCommandEncoder;
+    pub struct ComputeCommandEncoder {
+        pipeline: Option<ComputeLimits> = None,
+    }
 );
 command_encoder!(
     /// Apple's `id<MTLRenderCommandEncoder>` — encodes render passes.
-    pub struct RenderCommandEncoder;
+    pub struct RenderCommandEncoder {
+        targets: RenderTargetFormats = RenderTargetFormats::EMPTY,
+        pipeline_bound: bool = false,
+    }
 );
+
+#[derive(Clone, Copy)]
+struct ComputeLimits {
+    execution_width: usize,
+    max_threads: usize,
+    multiple_of_execution_width: bool,
+}
+
+#[derive(Clone, Copy)]
+pub struct RenderPassDepthAttachment<'a> {
+    pub texture: &'a MetalTexture,
+    pub load_action: usize,
+    pub store_action: usize,
+    pub clear_depth: f64,
+}
+
+#[derive(Clone, Copy)]
+pub struct RenderPassStencilAttachment<'a> {
+    pub texture: &'a MetalTexture,
+    pub load_action: usize,
+    pub store_action: usize,
+    pub clear_stencil: u32,
+}
 
 impl CommandQueue {
     /// Create a command buffer whose native object does not retain references.
@@ -510,9 +586,16 @@ impl CommandBuffer {
         load_action: usize,
         store_action: usize,
         clear_color: [f64; 4],
+        depth: Option<RenderPassDepthAttachment<'_>>,
+        stencil: Option<RenderPassStencilAttachment<'_>>,
     ) -> Result<RenderCommandEncoder, CommandBufferError> {
-        ensure_native_int(load_action, "load_action")?;
-        ensure_native_int(store_action, "store_action")?;
+        let targets = render_targets(
+            texture,
+            load_action,
+            store_action,
+            depth.as_ref(),
+            stencil.as_ref(),
+        )?;
         let core = self.begin_encoder("render", || unsafe {
             ffi::ametal_command_buffer_new_render_command_encoder(
                 self.as_ptr(),
@@ -523,9 +606,19 @@ impl CommandBuffer {
                 clear_color[1],
                 clear_color[2],
                 clear_color[3],
+                depth.map_or(core::ptr::null_mut(), |depth| depth.texture.as_ptr()),
+                depth.map_or(0, |depth| depth.load_action),
+                depth.map_or(0, |depth| depth.store_action),
+                depth.map_or(1.0, |depth| depth.clear_depth),
+                stencil.map_or(core::ptr::null_mut(), |stencil| stencil.texture.as_ptr()),
+                stencil.map_or(0, |stencil| stencil.load_action),
+                stencil.map_or(0, |stencil| stencil.store_action),
+                stencil.map_or(0, |stencil| stencil.clear_stencil),
             )
         })?;
-        Ok(RenderCommandEncoder::new(core, self.clone()))
+        let mut encoder = RenderCommandEncoder::new(core, self.clone());
+        encoder.targets = targets;
+        Ok(encoder)
     }
 
     /// Encode a wait until `event` reaches at least `value`.
@@ -766,7 +859,45 @@ impl ComputeCommandEncoder {
         self.core
             .with_active("set_compute_pipeline_state", |encoder| unsafe {
                 ffi::ametal_compute_command_encoder_set_pipeline_state(encoder, pipeline.as_ptr());
-            })
+            })?;
+        self.pipeline = Some(ComputeLimits {
+            execution_width: pipeline.thread_execution_width(),
+            max_threads: pipeline.max_total_threads_per_threadgroup(),
+            multiple_of_execution_width: pipeline.threadgroup_multiple_of_execution_width(),
+        });
+        Ok(())
+    }
+
+    fn validate_threadgroup(
+        &self,
+        threads_per_threadgroup: (usize, usize, usize),
+    ) -> Result<(), CommandBufferError> {
+        let limits = self
+            .pipeline
+            .ok_or(CommandBufferError::MissingPipelineState)?;
+        let threads = threads_per_threadgroup
+            .0
+            .checked_mul(threads_per_threadgroup.1)
+            .and_then(|threads| threads.checked_mul(threads_per_threadgroup.2))
+            .ok_or(CommandBufferError::ThreadgroupTooLarge {
+                threads: usize::MAX,
+                maximum: limits.max_threads,
+            })?;
+        if threads > limits.max_threads {
+            return Err(CommandBufferError::ThreadgroupTooLarge {
+                threads,
+                maximum: limits.max_threads,
+            });
+        }
+        if limits.multiple_of_execution_width
+            && (limits.execution_width == 0 || threads % limits.execution_width != 0)
+        {
+            return Err(CommandBufferError::ThreadgroupNotMultipleOfExecutionWidth {
+                threads,
+                execution_width: limits.execution_width,
+            });
+        }
+        Ok(())
     }
 
     /// Bind a buffer at `index`.
@@ -872,6 +1003,7 @@ impl ComputeCommandEncoder {
     ) -> Result<(), CommandBufferError> {
         validate_size(threadgroups, "threadgroup")?;
         validate_size(threads_per_threadgroup, "threads-per-threadgroup")?;
+        self.validate_threadgroup(threads_per_threadgroup)?;
         self.core
             .with_active("dispatch_threadgroups", |encoder| unsafe {
                 ffi::ametal_compute_command_encoder_dispatch_threadgroups(
@@ -894,6 +1026,7 @@ impl ComputeCommandEncoder {
     ) -> Result<(), CommandBufferError> {
         validate_size(threads, "thread grid")?;
         validate_size(threads_per_threadgroup, "threads-per-threadgroup")?;
+        self.validate_threadgroup(threads_per_threadgroup)?;
         self.core.with_active("dispatch_threads", |encoder| unsafe {
             ffi::ametal_compute_command_encoder_dispatch_threads(
                 encoder,
@@ -931,13 +1064,18 @@ impl RenderCommandEncoder {
         &mut self,
         pipeline: &RenderPipelineState,
     ) -> Result<(), CommandBufferError> {
+        if !pipeline.is_drawable() || pipeline.targets() != self.targets {
+            return Err(CommandBufferError::IncompatiblePipelineState);
+        }
         self.core
             .with_active("set_render_pipeline_state", |encoder| unsafe {
                 ffi::ametal_render_command_encoder_set_render_pipeline_state(
                     encoder,
                     pipeline.as_ptr(),
                 );
-            })
+            })?;
+        self.pipeline_bound = true;
+        Ok(())
     }
 
     /// Bind a vertex buffer at `index`.
@@ -983,6 +1121,16 @@ impl RenderCommandEncoder {
         &mut self,
         state: &DepthStencilState,
     ) -> Result<(), CommandBufferError> {
+        if state.tests_depth() && self.targets.depth == crate::pixel_format::INVALID {
+            return Err(CommandBufferError::MissingAttachment {
+                attachment: "depth",
+            });
+        }
+        if state.tests_stencil() && self.targets.stencil == crate::pixel_format::INVALID {
+            return Err(CommandBufferError::MissingAttachment {
+                attachment: "stencil",
+            });
+        }
         self.core
             .with_active("set_depth_stencil_state", |encoder| unsafe {
                 ffi::ametal_render_command_encoder_set_depth_stencil_state(encoder, state.as_ptr());
@@ -996,7 +1144,12 @@ impl RenderCommandEncoder {
         vertex_start: usize,
         vertex_count: usize,
     ) -> Result<(), CommandBufferError> {
-        ensure_native_int(primitive_type, "primitive type")?;
+        if !self.pipeline_bound {
+            return Err(CommandBufferError::MissingPipelineState);
+        }
+        if primitive_type > crate::primitive_type::TRIANGLE_STRIP {
+            return Err(CommandBufferError::InvalidPrimitiveType { primitive_type });
+        }
         ensure_native_int(vertex_start, "vertex start")?;
         ensure_native_int(vertex_count, "vertex count")?;
         vertex_start
@@ -1065,6 +1218,106 @@ unsafe extern "C" fn command_buffer_handler_trampoline(
             },
         )
     };
+}
+
+fn render_targets(
+    color: &MetalTexture,
+    load_action: usize,
+    store_action: usize,
+    depth: Option<&RenderPassDepthAttachment<'_>>,
+    stencil: Option<&RenderPassStencilAttachment<'_>>,
+) -> Result<RenderTargetFormats, CommandBufferError> {
+    use crate::pixel_format::{
+        color_bytes_per_pixel, is_depth_attachment_format, is_stencil_attachment_format,
+        DEPTH24UNORM_STENCIL8, DEPTH32FLOAT_STENCIL8, INVALID,
+    };
+    use crate::texture_type::{
+        CUBE, CUBE_ARRAY, TYPE_2D, TYPE_2D_ARRAY, TYPE_2D_MULTISAMPLE, TYPE_2D_MULTISAMPLE_ARRAY,
+        TYPE_3D,
+    };
+
+    let sample_count = color.sample_count();
+    let attachment_format = |attachment: &'static str,
+                             texture: &MetalTexture,
+                             load_action: usize,
+                             store_action: usize,
+                             format_ok: fn(usize) -> bool|
+     -> Result<usize, CommandBufferError> {
+        let format = texture.pixel_format();
+        let renderable_type = matches!(
+            texture.texture_type(),
+            TYPE_2D
+                | TYPE_2D_ARRAY
+                | TYPE_2D_MULTISAMPLE
+                | TYPE_2D_MULTISAMPLE_ARRAY
+                | CUBE
+                | CUBE_ARRAY
+                | TYPE_3D
+        );
+        if format_ok(format)
+            && texture.usage() & crate::texture_usage::RENDER_TARGET != 0
+            && renderable_type
+            && texture.sample_count() == sample_count
+            && load_action <= crate::load_action::CLEAR
+            && store_action <= crate::store_action::STORE
+        {
+            Ok(format)
+        } else {
+            Err(CommandBufferError::InvalidAttachment { attachment })
+        }
+    };
+    let color_format = attachment_format("color", color, load_action, store_action, |format| {
+        color_bytes_per_pixel(format).is_some()
+    })?;
+    let depth_format = depth
+        .map(|depth| {
+            attachment_format(
+                "depth",
+                depth.texture,
+                depth.load_action,
+                depth.store_action,
+                is_depth_attachment_format,
+            )
+        })
+        .transpose()?
+        .unwrap_or(INVALID);
+    let stencil_format = stencil
+        .map(|stencil| {
+            attachment_format(
+                "stencil",
+                stencil.texture,
+                stencil.load_action,
+                stencil.store_action,
+                is_stencil_attachment_format,
+            )
+        })
+        .transpose()?
+        .unwrap_or(INVALID);
+    if let (Some(depth), Some(stencil)) = (depth, stencil) {
+        let combined = |format| matches!(format, DEPTH24UNORM_STENCIL8 | DEPTH32FLOAT_STENCIL8);
+        if (combined(depth_format) || combined(stencil_format))
+            && depth.texture.as_ptr() != stencil.texture.as_ptr()
+        {
+            return Err(CommandBufferError::InvalidAttachment {
+                attachment: "stencil",
+            });
+        }
+    }
+    if depth.is_some_and(|depth| {
+        !depth.clear_depth.is_finite() || !(0.0..=1.0).contains(&depth.clear_depth)
+    }) {
+        return Err(CommandBufferError::InvalidAttachment {
+            attachment: "depth",
+        });
+    }
+    let mut colors = [INVALID; 8];
+    colors[0] = color_format;
+    Ok(RenderTargetFormats {
+        colors,
+        depth: depth_format,
+        stencil: stencil_format,
+        sample_count,
+    })
 }
 
 fn ensure_recording(

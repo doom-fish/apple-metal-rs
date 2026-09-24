@@ -8,19 +8,19 @@ use apple_metal::{
     argument_buffers_tier, binding_access, blend_factor, blend_operation, capture_destination,
     color_write_mask, command_buffer_status, compare_function, copy_all_devices,
     counter_sampling_point, indirect_command_type, intersection_function_signature, load_action,
-    log_level, metal_library_error_domain, pixel_format, primitive_type, purgeable_state,
-    resource_options, sampler_address_mode, sampler_border_color, sampler_min_mag_filter,
-    sampler_mip_filter, sampler_reduction_mode, spatial_scaler_color_processing_mode,
-    stencil_operation, storage_mode, store_action, texture_type, texture_usage, ArgumentDescriptor,
-    ArgumentEncoder, BinaryArchive, BlitCommandEncoder, CaptureManager, CommandBuffer,
-    CommandQueue, ComputeCommandEncoder, ComputePipelineDescriptor, ComputePipelineState,
-    DepthStencilDescriptor, DynamicLibrary, Event, Fence, IndirectCommandBuffer, MetalBuffer,
-    MetalCommandQueueDescriptor, MetalDevice, MetalFunction, MetalHeapDescriptor, MetalLibrary,
-    MetalTexture, RenderCommandEncoder, RenderPipelineColorAttachmentDescriptor,
-    RenderPipelineDescriptor, RenderPipelineState, ResidencySet, SamplerDescriptor,
-    SpatialScalerDescriptor, StencilDescriptor, TemporalScalerDescriptor, TemporalScalerFrameState,
-    TemporalScalerTextures, TextureDescriptor, TileRenderPipelineColorAttachmentDescriptor,
-    TileRenderPipelineDescriptor,
+    log_level, metal_library_error_domain, pixel_format, primitive_type, resource_options,
+    sampler_address_mode, sampler_border_color, sampler_min_mag_filter, sampler_mip_filter,
+    sampler_reduction_mode, spatial_scaler_color_processing_mode, stencil_operation, storage_mode,
+    store_action, texture_type, texture_usage, ArgumentDescriptor, ArgumentEncoder, BinaryArchive,
+    BlitCommandEncoder, CaptureManager, CommandBuffer, CommandQueue, ComputeCommandEncoder,
+    ComputePipelineDescriptor, ComputePipelineState, DepthStencilDescriptor, DynamicLibrary, Event,
+    Fence, HeapAlignment, IndirectCommandBuffer, MetalBuffer, MetalCommandQueueDescriptor,
+    MetalDevice, MetalFunction, MetalHeapDescriptor, MetalLibrary, MetalTexture, PurgeableState,
+    RenderCommandEncoder, RenderPassDepthAttachment, RenderPassStencilAttachment,
+    RenderPipelineColorAttachmentDescriptor, RenderPipelineDescriptor, RenderPipelineState,
+    ResidencySet, SamplerDescriptor, SpatialScalerDescriptor, StencilDescriptor,
+    TemporalScalerDescriptor, TemporalScalerFrameState, TemporalScalerTextures, TextureDescriptor,
+    TileRenderPipelineColorAttachmentDescriptor, TileRenderPipelineDescriptor,
 };
 use std::fs;
 use std::path::PathBuf;
@@ -503,7 +503,7 @@ fn public_api_smoke() {
     if let Some(event) = signal_event.as_ref() {
         event.set_signaled_value(1);
         assert_eq!(event.signaled_value(), 1);
-        assert!(event.wait_until_signaled_value(1, 1_000));
+        assert_eq!(event.wait_until_signaled_value(1, 1_000), Ok(()));
 
         let command_buffer = queue.new_command_buffer().expect("event signal buffer");
         command_buffer
@@ -513,7 +513,7 @@ fn public_api_smoke() {
         command_buffer
             .wait_until_completed()
             .expect("complete event signal");
-        assert!(event.wait_until_signaled_value(2, 1_000));
+        assert_eq!(event.wait_until_signaled_value(2, 1_000), Ok(()));
 
         let command_buffer = queue.new_command_buffer().expect("event wait buffer");
         command_buffer
@@ -595,7 +595,10 @@ fn public_api_smoke() {
             .expect("wait for compute fence");
     }
     compute_encoder
-        .dispatch_threads((4, 1, 1), (1, 1, 1))
+        .dispatch_threads(
+            (4, 1, 1),
+            (descriptor_compute_pipeline.thread_execution_width(), 1, 1),
+        )
         .expect("dispatch compute");
     if let Some(fence) = fence_b.as_ref() {
         compute_encoder
@@ -616,7 +619,9 @@ fn public_api_smoke() {
         None
     };
     if let Some(table) = intersection_table.as_ref() {
-        table.set_opaque_triangle_intersection_function(intersection_function_signature::NONE, 0);
+        table
+            .set_opaque_triangle_intersection_function(intersection_function_signature::NONE, 0)
+            .expect("opaque triangle intersection function");
     }
     let acceleration_structure = if device.supports_raytracing() {
         device.new_acceleration_structure_with_size(256)
@@ -659,6 +664,16 @@ fn public_api_smoke() {
     let vertex_buffer = device
         .new_buffer(16, resource_options::STORAGE_MODE_SHARED)
         .expect("vertex buffer");
+    let mut depth_descriptor = TextureDescriptor::new_2d(4, 4, pixel_format::DEPTH32FLOAT);
+    depth_descriptor.storage_mode = storage_mode::PRIVATE;
+    depth_descriptor.usage = texture_usage::RENDER_TARGET;
+    let depth_target = device.new_texture(depth_descriptor).expect("depth target");
+    let mut stencil_descriptor = TextureDescriptor::new_2d(4, 4, pixel_format::STENCIL8);
+    stencil_descriptor.storage_mode = storage_mode::PRIVATE;
+    stencil_descriptor.usage = texture_usage::RENDER_TARGET;
+    let stencil_target = device
+        .new_texture(stencil_descriptor)
+        .expect("stencil target");
     let render_command_buffer = queue.new_command_buffer().expect("render command buffer");
     let mut render_encoder: RenderCommandEncoder = render_command_buffer
         .new_render_command_encoder(
@@ -666,6 +681,18 @@ fn public_api_smoke() {
             load_action::CLEAR,
             store_action::STORE,
             [0.0, 0.0, 0.0, 1.0],
+            Some(RenderPassDepthAttachment {
+                texture: &depth_target,
+                load_action: load_action::CLEAR,
+                store_action: store_action::DONT_CARE,
+                clear_depth: 1.0,
+            }),
+            Some(RenderPassStencilAttachment {
+                texture: &stencil_target,
+                load_action: load_action::CLEAR,
+                store_action: store_action::DONT_CARE,
+                clear_stencil: 0,
+            }),
         )
         .expect("render encoder");
     if let Some(fence) = fence_b.as_ref() {
@@ -790,14 +817,14 @@ fn public_api_smoke() {
         assert!(heap.size() >= (1 << 20));
         let _ = heap.used_size();
         let _ = heap.current_allocated_size();
-        let _ = heap.max_available_size(256);
+        let _ = heap.max_available_size(HeapAlignment::new(256).expect("power of two"));
         let heap_buffer = heap
             .new_buffer(256, resource_options::STORAGE_MODE_SHARED)
             .expect("heap buffer");
         let heap_texture = heap
             .new_texture(TextureDescriptor::new_2d(4, 4, pixel_format::BGRA8UNORM))
             .expect("heap texture");
-        let _ = heap.set_purgeable_state(purgeable_state::KEEP_CURRENT);
+        let _ = heap.set_purgeable_state(PurgeableState::KeepCurrent);
         if device.supports_raytracing() {
             let _ = heap.new_acceleration_structure_with_size(256);
         }
