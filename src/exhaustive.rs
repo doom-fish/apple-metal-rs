@@ -563,6 +563,167 @@ unsafe extern "C" fn device_observer_trampoline(
     };
 }
 
+impl MetalTensorDataType {
+    pub const FLOAT32: Self = Self(3);
+    pub const FLOAT16: Self = Self(16);
+    pub const BFLOAT16: Self = Self(121);
+    pub const INT8: Self = Self(45);
+    pub const UINT8: Self = Self(49);
+    pub const INT16: Self = Self(37);
+    pub const UINT16: Self = Self(41);
+    pub const INT32: Self = Self(29);
+    pub const UINT32: Self = Self(33);
+    pub const INT4: Self = Self(143);
+    pub const UINT4: Self = Self(144);
+
+    const fn bits(self) -> Option<usize> {
+        match self.0 {
+            3 | 29 | 33 => Some(32),
+            16 | 121 | 37 | 41 => Some(16),
+            45 | 49 => Some(8),
+            143 | 144 => Some(4),
+            _ => None,
+        }
+    }
+}
+
+impl MetalTensorUsage {
+    pub const COMPUTE: Self = Self(1);
+    pub const RENDER: Self = Self(1 << 1);
+    pub const MACHINE_LEARNING: Self = Self(1 << 2);
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TensorDescriptor {
+    pub dimensions: Vec<usize>,
+    pub data_type: MetalTensorDataType,
+    pub usage: MetalTensorUsage,
+    pub storage_mode: usize,
+}
+
+impl TensorDescriptor {
+    #[must_use]
+    pub fn new(dimensions: &[usize], data_type: MetalTensorDataType) -> Self {
+        Self {
+            dimensions: dimensions.to_vec(),
+            data_type,
+            usage: MetalTensorUsage(MetalTensorUsage::COMPUTE.0 | MetalTensorUsage::RENDER.0),
+            storage_mode: crate::storage_mode::SHARED,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TensorError {
+    Unsupported,
+    InvalidRank { rank: usize },
+    UnsupportedDataType { data_type: usize },
+    InvalidUsage { usage: usize },
+    UnsupportedStorageMode { storage_mode: usize },
+    TooLarge { maximum_bytes: usize },
+    Native(String),
+}
+
+impl core::fmt::Display for TensorError {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Unsupported => formatter.write_str("MTLTensor requires macOS 26.0 or later"),
+            Self::InvalidRank { rank } => {
+                write!(formatter, "tensor rank {rank} exceeds the maximum of 16")
+            }
+            Self::UnsupportedDataType { data_type } => {
+                write!(formatter, "tensor data type {data_type} is unknown")
+            }
+            Self::InvalidUsage { usage } => {
+                write!(formatter, "tensor usage {usage:#x} has unknown bits")
+            }
+            Self::UnsupportedStorageMode { storage_mode } => {
+                write!(
+                    formatter,
+                    "storage mode {storage_mode} cannot back a tensor"
+                )
+            }
+            Self::TooLarge { maximum_bytes } => write!(
+                formatter,
+                "the tensor needs more than the device's {maximum_bytes}-byte buffer limit"
+            ),
+            Self::Native(message) => formatter.write_str(message),
+        }
+    }
+}
+
+impl std::error::Error for TensorError {}
+
+impl MetalDevice {
+    #[must_use]
+    pub fn max_buffer_length(&self) -> usize {
+        unsafe { ffi::ametal_device_max_buffer_length(self.as_ptr()) }
+    }
+
+    #[allow(clippy::missing_errors_doc)]
+    pub fn new_tensor(&self, descriptor: &TensorDescriptor) -> Result<MetalTensor, TensorError> {
+        if !unsafe { ffi::ametal_tensors_supported() } {
+            return Err(TensorError::Unsupported);
+        }
+        let rank = descriptor.dimensions.len();
+        if rank > 16 {
+            return Err(TensorError::InvalidRank { rank });
+        }
+        let bits = descriptor
+            .data_type
+            .bits()
+            .ok_or(TensorError::UnsupportedDataType {
+                data_type: descriptor.data_type.0,
+            })?;
+        if descriptor.usage.0 & !0x7 != 0 {
+            return Err(TensorError::InvalidUsage {
+                usage: descriptor.usage.0,
+            });
+        }
+        if !matches!(
+            descriptor.storage_mode,
+            crate::storage_mode::SHARED
+                | crate::storage_mode::MANAGED
+                | crate::storage_mode::PRIVATE
+        ) {
+            return Err(TensorError::UnsupportedStorageMode {
+                storage_mode: descriptor.storage_mode,
+            });
+        }
+        let maximum_bytes = self.max_buffer_length();
+        let bytes = descriptor
+            .dimensions
+            .iter()
+            .try_fold(bits, |total, extent| {
+                isize::try_from(*extent).ok()?;
+                total.checked_mul(*extent)
+            })
+            .map(|total_bits| total_bits.div_ceil(8));
+        if bytes.is_none_or(|bytes| bytes > maximum_bytes) {
+            return Err(TensorError::TooLarge { maximum_bytes });
+        }
+        let mut err: *mut c_char = ptr::null_mut();
+        let tensor = unsafe {
+            ffi::ametal_device_new_tensor(
+                self.as_ptr(),
+                descriptor.dimensions.as_ptr(),
+                rank,
+                descriptor.data_type.0,
+                descriptor.usage.0,
+                descriptor.storage_mode,
+                &raw mut err,
+            )
+        };
+        MetalTensor::wrap(tensor).ok_or_else(|| {
+            TensorError::Native(
+                unsafe { take_optional_string(err) }.unwrap_or_else(|| {
+                    "MTLDevice.makeTensor(descriptor:) returned nil".to_string()
+                }),
+            )
+        })
+    }
+}
+
 /// Calls the `Metal` framework counterpart for `copy_all_devices`.
 #[must_use]
 pub fn copy_all_devices() -> Vec<MetalDevice> {

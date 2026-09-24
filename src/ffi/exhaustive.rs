@@ -37,4 +37,15 @@ extern "C" {
         horizontal: usize,
         vertical: usize,
     ) -> *mut c_void;
+    pub fn ametal_device_max_buffer_length(device_handle: *mut c_void) -> usize;
+    pub fn ametal_tensors_supported() -> bool;
+    pub fn ametal_device_new_tensor(
+        device_handle: *mut c_void,
+        dimensions: *const usize,
+        rank: usize,
+        data_type: usize,
+        usage: usize,
+        storage_mode: usize,
+        out_error_message: *mut *mut c_char,
+    ) -> *mut c_void;
 }

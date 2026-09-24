@@ -132,3 +132,78 @@ public func ametal_io_flush_and_destroy_compression_context(_ handle: UnsafeMuta
     guard let handle else { return 1 }
     return MTLIOFlushAndDestroyCompressionContext(handle).rawValue
 }
+
+@_cdecl("ametal_device_max_buffer_length")
+public func ametal_device_max_buffer_length(_ deviceHandle: UnsafeMutableRawPointer?) -> Int {
+    guard let device: MTLDevice = am_borrow(deviceHandle) else { return 0 }
+    return device.maxBufferLength
+}
+
+@_cdecl("ametal_tensors_supported")
+public func ametal_tensors_supported() -> Bool {
+    if #available(macOS 26.0, *) {
+        return true
+    }
+    return false
+}
+
+@_cdecl("ametal_device_new_tensor")
+public func ametal_device_new_tensor(
+    _ deviceHandle: UnsafeMutableRawPointer?,
+    _ dimensions: UnsafePointer<Int>?,
+    _ rank: Int,
+    _ dataType: Int,
+    _ usage: UInt,
+    _ storageMode: UInt,
+    _ outErrorMessage: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> UnsafeMutableRawPointer? {
+    guard #available(macOS 26.0, *) else {
+        am_store_error_message(outErrorMessage, "MTLTensor requires macOS 26.0 or later")
+        return nil
+    }
+    guard let device: MTLDevice = am_borrow(deviceHandle),
+          (0...16).contains(rank),
+          usage & ~UInt(0x7) == 0,
+          let storage = MTLStorageMode(rawValue: storageMode),
+          storage == .shared || storage == .managed || storage == .private,
+          let type = MTLTensorDataType(rawValue: dataType)
+    else { return nil }
+    var values = [Int]()
+    if rank > 0 {
+        guard let dimensions else { return nil }
+        values = Array(UnsafeBufferPointer(start: dimensions, count: rank))
+    }
+    let bits: Int
+    switch dataType {
+    case 3, 29, 33: bits = 32
+    case 16, 121, 37, 41: bits = 16
+    case 45, 49: bits = 8
+    case 143, 144: bits = 4
+    default: return nil
+    }
+    var totalBits = bits
+    for extent in values {
+        let (product, overflow) = totalBits.multipliedReportingOverflow(by: extent)
+        guard extent >= 0, !overflow else { return nil }
+        totalBits = product
+    }
+    guard totalBits / 8 + (totalBits % 8 == 0 ? 0 : 1) <= device.maxBufferLength else {
+        am_store_error_message(outErrorMessage, "the tensor exceeds the device's buffer limit")
+        return nil
+    }
+    let extents = values.withUnsafeBufferPointer { buffer in
+        MTLTensorExtents(__rank: rank, values: rank == 0 ? nil : buffer.baseAddress)
+    }
+    guard let extents else { return nil }
+    let descriptor = MTLTensorDescriptor()
+    descriptor.dimensions = extents
+    descriptor.dataType = type
+    descriptor.usage = MTLTensorUsage(rawValue: usage)
+    descriptor.storageMode = storage
+    do {
+        return am_retain(try device.makeTensor(descriptor: descriptor) as AnyObject)
+    } catch {
+        am_store_error(outErrorMessage, error)
+        return nil
+    }
+}
