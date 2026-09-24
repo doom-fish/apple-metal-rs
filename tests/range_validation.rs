@@ -242,7 +242,15 @@ fn metalfx_scalers_refuse_formats_and_sizes_that_abort() {
         128,
         128,
     );
-    assert!(device.new_spatial_scaler(&valid).is_some());
+    let valid_spatial = device.new_spatial_scaler(&valid);
+    if valid_spatial.is_none() && common::is_paravirtual(&device) {
+        eprintln!(
+            "skipping the valid spatial scaler: MetalFX builds none on the {}",
+            device.name()
+        );
+    } else {
+        assert!(valid_spatial.is_some());
+    }
     let mut depth_output = valid;
     depth_output.output_texture_format = pixel_format::DEPTH32FLOAT;
     assert!(device.new_spatial_scaler(&depth_output).is_none());
@@ -267,7 +275,15 @@ fn metalfx_scalers_refuse_formats_and_sizes_that_abort() {
         (64, 64),
         (128, 128),
     );
-    assert!(device.new_temporal_scaler(&temporal).is_some());
+    let valid_temporal = device.new_temporal_scaler(&temporal);
+    if valid_temporal.is_none() && common::is_paravirtual(&device) {
+        eprintln!(
+            "skipping the valid temporal scaler: MetalFX builds none on the {}",
+            device.name()
+        );
+    } else {
+        assert!(valid_temporal.is_some());
+    }
     let mut depth_as_color = temporal;
     depth_as_color.color_texture_format = pixel_format::DEPTH32FLOAT;
     assert!(device.new_temporal_scaler(&depth_as_color).is_none());
