@@ -2,10 +2,12 @@
 
 use crate::{
     ffi, render::RenderTargetFormats, storage_mode, util::take_optional_string, CommandBuffer,
-    CommandBufferPhase, CommandQueue, ComputePipelineState, CounterSampleBuffer, DepthStencilState,
-    Event, Fence, MetalBuffer, MetalTexture, RenderPipelineState, SamplerState,
+    CommandBufferPhase, CommandBufferState, CommandQueue, ComputePipelineState,
+    CounterSampleBuffer, DepthStencilState, Event, Fence, MetalBuffer, MetalTexture,
+    RenderPipelineState, SamplerState,
 };
 use core::ffi::{c_char, c_void, CStr};
+use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::Range;
 use doom_fish_utils::callback_context::CallbackContext;
@@ -362,6 +364,18 @@ command_encoder!(
     }
 );
 
+pub struct ForeignEncoding<'a> {
+    command_buffer: *mut c_void,
+    _command_buffer: PhantomData<&'a CommandBuffer>,
+}
+
+impl ForeignEncoding<'_> {
+    #[must_use]
+    pub const fn command_buffer(&self) -> *mut c_void {
+        self.command_buffer
+    }
+}
+
 #[derive(Clone, Copy)]
 struct ComputeLimits {
     execution_width: usize,
@@ -417,6 +431,7 @@ impl CommandBuffer {
         if state.phase != CommandBufferPhase::Recording {
             return Err(invalid_state("enqueue", state.phase));
         }
+        self.ensure_natively_recording(&mut state, "enqueue")?;
         if state.active_encoder {
             return Err(CommandBufferError::ActiveEncoder);
         }
@@ -434,6 +449,7 @@ impl CommandBuffer {
             .lock()
             .map_err(|_| CommandBufferError::StateLockPoisoned)?;
         ensure_recording(state.phase, "commit")?;
+        self.ensure_natively_recording(&mut state, "commit")?;
         if state.active_encoder {
             return Err(CommandBufferError::ActiveEncoder);
         }
@@ -531,12 +547,13 @@ impl CommandBuffer {
         completed: bool,
         handler: Box<dyn FnOnce(Result<(), CommandBufferError>) + Send>,
     ) -> Result<(), CommandBufferError> {
-        let state = self
+        let mut state = self
             .inner
             .state
             .lock()
             .map_err(|_| CommandBufferError::StateLockPoisoned)?;
         ensure_recording(state.phase, operation)?;
+        self.ensure_natively_recording(&mut state, operation)?;
         let context = ManuallyDrop::new(CallbackContext::<CommandBufferHandler>::new(Mutex::new(
             Some(handler),
         )));
@@ -675,7 +692,7 @@ impl CommandBuffer {
         operation: &'static str,
         encode: impl FnOnce(),
     ) -> Result<(), CommandBufferError> {
-        let state = self
+        let mut state = self
             .inner
             .state
             .lock()
@@ -684,9 +701,60 @@ impl CommandBuffer {
         if state.active_encoder {
             return Err(CommandBufferError::ActiveEncoder);
         }
+        self.ensure_natively_recording(&mut state, operation)?;
         encode();
         drop(state);
         Ok(())
+    }
+
+    pub fn encode_foreign<R>(
+        &self,
+        encode: impl FnOnce(&ForeignEncoding<'_>) -> R,
+    ) -> Result<R, CommandBufferError> {
+        {
+            let mut state = self
+                .inner
+                .state
+                .lock()
+                .map_err(|_| CommandBufferError::StateLockPoisoned)?;
+            ensure_recording(state.phase, "encode_foreign")?;
+            if state.active_encoder {
+                return Err(CommandBufferError::ActiveEncoder);
+            }
+            self.ensure_natively_recording(&mut state, "encode_foreign")?;
+            state.active_encoder = true;
+        }
+        let result = encode(&ForeignEncoding {
+            command_buffer: self.as_ptr(),
+            _command_buffer: PhantomData,
+        });
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        state.active_encoder = false;
+        let _ = self.ensure_natively_recording(&mut state, "encode_foreign");
+        drop(state);
+        Ok(result)
+    }
+
+    fn ensure_natively_recording(
+        &self,
+        state: &mut CommandBufferState,
+        operation: &'static str,
+    ) -> Result<(), CommandBufferError> {
+        match unsafe { ffi::ametal_command_buffer_status(self.as_ptr()) } {
+            command_buffer_status::NOT_ENQUEUED | command_buffer_status::ENQUEUED => Ok(()),
+            status => {
+                state.phase = match status {
+                    command_buffer_status::COMPLETED => CommandBufferPhase::Completed,
+                    command_buffer_status::ERROR => CommandBufferPhase::Error,
+                    _ => CommandBufferPhase::Committed,
+                };
+                Err(invalid_state(operation, state.phase))
+            }
+        }
     }
 
     fn begin_encoder(
@@ -703,6 +771,7 @@ impl CommandBuffer {
         if state.active_encoder {
             return Err(CommandBufferError::ActiveEncoder);
         }
+        self.ensure_natively_recording(&mut state, "create command encoder")?;
         let pointer = create();
         if pointer.is_null() {
             return Err(CommandBufferError::EncoderCreationFailed { encoder });
