@@ -59,10 +59,16 @@ pub fn device() -> MetalDevice {
     MetalDevice::system_default().expect("Metal device available")
 }
 
+pub fn is_paravirtual(device: &MetalDevice) -> bool {
+    device.name().contains("Paravirtual")
+}
+
 pub fn heap_resources_work(device: &MetalDevice) -> bool {
-    let name = device.name();
-    if name.contains("Paravirtual") {
-        eprintln!("skipping heap-placed resources: the {name} faults on them");
+    if is_paravirtual(device) {
+        eprintln!(
+            "skipping heap-placed resources: the {} faults on them",
+            device.name()
+        );
         return false;
     }
     true

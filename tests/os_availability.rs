@@ -1,6 +1,8 @@
+mod common;
+
 use std::process::Command;
 
-use apple_metal::{log_level, resource_options, MetalDevice};
+use apple_metal::{gpu_family, log_level, resource_options, MetalDevice};
 
 const LOG_STATE_UNAVAILABLE: &str = "MTLLogState requires macOS 15.0 or later";
 const RESIDENCY_SET_UNAVAILABLE: &str = "MTLResidencySet requires macOS 15.0 or later";
@@ -43,7 +45,18 @@ fn macos_15_objects_follow_the_running_os() {
         Err(message) => assert_ne!(message, LOG_STATE_UNAVAILABLE),
     }
 
-    let residency_set = residency_set.expect("residency set on macOS 15 or later");
+    let residency_set = match residency_set {
+        Err(message)
+            if !device.supports_family(gpu_family::METAL3) || common::is_paravirtual(&device) =>
+        {
+            eprintln!(
+                "skipping residency sets: {} cannot create them: {message}",
+                device.name()
+            );
+            return;
+        }
+        other => other.expect("residency set on macOS 15 or later"),
+    };
     let buffer = device
         .new_buffer(256, resource_options::STORAGE_MODE_SHARED)
         .expect("shared buffer");
