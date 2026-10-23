@@ -19,6 +19,7 @@ type CommandBufferHandler = Mutex<Option<Box<dyn FnOnce(Result<(), CommandBuffer
 const MAX_BUFFER_BINDINGS: usize = 31;
 const MAX_TEXTURE_BINDINGS: usize = 128;
 const MAX_SAMPLER_BINDINGS: usize = 16;
+const MAX_INLINE_BYTES: usize = 4096;
 
 /// `MTLCommandBufferStatus` enum values.
 pub mod command_buffer_status {
@@ -1168,6 +1169,78 @@ impl RenderCommandEncoder {
             })
     }
 
+    #[allow(clippy::missing_errors_doc)]
+    pub fn set_vertex_bytes(&mut self, bytes: &[u8], index: usize) -> Result<(), CommandBufferError> {
+        validate_binding_index("vertex bytes", index, MAX_BUFFER_BINDINGS)?;
+        validate_inline_bytes("vertex bytes", bytes)?;
+        self.core.with_active("set_vertex_bytes", |encoder| unsafe {
+            ffi::ametal_render_command_encoder_set_vertex_bytes(
+                encoder,
+                bytes.as_ptr().cast(),
+                bytes.len(),
+                index,
+            );
+        })
+    }
+
+    #[allow(clippy::missing_errors_doc)]
+    pub fn set_vertex_texture(
+        &mut self,
+        texture: &MetalTexture,
+        index: usize,
+    ) -> Result<(), CommandBufferError> {
+        validate_binding_index("vertex texture", index, MAX_TEXTURE_BINDINGS)?;
+        self.core.with_active("set_vertex_texture", |encoder| unsafe {
+            ffi::ametal_render_command_encoder_set_vertex_texture(encoder, texture.as_ptr(), index);
+        })
+    }
+
+    #[allow(clippy::missing_errors_doc)]
+    pub fn set_fragment_buffer(
+        &mut self,
+        buffer: &MetalBuffer,
+        offset: usize,
+        index: usize,
+    ) -> Result<(), CommandBufferError> {
+        validate_binding_index("fragment buffer", index, MAX_BUFFER_BINDINGS)?;
+        checked_resource_range("fragment buffer", offset, 0, buffer.length())?;
+        ensure_native_int(offset, "fragment buffer offset")?;
+        self.core.with_active("set_fragment_buffer", |encoder| unsafe {
+            ffi::ametal_render_command_encoder_set_fragment_buffer(
+                encoder,
+                buffer.as_ptr(),
+                offset,
+                index,
+            );
+        })
+    }
+
+    #[allow(clippy::missing_errors_doc)]
+    pub fn set_fragment_bytes(&mut self, bytes: &[u8], index: usize) -> Result<(), CommandBufferError> {
+        validate_binding_index("fragment bytes", index, MAX_BUFFER_BINDINGS)?;
+        validate_inline_bytes("fragment bytes", bytes)?;
+        self.core.with_active("set_fragment_bytes", |encoder| unsafe {
+            ffi::ametal_render_command_encoder_set_fragment_bytes(
+                encoder,
+                bytes.as_ptr().cast(),
+                bytes.len(),
+                index,
+            );
+        })
+    }
+
+    #[allow(clippy::missing_errors_doc)]
+    pub fn set_fragment_texture(
+        &mut self,
+        texture: &MetalTexture,
+        index: usize,
+    ) -> Result<(), CommandBufferError> {
+        validate_binding_index("fragment texture", index, MAX_TEXTURE_BINDINGS)?;
+        self.core.with_active("set_fragment_texture", |encoder| unsafe {
+            ffi::ametal_render_command_encoder_set_fragment_texture(encoder, texture.as_ptr(), index);
+        })
+    }
+
     /// Bind a fragment sampler state at `index`.
     pub fn set_fragment_sampler_state(
         &mut self,
@@ -1464,6 +1537,13 @@ fn ensure_native_int(value: usize, field: &'static str) -> Result<(), CommandBuf
     } else {
         Err(CommandBufferError::IntegerOutOfRange { field, value })
     }
+}
+
+fn validate_inline_bytes(resource: &'static str, bytes: &[u8]) -> Result<(), CommandBufferError> {
+    if bytes.is_empty() {
+        return Err(CommandBufferError::InvalidRange);
+    }
+    checked_resource_range(resource, 0, bytes.len(), MAX_INLINE_BYTES)
 }
 
 fn validate_size(

@@ -422,6 +422,70 @@ public func ametal_render_command_encoder_set_vertex_buffer(
     amTrackArgumentBuffer(encoder, buffer: buffer)
 }
 
+@_cdecl("ametal_render_command_encoder_set_vertex_bytes")
+public func ametal_render_command_encoder_set_vertex_bytes(
+    _ handle: UnsafeMutableRawPointer?,
+    _ bytes: UnsafeRawPointer?,
+    _ length: Int,
+    _ index: Int
+) {
+    guard let encoder: MTLRenderCommandEncoder = am_borrow(handle),
+          let bytes
+    else { return }
+    encoder.setVertexBytes(bytes, length: length, index: index)
+}
+
+@_cdecl("ametal_render_command_encoder_set_vertex_texture")
+public func ametal_render_command_encoder_set_vertex_texture(
+    _ handle: UnsafeMutableRawPointer?,
+    _ textureHandle: UnsafeMutableRawPointer?,
+    _ index: Int
+) {
+    guard let encoder: MTLRenderCommandEncoder = am_borrow(handle),
+          let texture: MTLTexture = am_borrow(textureHandle)
+    else { return }
+    encoder.setVertexTexture(texture, index: index)
+}
+
+@_cdecl("ametal_render_command_encoder_set_fragment_buffer")
+public func ametal_render_command_encoder_set_fragment_buffer(
+    _ handle: UnsafeMutableRawPointer?,
+    _ bufferHandle: UnsafeMutableRawPointer?,
+    _ offset: Int,
+    _ index: Int
+) {
+    guard let encoder: MTLRenderCommandEncoder = am_borrow(handle),
+          let buffer: MTLBuffer = am_borrow(bufferHandle)
+    else { return }
+    encoder.setFragmentBuffer(buffer, offset: offset, index: index)
+    amTrackArgumentBuffer(encoder, buffer: buffer)
+}
+
+@_cdecl("ametal_render_command_encoder_set_fragment_bytes")
+public func ametal_render_command_encoder_set_fragment_bytes(
+    _ handle: UnsafeMutableRawPointer?,
+    _ bytes: UnsafeRawPointer?,
+    _ length: Int,
+    _ index: Int
+) {
+    guard let encoder: MTLRenderCommandEncoder = am_borrow(handle),
+          let bytes
+    else { return }
+    encoder.setFragmentBytes(bytes, length: length, index: index)
+}
+
+@_cdecl("ametal_render_command_encoder_set_fragment_texture")
+public func ametal_render_command_encoder_set_fragment_texture(
+    _ handle: UnsafeMutableRawPointer?,
+    _ textureHandle: UnsafeMutableRawPointer?,
+    _ index: Int
+) {
+    guard let encoder: MTLRenderCommandEncoder = am_borrow(handle),
+          let texture: MTLTexture = am_borrow(textureHandle)
+    else { return }
+    encoder.setFragmentTexture(texture, index: index)
+}
+
 @_cdecl("ametal_render_command_encoder_draw_primitives")
 public func ametal_render_command_encoder_draw_primitives(
     _ handle: UnsafeMutableRawPointer?,

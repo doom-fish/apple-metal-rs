@@ -5,6 +5,14 @@ All notable changes to `apple-metal` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `RenderCommandEncoder::set_fragment_buffer`, `set_fragment_bytes` and `set_fragment_texture` bind resources for the fragment function.
+- `RenderCommandEncoder::set_vertex_bytes` and `set_vertex_texture` bind inline data and textures for the vertex function.
+- Inline data for `set_vertex_bytes` and `set_fragment_bytes` must have 1 to 4096 bytes. Other lengths give an error.
+
 ## [0.10.0] - 2026-09-24
 
 ### Security

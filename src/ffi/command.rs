@@ -169,6 +169,34 @@ extern "C" {
         offset: usize,
         index: usize,
     );
+    pub fn ametal_render_command_encoder_set_vertex_bytes(
+        handle: *mut c_void,
+        bytes: *const c_void,
+        length: usize,
+        index: usize,
+    );
+    pub fn ametal_render_command_encoder_set_vertex_texture(
+        handle: *mut c_void,
+        texture_handle: *mut c_void,
+        index: usize,
+    );
+    pub fn ametal_render_command_encoder_set_fragment_buffer(
+        handle: *mut c_void,
+        buffer_handle: *mut c_void,
+        offset: usize,
+        index: usize,
+    );
+    pub fn ametal_render_command_encoder_set_fragment_bytes(
+        handle: *mut c_void,
+        bytes: *const c_void,
+        length: usize,
+        index: usize,
+    );
+    pub fn ametal_render_command_encoder_set_fragment_texture(
+        handle: *mut c_void,
+        texture_handle: *mut c_void,
+        index: usize,
+    );
     /// Calls the `Metal` framework counterpart for `ametal_render_command_encoder_draw_primitives`.
     pub fn ametal_render_command_encoder_draw_primitives(
         handle: *mut c_void,
