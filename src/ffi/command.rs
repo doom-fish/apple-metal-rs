@@ -37,6 +37,17 @@ extern "C" {
         stencil_store_action: usize,
         clear_stencil: u32,
     ) -> *mut c_void;
+    pub fn ametal_command_buffer_new_resolving_render_command_encoder(
+        handle: *mut c_void,
+        texture_handle: *mut c_void,
+        resolve_texture_handle: *mut c_void,
+        load_action: usize,
+        store_action: usize,
+        clear_r: f64,
+        clear_g: f64,
+        clear_b: f64,
+        clear_a: f64,
+    ) -> *mut c_void;
     /// Calls the `Metal` framework counterpart for `ametal_command_buffer_encode_wait_for_event`.
     pub fn ametal_command_buffer_encode_wait_for_event(
         handle: *mut c_void,
@@ -203,6 +214,23 @@ extern "C" {
         primitive_type: usize,
         vertex_start: usize,
         vertex_count: usize,
+    );
+    pub fn ametal_render_command_encoder_set_viewport(
+        handle: *mut c_void,
+        origin_x: f64,
+        origin_y: f64,
+        width: f64,
+        height: f64,
+        znear: f64,
+        zfar: f64,
+    );
+    pub fn ametal_render_command_encoder_draw_primitives_instanced(
+        handle: *mut c_void,
+        primitive_type: usize,
+        vertex_start: usize,
+        vertex_count: usize,
+        instance_count: usize,
+        base_instance: usize,
     );
     /// Calls the `Metal` framework counterpart for `ametal_render_command_encoder_update_fence`.
     pub fn ametal_render_command_encoder_update_fence(

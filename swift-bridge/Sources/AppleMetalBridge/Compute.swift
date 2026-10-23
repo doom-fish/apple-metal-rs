@@ -93,3 +93,23 @@ public func ametal_command_buffer_dispatch_compute_1d(
     enc.endEncoding()
     return true
 }
+
+@_cdecl("ametal_device_new_library_with_data")
+public func ametal_device_new_library_with_data(
+    _ device_handle: UnsafeMutableRawPointer?,
+    _ bytes: UnsafeRawPointer?,
+    _ length: Int,
+    _ out_error_message: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> UnsafeMutableRawPointer? {
+    guard let dev: MTLDevice = am_borrow(device_handle), let bytes, length > 0 else { return nil }
+    let data = DispatchData(bytes: UnsafeRawBufferPointer(start: bytes, count: length))
+    do {
+        let lib = try dev.makeLibrary(data: data as __DispatchData)
+        return am_retain(lib as AnyObject)
+    } catch {
+        if let outE = out_error_message {
+            outE.pointee = strdup(error.localizedDescription)
+        }
+        return nil
+    }
+}

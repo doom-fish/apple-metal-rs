@@ -15,6 +15,15 @@ extern "C" {
     pub fn ametal_device_recommended_max_working_set_size(handle: *mut c_void) -> u64;
     /// Calls the `Metal` framework counterpart for `ametal_device_supports_family`.
     pub fn ametal_device_supports_family(handle: *mut c_void, family: i64) -> bool;
+    pub fn ametal_device_is_removable(handle: *mut c_void) -> bool;
+    pub fn ametal_device_is_low_power(handle: *mut c_void) -> bool;
+    pub fn ametal_device_is_headless(handle: *mut c_void) -> bool;
+    pub fn ametal_device_new_library_with_data(
+        device_handle: *mut c_void,
+        bytes: *const c_void,
+        length: usize,
+        out_error_message: *mut *mut core::ffi::c_char,
+    ) -> *mut c_void;
 
     /// Calls the `Metal` framework counterpart for `ametal_device_new_buffer`.
     pub fn ametal_device_new_buffer(

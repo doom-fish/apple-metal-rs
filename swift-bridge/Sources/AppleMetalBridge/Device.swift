@@ -31,3 +31,21 @@ public func ametal_device_supports_family(_ handle: UnsafeMutableRawPointer?, _ 
     else { return false }
     return dev.supportsFamily(fam)
 }
+
+@_cdecl("ametal_device_is_removable")
+public func ametal_device_is_removable(_ handle: UnsafeMutableRawPointer?) -> Bool {
+    guard let dev: MTLDevice = am_borrow(handle) else { return false }
+    return dev.isRemovable
+}
+
+@_cdecl("ametal_device_is_low_power")
+public func ametal_device_is_low_power(_ handle: UnsafeMutableRawPointer?) -> Bool {
+    guard let dev: MTLDevice = am_borrow(handle) else { return false }
+    return dev.isLowPower
+}
+
+@_cdecl("ametal_device_is_headless")
+public func ametal_device_is_headless(_ handle: UnsafeMutableRawPointer?) -> Bool {
+    guard let dev: MTLDevice = am_borrow(handle) else { return false }
+    return dev.isHeadless
+}

@@ -1510,6 +1510,12 @@ impl Heap {
 }
 
 impl Event {
+    #[allow(clippy::missing_safety_doc)]
+    #[must_use]
+    pub unsafe fn from_raw_borrowed(ptr: *mut c_void) -> Option<Self> {
+        Self::wrap(unsafe { ffi::ametal_event_retain(ptr) })
+    }
+
     /// Current `signaledValue`.
     #[must_use]
     pub fn signaled_value(&self) -> u64 {

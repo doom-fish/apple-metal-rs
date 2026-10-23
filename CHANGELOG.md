@@ -5,6 +5,18 @@ All notable changes to `apple-metal` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `MetalDevice::is_removable`, `is_low_power` and `is_headless` tell which kind of GPU a device is.
+- `MetalDevice::new_library_with_data` loads a compiled `.metallib`.
+- `CommandBuffer::new_resolving_render_command_encoder` renders into a multisample texture and resolves the result into a single-sample texture.
+- `RenderCommandEncoder::set_viewport` sets the viewport. `Viewport::new` gives `None` for a value that is not finite, a negative size or a depth outside 0 to 1.
+- `RenderCommandEncoder::draw_primitives_instanced` draws instances from a base instance.
+- `Event::from_raw_borrowed` retains an `id<MTLEvent>` that other code made. It gives `None` for a null pointer or an object that is not an event.
+- `MetalBuffer::contents` gives the CPU address of a buffer. The address is null for private storage.
+
 ## [0.10.1] - 2026-10-23
 
 ### Added

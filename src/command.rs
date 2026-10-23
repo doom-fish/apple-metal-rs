@@ -4,7 +4,7 @@ use crate::{
     ffi, render::RenderTargetFormats, storage_mode, util::take_optional_string, CommandBuffer,
     CommandBufferPhase, CommandBufferState, CommandQueue, ComputePipelineState,
     CounterSampleBuffer, DepthStencilState, Event, Fence, MetalBuffer, MetalTexture,
-    RenderPipelineState, SamplerState,
+    RenderPipelineState, SamplerState, Viewport,
 };
 use core::ffi::{c_char, c_void, CStr};
 use core::marker::PhantomData;
@@ -632,6 +632,57 @@ impl CommandBuffer {
                 stencil.map_or(0, |stencil| stencil.load_action),
                 stencil.map_or(0, |stencil| stencil.store_action),
                 stencil.map_or(0, |stencil| stencil.clear_stencil),
+            )
+        })?;
+        let mut encoder = RenderCommandEncoder::new(core, self.clone());
+        encoder.targets = targets;
+        Ok(encoder)
+    }
+
+    #[allow(clippy::missing_errors_doc)]
+    pub fn new_resolving_render_command_encoder(
+        &self,
+        texture: &MetalTexture,
+        resolve_texture: &MetalTexture,
+        load_action: usize,
+        store_action: usize,
+        clear_color: [f64; 4],
+    ) -> Result<RenderCommandEncoder, CommandBufferError> {
+        use crate::store_action::{
+            DONT_CARE, MULTISAMPLE_RESOLVE, STORE, STORE_AND_MULTISAMPLE_RESOLVE,
+        };
+        let texture_store_action = match store_action {
+            MULTISAMPLE_RESOLVE => DONT_CARE,
+            STORE_AND_MULTISAMPLE_RESOLVE => STORE,
+            _ => {
+                return Err(CommandBufferError::InvalidAttachment {
+                    attachment: "resolve",
+                })
+            }
+        };
+        if texture.sample_count() < 2
+            || resolve_texture.sample_count() != 1
+            || resolve_texture.pixel_format() != texture.pixel_format()
+            || resolve_texture.width() != texture.width()
+            || resolve_texture.height() != texture.height()
+            || resolve_texture.usage() & crate::texture_usage::RENDER_TARGET == 0
+        {
+            return Err(CommandBufferError::InvalidAttachment {
+                attachment: "resolve",
+            });
+        }
+        let targets = render_targets(texture, load_action, texture_store_action, None, None)?;
+        let core = self.begin_encoder("render", || unsafe {
+            ffi::ametal_command_buffer_new_resolving_render_command_encoder(
+                self.as_ptr(),
+                texture.as_ptr(),
+                resolve_texture.as_ptr(),
+                load_action,
+                store_action,
+                clear_color[0],
+                clear_color[1],
+                clear_color[2],
+                clear_color[3],
             )
         })?;
         let mut encoder = RenderCommandEncoder::new(core, self.clone());
@@ -1309,6 +1360,64 @@ impl RenderCommandEncoder {
                 vertex_count,
             );
         })
+    }
+
+    #[allow(clippy::missing_errors_doc)]
+    pub fn set_viewport(&mut self, viewport: Viewport) -> Result<(), CommandBufferError> {
+        let (origin_x, origin_y) = viewport.origin();
+        let (width, height) = viewport.size();
+        let (znear, zfar) = viewport.depth_range();
+        self.core.with_active("set_viewport", |encoder| unsafe {
+            ffi::ametal_render_command_encoder_set_viewport(
+                encoder, origin_x, origin_y, width, height, znear, zfar,
+            );
+        })
+    }
+
+    #[allow(clippy::missing_errors_doc)]
+    pub fn draw_primitives_instanced(
+        &mut self,
+        primitive_type: usize,
+        vertex_start: usize,
+        vertex_count: usize,
+        instance_count: usize,
+        base_instance: usize,
+    ) -> Result<(), CommandBufferError> {
+        if !self.pipeline_bound {
+            return Err(CommandBufferError::MissingPipelineState);
+        }
+        if primitive_type > crate::primitive_type::TRIANGLE_STRIP {
+            return Err(CommandBufferError::InvalidPrimitiveType { primitive_type });
+        }
+        ensure_native_int(vertex_start, "vertex start")?;
+        ensure_native_int(vertex_count, "vertex count")?;
+        ensure_native_int(instance_count, "instance count")?;
+        ensure_native_int(base_instance, "base instance")?;
+        vertex_start
+            .checked_add(vertex_count)
+            .filter(|end| isize::try_from(*end).is_ok())
+            .ok_or_else(|| CommandBufferError::IntegerOutOfRange {
+                field: "vertex range end",
+                value: vertex_start.saturating_add(vertex_count),
+            })?;
+        base_instance
+            .checked_add(instance_count)
+            .filter(|end| isize::try_from(*end).is_ok())
+            .ok_or_else(|| CommandBufferError::IntegerOutOfRange {
+                field: "instance range end",
+                value: base_instance.saturating_add(instance_count),
+            })?;
+        self.core
+            .with_active("draw_primitives_instanced", |encoder| unsafe {
+                ffi::ametal_render_command_encoder_draw_primitives_instanced(
+                    encoder,
+                    primitive_type,
+                    vertex_start,
+                    vertex_count,
+                    instance_count,
+                    base_instance,
+                );
+            })
     }
 
     /// Update `fence` with work encoded so far.

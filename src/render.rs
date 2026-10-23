@@ -39,6 +39,56 @@ pub mod store_action {
     pub const STORE_AND_MULTISAMPLE_RESOLVE: usize = 3;
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Viewport {
+    origin_x: f64,
+    origin_y: f64,
+    width: f64,
+    height: f64,
+    znear: f64,
+    zfar: f64,
+}
+
+impl Viewport {
+    #[must_use]
+    pub fn new(
+        origin_x: f64,
+        origin_y: f64,
+        width: f64,
+        height: f64,
+        znear: f64,
+        zfar: f64,
+    ) -> Option<Self> {
+        let finite = [origin_x, origin_y, width, height]
+            .iter()
+            .all(|value| value.is_finite());
+        let depth = |value: f64| (0.0..=1.0).contains(&value);
+        (finite && width >= 0.0 && height >= 0.0 && depth(znear) && depth(zfar)).then_some(Self {
+            origin_x,
+            origin_y,
+            width,
+            height,
+            znear,
+            zfar,
+        })
+    }
+
+    #[must_use]
+    pub const fn origin(&self) -> (f64, f64) {
+        (self.origin_x, self.origin_y)
+    }
+
+    #[must_use]
+    pub const fn size(&self) -> (f64, f64) {
+        (self.width, self.height)
+    }
+
+    #[must_use]
+    pub const fn depth_range(&self) -> (f64, f64) {
+        (self.znear, self.zfar)
+    }
+}
+
 #[allow(clippy::redundant_pub_crate)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct RenderTargetFormats {

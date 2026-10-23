@@ -529,3 +529,84 @@ public func ametal_render_command_encoder_wait_for_fence(
         encoder.waitForFence(fence, before: .vertex)
     }
 }
+
+@_cdecl("ametal_command_buffer_new_resolving_render_command_encoder")
+public func ametal_command_buffer_new_resolving_render_command_encoder(
+    _ handle: UnsafeMutableRawPointer?,
+    _ textureHandle: UnsafeMutableRawPointer?,
+    _ resolveTextureHandle: UnsafeMutableRawPointer?,
+    _ loadAction: Int,
+    _ storeAction: Int,
+    _ clearR: Double,
+    _ clearG: Double,
+    _ clearB: Double,
+    _ clearA: Double
+) -> UnsafeMutableRawPointer? {
+    let descriptor = MTLRenderPassDescriptor()
+    guard let commandBuffer: MTLCommandBuffer = am_borrow(handle),
+          let texture: MTLTexture = am_borrow(textureHandle),
+          let resolveTexture: MTLTexture = am_borrow(resolveTextureHandle),
+          texture.usage.contains(.renderTarget),
+          resolveTexture.usage.contains(.renderTarget),
+          texture.sampleCount > 1,
+          resolveTexture.sampleCount == 1,
+          resolveTexture.pixelFormat == texture.pixelFormat,
+          resolveTexture.width == texture.width,
+          resolveTexture.height == texture.height,
+          let attachment = descriptor.colorAttachments[0],
+          let rawLoadAction = UInt(exactly: loadAction),
+          let rawStoreAction = UInt(exactly: storeAction),
+          rawLoadAction <= MTLLoadAction.clear.rawValue,
+          rawStoreAction == MTLStoreAction.multisampleResolve.rawValue
+            || rawStoreAction == MTLStoreAction.storeAndMultisampleResolve.rawValue
+    else { return nil }
+
+    attachment.texture = texture
+    attachment.resolveTexture = resolveTexture
+    attachment.loadAction = MTLLoadAction(rawValue: rawLoadAction) ?? .dontCare
+    attachment.storeAction = MTLStoreAction(rawValue: rawStoreAction) ?? .multisampleResolve
+    attachment.clearColor = MTLClearColor(red: clearR, green: clearG, blue: clearB, alpha: clearA)
+
+    guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
+        return nil
+    }
+    return am_retain(encoder as AnyObject)
+}
+
+@_cdecl("ametal_render_command_encoder_set_viewport")
+public func ametal_render_command_encoder_set_viewport(
+    _ handle: UnsafeMutableRawPointer?,
+    _ originX: Double,
+    _ originY: Double,
+    _ width: Double,
+    _ height: Double,
+    _ znear: Double,
+    _ zfar: Double
+) {
+    guard let encoder: MTLRenderCommandEncoder = am_borrow(handle) else { return }
+    encoder.setViewport(
+        MTLViewport(originX: originX, originY: originY, width: width, height: height, znear: znear, zfar: zfar)
+    )
+}
+
+@_cdecl("ametal_render_command_encoder_draw_primitives_instanced")
+public func ametal_render_command_encoder_draw_primitives_instanced(
+    _ handle: UnsafeMutableRawPointer?,
+    _ primitiveType: Int,
+    _ vertexStart: Int,
+    _ vertexCount: Int,
+    _ instanceCount: Int,
+    _ baseInstance: Int
+) {
+    guard let encoder: MTLRenderCommandEncoder = am_borrow(handle),
+          let rawPrimitiveType = UInt(exactly: primitiveType)
+    else { return }
+    amDeclareArgumentBufferResources(encoder)
+    encoder.drawPrimitives(
+        type: MTLPrimitiveType(rawValue: rawPrimitiveType) ?? .point,
+        vertexStart: vertexStart,
+        vertexCount: vertexCount,
+        instanceCount: instanceCount,
+        baseInstance: baseInstance
+    )
+}

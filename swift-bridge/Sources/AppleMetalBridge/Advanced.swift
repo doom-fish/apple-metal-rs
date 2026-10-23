@@ -1253,3 +1253,12 @@ public func ametal_capture_scope_end(_ handle: UnsafeMutableRawPointer?) {
     guard let scope: MTLCaptureScope = am_borrow(handle) else { return }
     scope.end()
 }
+
+@_cdecl("ametal_event_retain")
+public func ametal_event_retain(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+    guard let handle,
+          Unmanaged<AnyObject>.fromOpaque(handle).takeUnretainedValue() is MTLEvent
+    else { return nil }
+    _ = Unmanaged<AnyObject>.fromOpaque(handle).retain()
+    return handle
+}

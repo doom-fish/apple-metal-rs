@@ -555,6 +555,21 @@ impl MetalDevice {
         unsafe { ffi::ametal_device_supports_family(self.ptr, family) }
     }
 
+    #[must_use]
+    pub fn is_removable(&self) -> bool {
+        unsafe { ffi::ametal_device_is_removable(self.ptr) }
+    }
+
+    #[must_use]
+    pub fn is_low_power(&self) -> bool {
+        unsafe { ffi::ametal_device_is_low_power(self.ptr) }
+    }
+
+    #[must_use]
+    pub fn is_headless(&self) -> bool {
+        unsafe { ffi::ametal_device_is_headless(self.ptr) }
+    }
+
     /// Allocate a GPU-visible buffer of `length` bytes.
     /// `options` is an `MTLResourceOptions` bitmask (see
     /// [`resource_options`]).
@@ -661,6 +676,28 @@ impl MetalDevice {
                 s
             };
             Err(msg)
+        } else {
+            Ok(MetalLibrary { ptr: p })
+        }
+    }
+
+    #[allow(clippy::missing_errors_doc)]
+    pub fn new_library_with_data(&self, data: &[u8]) -> Result<MetalLibrary, String> {
+        if data.is_empty() {
+            return Err("a Metal library needs at least one byte".to_string());
+        }
+        let mut err_msg: *mut core::ffi::c_char = core::ptr::null_mut();
+        let p = unsafe {
+            ffi::ametal_device_new_library_with_data(
+                self.ptr,
+                data.as_ptr().cast(),
+                data.len(),
+                &raw mut err_msg,
+            )
+        };
+        if p.is_null() {
+            Err(unsafe { crate::util::take_optional_string(err_msg) }
+                .unwrap_or_else(|| "MTLDevice.makeLibrary(data:) returned nil".to_string()))
         } else {
             Ok(MetalLibrary { ptr: p })
         }
@@ -1190,6 +1227,11 @@ impl MetalBuffer {
     #[must_use]
     pub fn as_ptr(&self) -> *mut c_void {
         self.inner.ptr
+    }
+
+    #[must_use]
+    pub fn contents(&self) -> *mut c_void {
+        unsafe { ffi::ametal_buffer_contents(self.inner.ptr) }
     }
 
     fn ensure_cpu_accessible(&self) -> Result<usize, MetalBufferAccessError> {
