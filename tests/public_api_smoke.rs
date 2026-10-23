@@ -270,7 +270,7 @@ fn public_api_smoke() {
     let device = MetalDevice::system_default().expect("Metal device available");
     let borrowed = unsafe { MetalDevice::from_raw_borrowed(device.as_ptr()) };
     assert_eq!(borrowed.has_unified_memory(), device.has_unified_memory());
-    assert!(!device.name().is_empty());
+    assert_ne!(device.name(), "");
     assert!(!copy_all_devices().is_empty());
     assert!(metal_library_error_domain().is_some());
     assert!(MetalCommandQueueDescriptor::new().is_some());
@@ -567,7 +567,7 @@ fn public_api_smoke() {
         let resolved = sample_buffer
             .resolve_range(0..1)
             .expect("resolved counter data");
-        assert!(!resolved.is_empty());
+        assert_ne!(resolved, [] as [u8; 0]);
     }
 
     let explicit_buffer = device
@@ -864,14 +864,14 @@ fn public_api_smoke() {
                 dynamic_path.to_string_lossy().as_ref(),
             )
             .expect("dynamic library from source");
-        assert!(!dynamic_library.install_name().is_empty());
+        assert_ne!(dynamic_library.install_name(), "");
         dynamic_library
             .serialize_to_file(&dynamic_path)
             .expect("serialize dynamic library");
         let reloaded = device
             .load_dynamic_library(&dynamic_path)
             .expect("load dynamic library");
-        assert!(!reloaded.install_name().is_empty());
+        assert_ne!(reloaded.install_name(), "");
 
         let archive_path = artifact_path("smoke-archive.metalarc");
         let binary_archive: BinaryArchive = device

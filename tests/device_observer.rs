@@ -23,7 +23,7 @@ fn dropping_the_observer_unregisters_and_releases_its_handler() {
     let token = Arc::new(());
     let captured = Arc::clone(&token);
     let (devices, observer) = copy_all_devices_with_observer(move |device, name| {
-        assert!(!name.is_empty());
+        assert_ne!(name, "");
         assert!(!device.as_ptr().is_null());
         assert!(Arc::strong_count(&captured) >= 2);
     });
