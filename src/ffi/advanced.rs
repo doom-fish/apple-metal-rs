@@ -4,6 +4,7 @@ extern "C" {
     /// Calls the `Metal` framework counterpart for `ametal_object_release`.
     pub fn ametal_object_release(handle: *mut c_void);
     pub fn ametal_event_retain(handle: *mut c_void) -> *mut c_void;
+    pub fn ametal_texture_retain(handle: *mut c_void) -> *mut c_void;
 
     /// Calls the `Metal` framework counterpart for `ametal_device_name`.
     pub fn ametal_device_name(handle: *mut c_void) -> *mut core::ffi::c_char;

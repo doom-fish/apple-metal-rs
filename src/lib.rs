@@ -1475,6 +1475,13 @@ impl MetalTexture {
     pub const unsafe fn from_raw(ptr: *mut c_void) -> Self {
         Self { ptr }
     }
+
+    #[allow(clippy::missing_safety_doc)]
+    #[must_use]
+    pub unsafe fn from_raw_borrowed(ptr: *mut c_void) -> Option<Self> {
+        let retained = unsafe { ffi::ametal_texture_retain(ptr) };
+        (!retained.is_null()).then_some(Self { ptr: retained })
+    }
 }
 
 impl MetalDevice {

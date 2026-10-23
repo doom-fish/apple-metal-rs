@@ -100,3 +100,12 @@ public func ametal_device_new_texture_from_iosurface(
     return am_retain(tex as AnyObject)
 }
 #endif
+
+@_cdecl("ametal_texture_retain")
+public func ametal_texture_retain(_ handle: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+    guard let handle,
+          Unmanaged<AnyObject>.fromOpaque(handle).takeUnretainedValue() is MTLTexture
+    else { return nil }
+    _ = Unmanaged<AnyObject>.fromOpaque(handle).retain()
+    return handle
+}

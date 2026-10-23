@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RenderCommandEncoder::draw_primitives_instanced` draws instances from a base instance.
 - `Event::from_raw_borrowed` retains an `id<MTLEvent>` that other code made. It gives `None` for a null pointer or an object that is not an event.
 - `MetalBuffer::contents` gives the CPU address of a buffer. The address is null for private storage.
+- `MetalTexture::from_raw_borrowed` retains an `id<MTLTexture>` that other code made, for example the texture of a `CVMetalTexture`. It gives `None` for a null pointer or an object that is not a texture.
 
 ## [0.10.1] - 2026-10-23
 
