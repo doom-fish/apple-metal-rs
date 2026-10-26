@@ -500,6 +500,12 @@ there because only a portion of that function body requires the newer SDK.
   `tests/public_api_smoke.rs` integration smoke test.
 - Added `COVERAGE.md`, refreshed the README, and bumped the crate to `0.6.0`.
 
+## [0.5.1] - 2026-05-16
+
+### Changed
+
+- Accept `apple-cf` versions from 0.1.1 to below 0.6.
+
 ## 0.5.0 — Compute pipeline + screencapturekit-style bridge split
 
 - **`MetalLibrary`** — compile MSL source via
@@ -518,6 +524,30 @@ there because only a portion of that function body requires the newer SDK.
   helpers. No behaviour change for existing consumers.
 - New example `04_compute_shader` runs an end-to-end GPU
   multiply-by-2 kernel.
+
+## [0.4.0] - 2026-05-16
+
+### Added
+
+- Add `MTLCommandQueue`, `MTLCommandBuffer` and blit encoder support.
+
+## [0.3.0] - 2026-05-16
+
+### Changed
+
+- Replace `objc_msgSend` calls with a Swift bridge.
+
+## [0.2.0] - 2026-05-16
+
+### Added
+
+- Add `MTLBuffer`, device capabilities and texture descriptors.
+
+## [0.1.1] - 2026-05-16
+
+### Changed
+
+- Accept `apple-cf` versions from 0.1.1 to below 0.3.
 
 ## 0.1.0
 
