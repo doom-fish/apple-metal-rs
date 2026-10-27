@@ -22,6 +22,7 @@ pub(crate) mod metalfx;
 pub(crate) mod pipeline;
 pub(crate) mod render;
 pub(crate) mod state;
+mod system;
 pub(crate) mod util;
 
 /// Re-exports the `Metal` framework surface for this item.
@@ -672,7 +673,7 @@ impl MetalDevice {
                 let s = unsafe { std::ffi::CStr::from_ptr(err_msg) }
                     .to_string_lossy()
                     .into_owned();
-                unsafe { libc::free(err_msg.cast()) };
+                unsafe { crate::system::free(err_msg.cast()) };
                 s
             };
             Err(msg)
@@ -725,7 +726,7 @@ impl MetalDevice {
                 let s = unsafe { std::ffi::CStr::from_ptr(err_msg) }
                     .to_string_lossy()
                     .into_owned();
-                unsafe { libc::free(err_msg.cast()) };
+                unsafe { crate::system::free(err_msg.cast()) };
                 s
             };
             Err(msg)

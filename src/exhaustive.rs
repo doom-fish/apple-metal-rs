@@ -144,8 +144,7 @@ macro_rules! metal_string_constant {
 ///
 /// * `ptr` must be either null or a valid pointer to `count` consecutive
 ///   `*mut c_void` values, each holding a +1-retained `id<MTLDevice>`.
-/// * The array itself must have been allocated with `malloc` (it is freed
-///   with `libc::free` here).
+/// * The array itself must have been allocated with `malloc`.
 /// * `count` must equal the number of elements allocated at `ptr`.
 unsafe fn take_device_array(ptr: *mut *mut c_void, count: usize) -> Vec<MetalDevice> {
     if ptr.is_null() || count == 0 {
@@ -158,7 +157,7 @@ unsafe fn take_device_array(ptr: *mut *mut c_void, count: usize) -> Vec<MetalDev
         .copied()
         .map(|device| unsafe { MetalDevice::from_raw(device) })
         .collect();
-    libc::free(ptr.cast());
+    crate::system::free(ptr.cast());
     values
 }
 

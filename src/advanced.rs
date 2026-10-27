@@ -1817,7 +1817,7 @@ impl CounterSampleBuffer {
             None
         } else {
             let bytes = unsafe { core::slice::from_raw_parts(ptr.cast::<u8>(), out_len) }.to_vec();
-            unsafe { libc::free(ptr.cast()) };
+            unsafe { crate::system::free(ptr.cast()) };
             Some(bytes)
         }
     }

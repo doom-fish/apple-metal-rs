@@ -12,12 +12,12 @@ pub unsafe fn take_optional_string(ptr: *mut core::ffi::c_char) -> Option<String
     }
 
     let value = CStr::from_ptr(ptr).to_string_lossy().into_owned();
-    libc::free(ptr.cast());
+    crate::system::free(ptr.cast());
     Some(value)
 }
 
 /// Calls the `Metal` framework counterpart for `take_string`.
 pub unsafe fn take_string(ptr: *mut core::ffi::c_char) -> String {
-    doom_fish_utils::ffi_string::take_owned_cstring_c(ptr, |p| libc::free(p.cast()))
+    doom_fish_utils::ffi_string::take_owned_cstring_c(ptr, |p| crate::system::free(p.cast()))
         .unwrap_or_default()
 }

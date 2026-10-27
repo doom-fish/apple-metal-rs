@@ -1,5 +1,8 @@
 # COVERAGE
 
+Version 0.10.4 replaces the `libc` dependency with direct system C declarations.
+The framework coverage does not change.
+
 Audit target: `MacOSX26.2.sdk/System/Library/Frameworks/Metal.framework/Headers`
 plus the wrapped `MetalFX.framework` headers. `COVERAGE_AUDIT.md` was generated
 against that SDK and has not been regenerated for the installed 26.5 SDK.

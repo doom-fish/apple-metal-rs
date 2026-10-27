@@ -43,7 +43,7 @@ remains out of scope for this crate.
 
 ```toml
 [dependencies]
-apple-metal = "0.10"
+apple-metal = "0.10.4"
 ```
 
 Only one `apple-metal` release from 0.10 on can be linked into a binary: the
@@ -54,6 +54,9 @@ an older copy pulled in by another crate still links, but its types don't
 interoperate with this one.
 
 ## Quick start
+
+The crate calls the system allocator through local C declarations and uses `core::ffi` types.
+It does not require the `libc` crate.
 
 ```rust,no_run
 use apple_metal::{resource_options, MetalDevice};
